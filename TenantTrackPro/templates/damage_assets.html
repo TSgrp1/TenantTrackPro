@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Damage Assets{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-exclamation-triangle text-danger"></i> Damage Assets</h2>
+                <div class="btn-group">
+                    <a href="{{ url_for('asset_management') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Asset Management
+                    </a>
+                    <a href="{{ url_for('store_assets') }}" class="btn btn-warning">
+                        <i class="fas fa-warehouse"></i> Store Assets
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <form method="GET" class="d-flex">
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="Search serial numbers or room..." 
+                               value="{{ search_query or '' }}">
+                        <input type="hidden" name="asset_name" value="{{ asset_name_filter or '' }}">
+                        <button type="submit" class="btn btn-outline-primary ms-2">Search</button>
+                    </form>
+                </div>
+                <div class="col-md-4">
+                    <form method="GET">
+                        <select name="asset_name" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Asset Types</option>
+                            {% for name in asset_names %}
+                            <option value="{{ name.id }}" {% if asset_name_filter == name.id|string %}selected{% endif %}>
+                                {{ name.name }} ({{ name.category }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <input type="hidden" name="search" value="{{ search_query or '' }}">
+                    </form>
+                </div>
+            </div>
+
+            <!-- Assets Table -->
+            {% if assets.items %}
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Damage Assets - {{ assets.total }} items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Asset Name</th>
+                                    <th>Category</th>
+                                    <th>Serial Number</th>
+                                    <th>Room Number</th>
+                                    <th>Status</th>
+                                    <th>Quantity</th>
+                                    <th>Date Added</th>
+                                    <th>Last Edit</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asset in assets.items %}
+                                <tr>
+                                    <td>{{ asset.asset_name_ref.name }}</td>
+                                    <td>{{ asset.asset_name_ref.category }}</td>
+                                    <td><strong>{{ asset.serial_number }}</strong></td>
+                                    <td>{{ asset.room_number or '-' }}</td>
+                                    <td>
+                                        <select class="form-select form-select-sm status-select" 
+                                                data-asset-id="{{ asset.id }}">
+                                            <option value="Room" {% if asset.status == 'Room' %}selected{% endif %}>
+                                                Room
+                                            </option>
+                                            <option value="Store" {% if asset.status == 'Store' %}selected{% endif %}>
+                                                Store
+                                            </option>
+
+                                            <option value="Damage" {% if asset.status == 'Damage' %}selected{% endif %}>
+                                                Damage
+                                            </option>
+                                            <option value="Dispose" {% if asset.status == 'Dispose' %}selected{% endif %}>
+                                                Dispose
+                                            </option>
+                                            <option value="Other" {% if asset.status == 'Other' %}selected{% endif %}>
+                                                Other
+                                            </option>
+                                        </select>
+                                    </td>
+                                    <td>{{ asset.quantity }}</td>
+                                    <td>{{ asset.date_added.strftime('%Y-%m-%d') if asset.date_added else '-' }}</td>
+                                    <td>{{ asset.last_edited.strftime('%Y-%m-%d %H:%M') if asset.last_edited else '-' }}</td>
+                                    <td>{{ asset.notes[:30] + '...' if asset.notes and asset.notes|length > 30 else asset.notes or '-' }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('edit_asset_item', asset_id=asset.id) }}" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('delete_asset_item', asset_id=asset.id) }}" 
+                                                  style="display: inline;" onsubmit="return confirm('Delete this asset?')">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if assets.pages > 1 %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if assets.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('damage_assets', page=assets.prev_num, search=search_query, asset_name=asset_name_filter) }}">Previous</a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in assets.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != assets.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('damage_assets', page=page_num, search=search_query, asset_name=asset_name_filter) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if assets.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('damage_assets', page=assets.next_num, search=search_query, asset_name=asset_name_filter) }}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-danger">
+                <h4><i class="fas fa-exclamation-triangle"></i> No Damage Assets Found</h4>
+                <p>No assets are currently marked as "Damage" status. Assets will appear here when their status is changed to "Damage".</p>
+                <a href="{{ url_for('asset_management') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Back to Asset Management
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle status updates via AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.status-select').forEach(function(select) {
+        select.addEventListener('change', function() {
+            const assetId = this.getAttribute('data-asset-id');
+            const newStatus = this.value;
+            
+            fetch(`/asset-management/update-status/${assetId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: newStatus
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // If status changed from Damage to something else, remove from this view
+                    if (newStatus !== 'Damage') {
+                        location.reload();
+                    }
+                } else {
+                    alert('Error updating status: ' + data.message);
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating status');
+                location.reload();
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

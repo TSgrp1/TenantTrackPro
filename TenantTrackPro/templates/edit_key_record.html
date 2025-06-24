@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Key Record{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-edit me-2"></i>Edit Key Record
+                        </h4>
+                        <a href="{{ url_for('key_management_records') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Records
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Display any flash messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="room_number" class="form-label">
+                                    <i class="fas fa-door-open me-2"></i>Room Number <span class="text-danger">*</span>
+                                </label>
+                                {% if room_numbers %}
+                                <select class="form-control" id="room_number" name="room_number" required>
+                                    <option value="">Select Room Number</option>
+                                    {% for room in room_numbers %}
+                                        <option value="{{ room.room_number }}" {% if record.room_number == room.room_number %}selected{% endif %}>
+                                            {{ room.room_number }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% else %}
+                                <input type="text" class="form-control" id="room_number" name="room_number" 
+                                       value="{{ record.room_number }}" required>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="resident_name" class="form-label">
+                                    <i class="fas fa-user me-2"></i>Resident Name <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="resident_name" name="resident_name" 
+                                       value="{{ record.resident_name }}" required>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label for="company_name" class="form-label">
+                                    <i class="fas fa-building me-2"></i>Company Name <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="company_name" name="company_name" 
+                                       value="{{ record.company_name }}" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="scan_time" class="form-label">
+                                    <i class="fas fa-calendar-alt me-2"></i>Scan Date & Time
+                                </label>
+                                <input type="datetime-local" class="form-control" id="scan_time" name="scan_time" 
+                                       value="{{ record.scan_time.strftime('%Y-%m-%dT%H:%M') }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fas fa-info-circle me-2"></i>Current Status
+                                </label>
+                                <div class="form-control-plaintext">
+                                    <span class="badge 
+                                        {% if record.status == 'Not Returned' %}bg-warning text-dark
+                                        {% elif record.status == 'Returned' %}bg-success
+                                        {% else %}bg-primary{% endif %} fs-6">
+                                        {{ record.status }}
+                                    </span>
+                                    <small class="text-muted ms-2">
+                                        ({{ record.scan_type.title() }} - {{ record.time_held_minutes }} min)
+                                    </small>
+                                </div>
+                            </div>
+
+                            {% if record.scan_type == 'out' and not record.is_returned %}
+                            <div class="col-md-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_returned" name="is_returned">
+                                    <label class="form-check-label" for="is_returned">
+                                        <i class="fas fa-check-circle me-2"></i>Mark as Returned
+                                    </label>
+                                    <small class="form-text text-muted d-block">
+                                        Check this box to manually mark the key as returned
+                                    </small>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="col-md-12">
+                                <label for="notes" class="form-label">
+                                    <i class="fas fa-sticky-note me-2"></i>Notes (Optional)
+                                </label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                          placeholder="Add any additional notes or comments...">{{ record.notes or '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Record Information -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <i class="fas fa-info-circle me-2"></i>Record Information
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <small><strong>Created:</strong> {{ record.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <small><strong>Last Updated:</strong> {{ record.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                                            </div>
+                                            {% if record.return_time %}
+                                            <div class="col-md-6 mt-2">
+                                                <small><strong>Returned:</strong> {{ record.return_time.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                                            </div>
+                                            {% endif %}
+                                            {% if record.is_overdue and not record.is_returned %}
+                                            <div class="col-md-6 mt-2">
+                                                <small class="text-warning">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                                    <strong>Status:</strong> Overdue ({{ record.time_held_minutes }} minutes)
+                                                </small>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('key_management_records') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Save Changes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const roomNumber = document.getElementById('room_number').value.trim();
+    const residentName = document.getElementById('resident_name').value.trim();
+    const companyName = document.getElementById('company_name').value.trim();
+
+    if (!roomNumber || !residentName || !companyName) {
+        e.preventDefault();
+        alert('Please fill in all required fields.');
+        return false;
+    }
+});
+
+// Auto-focus on first input
+document.getElementById('room_number').focus();
+</script>
+{% endblock %}

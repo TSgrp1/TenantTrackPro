@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Edit House Acknowledge{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-edit me-2"></i>Edit House Acknowledge</h4>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('house_acknowledge_update', acknowledge_id=house_acknowledge.id) }}" 
+                          method="POST" enctype="multipart/form-data">
+                        
+                        <!-- Basic Information -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2">Basic Information</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="title" name="title" 
+                                               value="{{ house_acknowledge.title }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Description</label>
+                                        <textarea class="form-control" id="description" name="description" 
+                                                  rows="3">{{ house_acknowledge.description }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Language Content -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2">Content in All Languages</h5>
+                            
+                            <!-- English Content -->
+                            <div class="language-section mb-4">
+                                <h6 class="text-primary"><i class="fas fa-flag me-2"></i>English Content</h6>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="mb-3">
+                                            <label for="english_text" class="form-label">English Text <span class="text-danger">*</span></label>
+                                            <textarea class="form-control" id="english_text" name="english_text" 
+                                                      rows="4" required>{{ house_acknowledge.english_text }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="english_image1" class="form-label">English Image 1</label>
+                                            <input type="file" class="form-control" id="english_image1" name="english_image1" accept="image/*">
+                                            {% if house_acknowledge.english_image1 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.english_image1.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="english_image2" class="form-label">English Image 2</label>
+                                            <input type="file" class="form-control" id="english_image2" name="english_image2" accept="image/*">
+                                            {% if house_acknowledge.english_image2 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.english_image2.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="english_image3" class="form-label">English Image 3</label>
+                                            <input type="file" class="form-control" id="english_image3" name="english_image3" accept="image/*">
+                                            {% if house_acknowledge.english_image3 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.english_image3.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tamil Content -->
+                            <div class="language-section mb-4">
+                                <h6 class="text-success"><i class="fas fa-flag me-2"></i>Tamil Content</h6>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="mb-3">
+                                            <label for="tamil_text" class="form-label">Tamil Text <span class="text-danger">*</span></label>
+                                            <textarea class="form-control" id="tamil_text" name="tamil_text" 
+                                                      rows="4" required>{{ house_acknowledge.tamil_text }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="tamil_image1" class="form-label">Tamil Image 1</label>
+                                            <input type="file" class="form-control" id="tamil_image1" name="tamil_image1" accept="image/*">
+                                            {% if house_acknowledge.tamil_image1 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.tamil_image1.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="tamil_image2" class="form-label">Tamil Image 2</label>
+                                            <input type="file" class="form-control" id="tamil_image2" name="tamil_image2" accept="image/*">
+                                            {% if house_acknowledge.tamil_image2 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.tamil_image2.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="tamil_image3" class="form-label">Tamil Image 3</label>
+                                            <input type="file" class="form-control" id="tamil_image3" name="tamil_image3" accept="image/*">
+                                            {% if house_acknowledge.tamil_image3 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.tamil_image3.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Chinese Content -->
+                            <div class="language-section mb-4">
+                                <h6 class="text-warning"><i class="fas fa-flag me-2"></i>Chinese Content</h6>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="mb-3">
+                                            <label for="chinese_text" class="form-label">Chinese Text <span class="text-danger">*</span></label>
+                                            <textarea class="form-control" id="chinese_text" name="chinese_text" 
+                                                      rows="4" required>{{ house_acknowledge.chinese_text }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="chinese_image1" class="form-label">Chinese Image 1</label>
+                                            <input type="file" class="form-control" id="chinese_image1" name="chinese_image1" accept="image/*">
+                                            {% if house_acknowledge.chinese_image1 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.chinese_image1.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="chinese_image2" class="form-label">Chinese Image 2</label>
+                                            <input type="file" class="form-control" id="chinese_image2" name="chinese_image2" accept="image/*">
+                                            {% if house_acknowledge.chinese_image2 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.chinese_image2.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="chinese_image3" class="form-label">Chinese Image 3</label>
+                                            <input type="file" class="form-control" id="chinese_image3" name="chinese_image3" accept="image/*">
+                                            {% if house_acknowledge.chinese_image3 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.chinese_image3.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Myanmar Content -->
+                            <div class="language-section mb-4">
+                                <h6 class="text-info"><i class="fas fa-flag me-2"></i>Myanmar Content</h6>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="mb-3">
+                                            <label for="myanmar_text" class="form-label">Myanmar Text <span class="text-danger">*</span></label>
+                                            <textarea class="form-control" id="myanmar_text" name="myanmar_text" 
+                                                      rows="4" required>{{ house_acknowledge.myanmar_text }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="myanmar_image1" class="form-label">Myanmar Image 1</label>
+                                            <input type="file" class="form-control" id="myanmar_image1" name="myanmar_image1" accept="image/*">
+                                            {% if house_acknowledge.myanmar_image1 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.myanmar_image1.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="myanmar_image2" class="form-label">Myanmar Image 2</label>
+                                            <input type="file" class="form-control" id="myanmar_image2" name="myanmar_image2" accept="image/*">
+                                            {% if house_acknowledge.myanmar_image2 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.myanmar_image2.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="myanmar_image3" class="form-label">Myanmar Image 3</label>
+                                            <input type="file" class="form-control" id="myanmar_image3" name="myanmar_image3" accept="image/*">
+                                            {% if house_acknowledge.myanmar_image3 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.myanmar_image3.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bengali Content -->
+                            <div class="language-section mb-4">
+                                <h6 class="text-danger"><i class="fas fa-flag me-2"></i>Bengali Content</h6>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="mb-3">
+                                            <label for="bengali_text" class="form-label">Bengali Text <span class="text-danger">*</span></label>
+                                            <textarea class="form-control" id="bengali_text" name="bengali_text" 
+                                                      rows="4" required>{{ house_acknowledge.bengali_text }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="bengali_image1" class="form-label">Bengali Image 1</label>
+                                            <input type="file" class="form-control" id="bengali_image1" name="bengali_image1" accept="image/*">
+                                            {% if house_acknowledge.bengali_image1 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.bengali_image1.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="bengali_image2" class="form-label">Bengali Image 2</label>
+                                            <input type="file" class="form-control" id="bengali_image2" name="bengali_image2" accept="image/*">
+                                            {% if house_acknowledge.bengali_image2 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.bengali_image2.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="bengali_image3" class="form-label">Bengali Image 3</label>
+                                            <input type="file" class="form-control" id="bengali_image3" name="bengali_image3" accept="image/*">
+                                            {% if house_acknowledge.bengali_image3 %}
+                                            <small class="text-muted">Current: {{ house_acknowledge.bengali_image3.split('/')[-1] }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('house_acknowledge_storage') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Update House Acknowledge
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.language-section {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+    background-color: #f8f9fa;
+}
+
+.language-section h6 {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+</style>
+{% endblock %}

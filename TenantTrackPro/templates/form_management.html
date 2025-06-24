@@ -1,0 +1,1351 @@
+{% extends "base.html" %}
+
+{% block title %}House Rules and Regulations{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-clipboard-list me-2"></i>House Rules and Regulations</h1>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createComplianceModal">
+                    <i class="fas fa-plus me-2"></i>Create New Form
+                </button>
+            </div>
+
+            <!-- Existing Forms -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Existing Forms</h5>
+                </div>
+                <div class="card-body">
+                    {% if forms %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Form Name</th>
+                                        <th>Type</th>
+                                        <th>Language</th>
+                                        <th>QR Code</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for form in forms %}
+                                    <tr>
+                                        <td>{{ form.name }}</td>
+                                        <td>
+                                            <span class="badge bg-info">{{ form.form_type.title() }}</span>
+                                        </td>
+                                        <td>
+                                            {% if form.language_code == 'en' %}English
+                                            {% elif form.language_code == 'bn' %}বাংলা
+                                            {% elif form.language_code == 'my' %}မြန်မာ
+                                            {% elif form.language_code == 'ta' %}தமிழ்
+                                            {% elif form.language_code == 'zh' %}中文
+                                            {% else %}{{ form.language_code.upper() }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if form.qr_code %}
+                                                <a href="{{ url_for('generate_qr_code', qr_id=form.qr_code.id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-qrcode me-1"></i>View QR
+                                                </a>
+                                            {% else %}
+                                                <span class="text-muted">No QR</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if form.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ form.created_at.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            <a href="{{ url_for('public_form_language_select', form_id=form.id) }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-eye me-1"></i>Preview
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Forms Created Yet</h5>
+                            <p class="text-muted">Create your first multilingual form to get started.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Form Modal -->
+<div class="modal fade" id="createFormModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Multilingual Form</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="multilingualForm" action="{{ url_for('create_form_template') }}" method="post" enctype="multipart/form-data">
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="form_name" class="form-label">Form Name *</label>
+                            <input type="text" class="form-control" id="form_name" name="form_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="form_type" class="form-label">Form Type *</label>
+                            <select class="form-select" id="form_type" name="form_type" required>
+                                <option value="">Select Type</option>
+                                <option value="regulations">Dormitory Regulations</option>
+                                <option value="handover">Room Handover</option>
+                                <option value="inspection">Inspection Form</option>
+                                <option value="registration">Registration Form</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                        </div>
+                    </div>
+
+
+
+                    <!-- Language Tabs -->
+                    <ul class="nav nav-tabs mb-3" id="languageTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="english-tab" data-bs-toggle="tab" data-bs-target="#english" type="button">
+                                <i class="fas fa-image me-1"></i>English
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="bengali-tab" data-bs-toggle="tab" data-bs-target="#bengali" type="button">
+                                <i class="fas fa-image me-1"></i>বাংলা (Bengali)
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="myanmar-tab" data-bs-toggle="tab" data-bs-target="#myanmar" type="button">
+                                <i class="fas fa-image me-1"></i>မြန်မာ (Myanmar)
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tamil-tab" data-bs-toggle="tab" data-bs-target="#tamil" type="button">
+                                <i class="fas fa-image me-1"></i>தமிழ் (Tamil)
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="chinese-tab" data-bs-toggle="tab" data-bs-target="#chinese" type="button">
+                                <i class="fas fa-image me-1"></i>中文 (Chinese)
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Language Content Tabs -->
+                    <div class="tab-content" id="languageTabContent">
+                        <!-- English -->
+                        <div class="tab-pane fade show active" id="english" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Regulations/Instructions (English) *</label>
+                                
+                                <!-- Input Type Selection -->
+                                <div class="mb-3">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_en" id="text_input_en" value="text" checked onchange="toggleInputType('en')">
+                                        <label class="form-check-label" for="text_input_en">
+                                            <i class="fas fa-keyboard me-1"></i> Text Input
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_en" id="pdf_input_en" value="pdf" onchange="toggleInputType('en')">
+                                        <label class="form-check-label" for="pdf_input_en">
+                                            <i class="fas fa-file-pdf me-1"></i> PDF Upload
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_en" id="image_input_en" value="image" onchange="toggleInputType('en')">
+                                        <label class="form-check-label" for="image_input_en">
+                                            <i class="fas fa-image me-1"></i> Image Upload
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Text Input Container -->
+                                <div id="text_container_en">
+                                    <textarea class="form-control" name="regulations_en" id="regulations_en" rows="6" 
+                                              placeholder="Enter regulations and instructions in English..." required></textarea>
+                                </div>
+                                
+                                <!-- PDF Input Container -->
+                                <div id="pdf_container_en" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" name="pdf_file_en" id="pdf_file_en" 
+                                               accept=".pdf" onchange="handlePdfUpload('en')">
+                                        <label class="input-group-text" for="pdf_file_en">
+                                            <i class="fas fa-upload"></i>
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Maximum file size: 10MB. Only PDF files are allowed.</div>
+                                    
+                                    <!-- PDF Preview -->
+                                    <div id="pdf_preview_en" class="mt-2" style="display: none;">
+                                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-file-pdf me-2"></i>
+                                                <span id="pdf_name_en"></span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePdf('en')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Image Input Container -->
+                                <div id="image_container_en" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" name="image_file_en" id="image_file_en" 
+                                               accept="image/jpeg,image/jpg,image/png,image/gif" onchange="handleImageUpload('en')">
+                                        <label class="input-group-text" for="image_file_en">
+                                            <i class="fas fa-image"></i>
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Maximum file size: 5MB. Supported formats: JPG, PNG, GIF</div>
+                                    
+                                    <!-- Image Preview -->
+                                    <div id="image_preview_en" class="mt-3" style="display: none;">
+                                        <div class="card">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <span>
+                                                    <i class="fas fa-image me-2"></i>
+                                                    <span id="image_name_en"></span>
+                                                </span>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeImage('en')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <div class="card-body text-center">
+                                                <img id="image_display_en" src="" alt="Regulations Preview" 
+                                                     class="img-fluid" style="max-height: 300px; border-radius: 0.375rem;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+
+
+                        </div>
+
+                        <!-- Bengali -->
+                        <div class="tab-pane fade" id="bengali" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">নিয়মকানুন ও নির্দেশাবলী (Bengali)</label>
+                                
+                                <!-- Input Type Selection -->
+                                <div class="mb-3">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_bn" id="text_input_bn" value="text" checked onchange="toggleInputType('bn')">
+                                        <label class="form-check-label" for="text_input_bn">
+                                            <i class="fas fa-keyboard me-1"></i> লেখা ইনপুট
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_bn" id="pdf_input_bn" value="pdf" onchange="toggleInputType('bn')">
+                                        <label class="form-check-label" for="pdf_input_bn">
+                                            <i class="fas fa-file-pdf me-1"></i> PDF আপলোড
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_bn" id="image_input_bn" value="image" onchange="toggleInputType('bn')">
+                                        <label class="form-check-label" for="image_input_bn">
+                                            <i class="fas fa-image me-1"></i> ছবি আপলোড
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Text Input Container -->
+                                <div id="text_container_bn">
+                                    <textarea class="form-control" name="regulations_bn" id="regulations_bn" rows="6" 
+                                              placeholder="বাংলায় নিয়মকানুন ও নির্দেশাবলী লিখুন..."></textarea>
+                                </div>
+                                
+                                <!-- PDF Input Container -->
+                                <div id="pdf_container_bn" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" name="pdf_file_bn" id="pdf_file_bn" 
+                                               accept=".pdf" onchange="handlePdfUpload('bn')">
+                                        <label class="input-group-text" for="pdf_file_bn">
+                                            <i class="fas fa-upload"></i>
+                                        </label>
+                                    </div>
+                                    <div class="form-text">সর্বোচ্চ ফাইল সাইজ: ১০এমবি। শুধুমাত্র PDF ফাইল অনুমোদিত।</div>
+                                    
+                                    <div id="pdf_preview_bn" class="mt-2" style="display: none;">
+                                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-file-pdf me-2"></i>
+                                                <span id="pdf_name_bn"></span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePdf('bn')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Image Input Container -->
+                                <div id="image_container_bn" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" name="image_file_bn" id="image_file_bn" 
+                                               accept="image/jpeg,image/jpg,image/png,image/gif" onchange="handleImageUpload('bn')">
+                                        <label class="input-group-text" for="image_file_bn">
+                                            <i class="fas fa-image"></i>
+                                        </label>
+                                    </div>
+                                    <div class="form-text">সর্বোচ্চ ফাইল সাইজ: ৫এমবি। সাপোর্টেড ফরম্যাট: JPG, PNG, GIF</div>
+                                    
+                                    <div id="image_preview_bn" class="mt-3" style="display: none;">
+                                        <div class="card">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <span>
+                                                    <i class="fas fa-image me-2"></i>
+                                                    <span id="image_name_bn"></span>
+                                                </span>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeImage('bn')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <div class="card-body text-center">
+                                                <img id="image_display_bn" src="" alt="নিয়মকানুন প্রিভিউ" 
+                                                     class="img-fluid" style="max-height: 300px; border-radius: 0.375rem;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Bengali Reference Photos -->
+                            <div class="mt-4">
+                                <h6 class="fw-bold mb-3">
+                                    <i class="fas fa-images me-2"></i>রেফারেন্স ফটো (Bengali)
+                                </h6>
+                                <p class="text-muted small mb-3">তিনটি পর্যন্ত রেফারেন্স ফটো আপলোড করুন (ঐচ্ছিক)</p>
+                                
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">ফটো ১</label>
+                                        <input type="file" class="form-control" name="ref_photo_1_bn" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('bn', 1)">
+                                        <div class="form-text">সর্বোচ্চ: ৫MB। JPG, PNG, GIF</div>
+                                        <div id="photo_preview_bn_1" class="mt-2" style="display: none;">
+                                            <img id="photo_display_bn_1" src="" alt="ফটো ১ প্রিভিউ" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('bn', 1)">
+                                                    <i class="fas fa-times"></i> মুছুন
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">ফটো ২</label>
+                                        <input type="file" class="form-control" name="ref_photo_2_bn" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('bn', 2)">
+                                        <div class="form-text">সর্বোচ্চ: ৫MB। JPG, PNG, GIF</div>
+                                        <div id="photo_preview_bn_2" class="mt-2" style="display: none;">
+                                            <img id="photo_display_bn_2" src="" alt="ফটো ২ প্রিভিউ" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('bn', 2)">
+                                                    <i class="fas fa-times"></i> মুছুন
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">ফটো ৩</label>
+                                        <input type="file" class="form-control" name="ref_photo_3_bn" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('bn', 3)">
+                                        <div class="form-text">সর্বোচ্চ: ৫MB। JPG, PNG, GIF</div>
+                                        <div id="photo_preview_bn_3" class="mt-2" style="display: none;">
+                                            <img id="photo_display_bn_3" src="" alt="ফটো ৩ প্রিভিউ" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('bn', 3)">
+                                                    <i class="fas fa-times"></i> মুছুন
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Myanmar -->
+                        <div class="tab-pane fade" id="myanmar" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">စည်းမျဉ်းများနှင့် ညွှန်ကြားချက်များ (Myanmar)</label>
+                                
+                                <!-- Input Type Selection -->
+                                <div class="mb-3">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_my" id="text_input_my" value="text" checked onchange="toggleInputType('my')">
+                                        <label class="form-check-label" for="text_input_my">
+                                            <i class="fas fa-keyboard me-1"></i> စာသား ထည့်သွင်းခြင်း
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_my" id="pdf_input_my" value="pdf" onchange="toggleInputType('my')">
+                                        <label class="form-check-label" for="pdf_input_my">
+                                            <i class="fas fa-file-pdf me-1"></i> PDF တင်ခြင်း
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_my" id="image_input_my" value="image" onchange="toggleInputType('my')">
+                                        <label class="form-check-label" for="image_input_my">
+                                            <i class="fas fa-image me-1"></i> ပုံတင်ခြင်း
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Text Input Container -->
+                                <div id="text_container_my">
+                                    <textarea class="form-control" name="regulations_my" id="regulations_my" rows="6" 
+                                              placeholder="မြန်မာဘာသာဖြင့် စည်းမျဉ်းများနှင့် ညွှန်ကြားချက်များ ရေးပါ..."></textarea>
+                                </div>
+                                
+                                <!-- PDF Input Container -->
+                                <div id="pdf_container_my" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" name="pdf_file_my" id="pdf_file_my" 
+                                               accept=".pdf" onchange="handlePdfUpload('my')">
+                                        <label class="input-group-text" for="pdf_file_my">
+                                            <i class="fas fa-upload"></i>
+                                        </label>
+                                    </div>
+                                    <div class="form-text">အများဆုံး ဖိုင်အရွယ်: ၁၀MB။ PDF ဖိုင်များသာ ခွင့်ပြုသည်။</div>
+                                    
+                                    <div id="pdf_preview_my" class="mt-2" style="display: none;">
+                                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-file-pdf me-2"></i>
+                                                <span id="pdf_name_my"></span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePdf('my')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Image Input Container -->
+                                <div id="image_container_my" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" name="image_file_my" id="image_file_my" 
+                                               accept="image/jpeg,image/jpg,image/png,image/gif" onchange="handleImageUpload('my')">
+                                        <label class="input-group-text" for="image_file_my">
+                                            <i class="fas fa-image"></i>
+                                        </label>
+                                    </div>
+                                    <div class="form-text">အများဆုံး ဖိုင်အရွယ်: ၅MB။ ပံ့ပိုးထားသော ပုံစံများ: JPG, PNG, GIF</div>
+                                    
+                                    <div id="image_preview_my" class="mt-3" style="display: none;">
+                                        <div class="card">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <span>
+                                                    <i class="fas fa-image me-2"></i>
+                                                    <span id="image_name_my"></span>
+                                                </span>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeImage('my')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <div class="card-body text-center">
+                                                <img id="image_display_my" src="" alt="စည်းမျဉ်းများ အစမ်းကြည့်ရှုခြင်း" 
+                                                     class="img-fluid" style="max-height: 300px; border-radius: 0.375rem;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Myanmar Reference Photos -->
+                            <div class="mt-4">
+                                <h6 class="fw-bold mb-3">
+                                    <i class="fas fa-images me-2"></i>ရည်ညွှန်းဓာတ်ပုံများ (Myanmar)
+                                </h6>
+                                <p class="text-muted small mb-3">သုံးခုအထိ ရည်ညွှန်းဓာတ်ပုံများ တင်ပါ (ရွေးချယ်ခွင့်)</p>
+                                
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">ဓာတ်ပုံ ၁</label>
+                                        <input type="file" class="form-control" name="ref_photo_1_my" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('my', 1)">
+                                        <div class="form-text">အများဆုံး: ၅MB။ JPG, PNG, GIF</div>
+                                        <div id="photo_preview_my_1" class="mt-2" style="display: none;">
+                                            <img id="photo_display_my_1" src="" alt="ဓာတ်ပုံ ၁ အစမ်း" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('my', 1)">
+                                                    <i class="fas fa-times"></i> ဖယ်ရှားပါ
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">ဓာတ်ပုံ ၂</label>
+                                        <input type="file" class="form-control" name="ref_photo_2_my" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('my', 2)">
+                                        <div class="form-text">အများဆုံး: ၅MB။ JPG, PNG, GIF</div>
+                                        <div id="photo_preview_my_2" class="mt-2" style="display: none;">
+                                            <img id="photo_display_my_2" src="" alt="ဓာတ်ပုံ ၂ အစမ်း" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('my', 2)">
+                                                    <i class="fas fa-times"></i> ဖယ်ရှားပါ
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">ဓာတ်ပုံ ၃</label>
+                                        <input type="file" class="form-control" name="ref_photo_3_my" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('my', 3)">
+                                        <div class="form-text">အများဆုံး: ၅MB။ JPG, PNG, GIF</div>
+                                        <div id="photo_preview_my_3" class="mt-2" style="display: none;">
+                                            <img id="photo_display_my_3" src="" alt="ဓာတ်ပုံ ၃ အစမ်း" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('my', 3)">
+                                                    <i class="fas fa-times"></i> ဖယ်ရှားပါ
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        <!-- Tamil -->
+                        <div class="tab-pane fade" id="tamil" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">விதிமுறைகள் மற்றும் வழிமுறைகள் (Tamil)</label>
+                                
+                                <!-- Input Type Selection -->
+                                <div class="mb-3">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_ta" id="text_input_ta" value="text" checked onchange="toggleInputType('ta')">
+                                        <label class="form-check-label" for="text_input_ta">
+                                            <i class="fas fa-keyboard me-1"></i> உரை உள்ளீடு
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_ta" id="pdf_input_ta" value="pdf" onchange="toggleInputType('ta')">
+                                        <label class="form-check-label" for="pdf_input_ta">
+                                            <i class="fas fa-file-pdf me-1"></i> PDF பதிவேற்றம்
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_ta" id="image_input_ta" value="image" onchange="toggleInputType('ta')">
+                                        <label class="form-check-label" for="image_input_ta">
+                                            <i class="fas fa-image me-1"></i> படம் பதிவேற்றம்
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Text Input Container -->
+                                <div id="text_container_ta">
+                                    <textarea class="form-control" name="regulations_ta" id="regulations_ta" rows="6" 
+                                              placeholder="தமிழில் விதிமுறைகள் மற்றும் வழிமுறைகளை எழுதுங்கள்..."></textarea>
+                                </div>
+                                
+                                <!-- PDF Input Container -->
+                                <div id="pdf_container_ta" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" name="pdf_file_ta" id="pdf_file_ta" 
+                                               accept=".pdf" onchange="handlePdfUpload('ta')">
+                                        <label class="input-group-text" for="pdf_file_ta">
+                                            <i class="fas fa-upload"></i>
+                                        </label>
+                                    </div>
+                                    <div class="form-text">அதிகபட்ச கோப்பு அளவு: 10MB। PDF கோப்புகள் மட்டுமே அனுமதிக்கப்படும்।</div>
+                                    
+                                    <div id="pdf_preview_ta" class="mt-2" style="display: none;">
+                                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-file-pdf me-2"></i>
+                                                <span id="pdf_name_ta"></span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePdf('ta')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Image Input Container -->
+                                <div id="image_container_ta" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" name="image_file_ta" id="image_file_ta" 
+                                               accept="image/jpeg,image/jpg,image/png,image/gif" onchange="handleImageUpload('ta')">
+                                        <label class="input-group-text" for="image_file_ta">
+                                            <i class="fas fa-image"></i>
+                                        </label>
+                                    </div>
+                                    <div class="form-text">அதிகபட்ச கோப்பு அளவு: 5MB। ஆதரிக்கப்படும் வடிவங்கள்: JPG, PNG, GIF</div>
+                                    
+                                    <div id="image_preview_ta" class="mt-3" style="display: none;">
+                                        <div class="card">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <span>
+                                                    <i class="fas fa-image me-2"></i>
+                                                    <span id="image_name_ta"></span>
+                                                </span>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeImage('ta')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <div class="card-body text-center">
+                                                <img id="image_display_ta" src="" alt="விதிமுறைகள் முன்னோட்டம்" 
+                                                     class="img-fluid" style="max-height: 300px; border-radius: 0.375rem;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tamil Reference Photos -->
+                            <div class="mt-4">
+                                <h6 class="fw-bold mb-3">
+                                    <i class="fas fa-images me-2"></i>குறிப்பு புகைப்படங்கள் (Tamil)
+                                </h6>
+                                <p class="text-muted small mb-3">மூன்று வரை குறிப்பு புகைப்படங்களை பதிவேற்றவும் (விருப்பமான)</p>
+                                
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">புகைப்படம் 1</label>
+                                        <input type="file" class="form-control" name="ref_photo_1_ta" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('ta', 1)">
+                                        <div class="form-text">அதிகபட்சம்: 5MB। JPG, PNG, GIF</div>
+                                        <div id="photo_preview_ta_1" class="mt-2" style="display: none;">
+                                            <img id="photo_display_ta_1" src="" alt="புகைப்படம் 1 முன்னோட்டம்" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('ta', 1)">
+                                                    <i class="fas fa-times"></i> அகற்று
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">புகைப்படம் 2</label>
+                                        <input type="file" class="form-control" name="ref_photo_2_ta" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('ta', 2)">
+                                        <div class="form-text">அதிகபட்சம்: 5MB। JPG, PNG, GIF</div>
+                                        <div id="photo_preview_ta_2" class="mt-2" style="display: none;">
+                                            <img id="photo_display_ta_2" src="" alt="புகைப்படம் 2 முன்னோட்டம்" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('ta', 2)">
+                                                    <i class="fas fa-times"></i> அகற்று
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">புகைப்படம் 3</label>
+                                        <input type="file" class="form-control" name="ref_photo_3_ta" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('ta', 3)">
+                                        <div class="form-text">அதிகபட்சம்: 5MB। JPG, PNG, GIF</div>
+                                        <div id="photo_preview_ta_3" class="mt-2" style="display: none;">
+                                            <img id="photo_display_ta_3" src="" alt="புகைப்படம் 3 முன்னோட்டம்" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('ta', 3)">
+                                                    <i class="fas fa-times"></i> அகற்று
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tamil Reference Photos -->
+                            <div class="mt-4">
+                                <h6 class="fw-bold mb-3">
+                                    <i class="fas fa-images me-2"></i>குறிப்பு புகைப்படங்கள் (Tamil)
+                                </h6>
+                                <p class="text-muted small mb-3">மூன்று வரை குறிப்பு புகைப்படங்களை பதிவேற்றவும் (விருப்பமான)</p>
+                                
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">புகைப்படம் 1</label>
+                                        <input type="file" class="form-control" name="ref_photo_1_ta" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('ta', 1)">
+                                        <div class="form-text">அதிகபட்சம்: 5MB। JPG, PNG, GIF</div>
+                                        <div id="photo_preview_ta_1" class="mt-2" style="display: none;">
+                                            <img id="photo_display_ta_1" src="" alt="புகைப்படம் 1 முன்னோட்டம்" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('ta', 1)">
+                                                    <i class="fas fa-times"></i> அகற்று
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">புகைப்படம் 2</label>
+                                        <input type="file" class="form-control" name="ref_photo_2_ta" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('ta', 2)">
+                                        <div class="form-text">அதிகபட்சம்: 5MB। JPG, PNG, GIF</div>
+                                        <div id="photo_preview_ta_2" class="mt-2" style="display: none;">
+                                            <img id="photo_display_ta_2" src="" alt="புகைப்படம் 2 முன்னோட்டம்" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('ta', 2)">
+                                                    <i class="fas fa-times"></i> அகற்று
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">புகைப்படம் 3</label>
+                                        <input type="file" class="form-control" name="ref_photo_3_ta" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('ta', 3)">
+                                        <div class="form-text">அதிகபட்சம்: 5MB। JPG, PNG, GIF</div>
+                                        <div id="photo_preview_ta_3" class="mt-2" style="display: none;">
+                                            <img id="photo_display_ta_3" src="" alt="புகைப்படம் 3 முன்னோட்டம்" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('ta', 3)">
+                                                    <i class="fas fa-times"></i> அகற்று
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Chinese -->
+                        <div class="tab-pane fade" id="chinese" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">规章制度与说明 (Chinese)</label>
+                                
+                                <!-- Input Type Selection -->
+                                <div class="mb-3">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_zh" id="text_input_zh" value="text" checked onchange="toggleInputType('zh')">
+                                        <label class="form-check-label" for="text_input_zh">
+                                            <i class="fas fa-keyboard me-1"></i> 文本输入
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_zh" id="pdf_input_zh" value="pdf" onchange="toggleInputType('zh')">
+                                        <label class="form-check-label" for="pdf_input_zh">
+                                            <i class="fas fa-file-pdf me-1"></i> PDF上传
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="input_type_zh" id="image_input_zh" value="image" onchange="toggleInputType('zh')">
+                                        <label class="form-check-label" for="image_input_zh">
+                                            <i class="fas fa-image me-1"></i> 图片上传
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Text Input Container -->
+                                <div id="text_container_zh">
+                                    <textarea class="form-control" name="regulations_zh" id="regulations_zh" rows="6" 
+                                              placeholder="请用中文输入规章制度与说明..."></textarea>
+                                </div>
+                                
+                                <!-- PDF Input Container -->
+                                <div id="pdf_container_zh" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" name="pdf_file_zh" id="pdf_file_zh" 
+                                               accept=".pdf" onchange="handlePdfUpload('zh')">
+                                        <label class="input-group-text" for="pdf_file_zh">
+                                            <i class="fas fa-upload"></i>
+                                        </label>
+                                    </div>
+                                    <div class="form-text">最大文件大小：10MB。仅允许PDF文件。</div>
+                                    
+                                    <div id="pdf_preview_zh" class="mt-2" style="display: none;">
+                                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-file-pdf me-2"></i>
+                                                <span id="pdf_name_zh"></span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePdf('zh')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Image Input Container -->
+                                <div id="image_container_zh" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" name="image_file_zh" id="image_file_zh" 
+                                               accept="image/jpeg,image/jpg,image/png,image/gif" onchange="handleImageUpload('zh')">
+                                        <label class="input-group-text" for="image_file_zh">
+                                            <i class="fas fa-image"></i>
+                                        </label>
+                                    </div>
+                                    <div class="form-text">最大文件大小：5MB。支持格式：JPG、PNG、GIF</div>
+                                    
+                                    <div id="image_preview_zh" class="mt-3" style="display: none;">
+                                        <div class="card">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <span>
+                                                    <i class="fas fa-image me-2"></i>
+                                                    <span id="image_name_zh"></span>
+                                                </span>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeImage('zh')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <div class="card-body text-center">
+                                                <img id="image_display_zh" src="" alt="规章预览" 
+                                                     class="img-fluid" style="max-height: 300px; border-radius: 0.375rem;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Chinese Reference Photos -->
+                            <div class="mt-4">
+                                <h6 class="fw-bold mb-3">
+                                    <i class="fas fa-images me-2"></i>参考照片 (Chinese)
+                                </h6>
+                                <p class="text-muted small mb-3">上传最多三张参考照片（可选）</p>
+                                
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">照片 1</label>
+                                        <input type="file" class="form-control" name="ref_photo_1_zh" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('zh', 1)">
+                                        <div class="form-text">最大: 5MB。JPG, PNG, GIF</div>
+                                        <div id="photo_preview_zh_1" class="mt-2" style="display: none;">
+                                            <img id="photo_display_zh_1" src="" alt="照片 1 预览" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('zh', 1)">
+                                                    <i class="fas fa-times"></i> 删除
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">照片 2</label>
+                                        <input type="file" class="form-control" name="ref_photo_2_zh" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('zh', 2)">
+                                        <div class="form-text">最大: 5MB。JPG, PNG, GIF</div>
+                                        <div id="photo_preview_zh_2" class="mt-2" style="display: none;">
+                                            <img id="photo_display_zh_2" src="" alt="照片 2 预览" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('zh', 2)">
+                                                    <i class="fas fa-times"></i> 删除
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">照片 3</label>
+                                        <input type="file" class="form-control" name="ref_photo_3_zh" accept=".jpg,.jpeg,.png,.gif" onchange="handleLanguageReferencePhotoUpload('zh', 3)">
+                                        <div class="form-text">最大: 5MB。JPG, PNG, GIF</div>
+                                        <div id="photo_preview_zh_3" class="mt-2" style="display: none;">
+                                            <img id="photo_display_zh_3" src="" alt="照片 3 预览" class="img-thumbnail" style="max-height: 150px;">
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLanguageReferencePhoto('zh', 3)">
+                                                    <i class="fas fa-times"></i> 删除
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    
+                    <!-- Dynamic Form Fields Section -->
+                    <div class="mt-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-list me-2"></i>Form Fields (JSON Format)
+                        </h6>
+                        <textarea class="form-control" name="fields_json" rows="8" placeholder='Enter form fields in JSON format, e.g.:
+[
+  {"type": "text", "name": "applicant_name", "label": "Applicant Name", "required": true},
+  {"type": "email", "name": "email", "label": "Email Address", "required": true},
+  {"type": "select", "name": "department", "label": "Department", "options": ["HR", "IT", "Finance"]},
+  {"type": "textarea", "name": "comments", "label": "Comments", "required": false}
+]'></textarea>
+                        <div class="form-text">Define the form fields that users will fill out after reading the regulations.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="multilingualForm" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> Create Multilingual Form
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleInputType(lang) {
+    const textInput = document.getElementById(`text_input_${lang}`);
+    const pdfInput = document.getElementById(`pdf_input_${lang}`);
+    const imageInput = document.getElementById(`image_input_${lang}`);
+    const textContainer = document.getElementById(`text_container_${lang}`);
+    const pdfContainer = document.getElementById(`pdf_container_${lang}`);
+    const imageContainer = document.getElementById(`image_container_${lang}`);
+    const textArea = document.getElementById(`regulations_${lang}`);
+    const pdfFile = document.getElementById(`pdf_file_${lang}`);
+    const imageFile = document.getElementById(`image_file_${lang}`);
+    
+    if (textInput.checked) {
+        textContainer.style.display = 'block';
+        pdfContainer.style.display = 'none';
+        imageContainer.style.display = 'none';
+        textArea.required = true;
+        pdfFile.required = false;
+        imageFile.required = false;
+        // Clear other inputs
+        pdfFile.value = '';
+        imageFile.value = '';
+        document.getElementById(`pdf_preview_${lang}`).style.display = 'none';
+        document.getElementById(`image_preview_${lang}`).style.display = 'none';
+    } else if (pdfInput.checked) {
+        textContainer.style.display = 'none';
+        pdfContainer.style.display = 'block';
+        imageContainer.style.display = 'none';
+        textArea.required = false;
+        pdfFile.required = true;
+        imageFile.required = false;
+        // Clear other inputs
+        textArea.value = '';
+        imageFile.value = '';
+        document.getElementById(`image_preview_${lang}`).style.display = 'none';
+    } else if (imageInput.checked) {
+        textContainer.style.display = 'none';
+        pdfContainer.style.display = 'none';
+        imageContainer.style.display = 'block';
+        textArea.required = false;
+        pdfFile.required = false;
+        imageFile.required = true;
+        // Clear other inputs
+        textArea.value = '';
+        pdfFile.value = '';
+        document.getElementById(`pdf_preview_${lang}`).style.display = 'none';
+    }
+}
+
+function handlePdfUpload(lang) {
+    const fileInput = document.getElementById(`pdf_file_${lang}`);
+    const preview = document.getElementById(`pdf_preview_${lang}`);
+    const fileName = document.getElementById(`pdf_name_${lang}`);
+    
+    if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        
+        // Validate file type
+        if (file.type !== 'application/pdf') {
+            alert('Please select a PDF file only.');
+            fileInput.value = '';
+            return;
+        }
+        
+        // Validate file size (10MB limit)
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File size must be less than 10MB.');
+            fileInput.value = '';
+            return;
+        }
+        
+        fileName.textContent = file.name;
+        preview.style.display = 'block';
+    }
+}
+
+function removePdf(lang) {
+    const fileInput = document.getElementById(`pdf_file_${lang}`);
+    const preview = document.getElementById(`pdf_preview_${lang}`);
+    
+    fileInput.value = '';
+    preview.style.display = 'none';
+}
+
+function handleImageUpload(lang) {
+    const fileInput = document.getElementById(`image_file_${lang}`);
+    const preview = document.getElementById(`image_preview_${lang}`);
+    const imageName = document.getElementById(`image_name_${lang}`);
+    const imageDisplay = document.getElementById(`image_display_${lang}`);
+    
+    if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        
+        // Validate file type
+        if (!['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(file.type)) {
+            alert('Please select an image file only (JPG, PNG, GIF).');
+            fileInput.value = '';
+            return;
+        }
+        
+        // Validate file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size must be less than 5MB.');
+            fileInput.value = '';
+            return;
+        }
+        
+        imageName.textContent = file.name;
+        
+        // Show image preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imageDisplay.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function removeImage(lang) {
+    const fileInput = document.getElementById(`image_file_${lang}`);
+    const preview = document.getElementById(`image_preview_${lang}`);
+    
+    fileInput.value = '';
+    preview.style.display = 'none';
+}
+
+function handleReferencePhotoUpload(photoNumber) {
+    const fileInput = document.querySelector(`input[name="ref_photo_${photoNumber}"]`);
+    const preview = document.getElementById(`photo_preview_${photoNumber}`);
+    const imageDisplay = document.getElementById(`photo_display_${photoNumber}`);
+    
+    if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        
+        // Validate file type
+        if (!['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(file.type)) {
+            alert('Please select an image file only (JPG, PNG, GIF).');
+            fileInput.value = '';
+            return;
+        }
+        
+        // Validate file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size must be less than 5MB.');
+            fileInput.value = '';
+            return;
+        }
+        
+        // Show image preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imageDisplay.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+
+
+function handleLanguageReferencePhotoUpload(lang, photoNumber) {
+    const fileInput = document.querySelector(`input[name="ref_photo_${photoNumber}_${lang}"]`);
+    const preview = document.getElementById(`photo_preview_${lang}_${photoNumber}`);
+    const imageDisplay = document.getElementById(`photo_display_${lang}_${photoNumber}`);
+    
+    if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        
+        // Validate file type
+        if (!['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(file.type)) {
+            alert('Please select an image file only (JPG, PNG, GIF).');
+            fileInput.value = '';
+            return;
+        }
+        
+        // Validate file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size must be less than 5MB.');
+            fileInput.value = '';
+            return;
+        }
+        
+        // Show image preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imageDisplay.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function removeLanguageReferencePhoto(lang, photoNumber) {
+    const fileInput = document.querySelector(`input[name="ref_photo_${photoNumber}_${lang}"]`);
+    const preview = document.getElementById(`photo_preview_${lang}_${photoNumber}`);
+    
+    fileInput.value = '';
+    preview.style.display = 'none';
+}
+
+
+
+// Form submission handling
+document.getElementById('multilingualForm').addEventListener('submit', function(e) {
+    // Check if English input is provided (text, PDF, or image)
+    const textInput = document.getElementById('text_input_en');
+    const pdfInput = document.getElementById('pdf_input_en');
+    const imageInput = document.getElementById('image_input_en');
+    const textArea = document.getElementById('regulations_en');
+    const pdfFile = document.getElementById('pdf_file_en');
+    const imageFile = document.getElementById('image_file_en');
+    
+    if (textInput.checked && !textArea.value.trim()) {
+        e.preventDefault();
+        alert('Please enter regulations text in English or switch to PDF/Image upload.');
+        document.getElementById('english-tab').click();
+        return;
+    }
+    
+    if (pdfInput.checked && !pdfFile.files.length) {
+        e.preventDefault();
+        alert('Please upload a PDF file for English regulations or switch to text/image input.');
+        document.getElementById('english-tab').click();
+        return;
+    }
+    
+    if (imageInput.checked && !imageFile.files.length) {
+        e.preventDefault();
+        alert('Please upload an image file for English regulations or switch to text/PDF input.');
+        document.getElementById('english-tab').click();
+        return;
+    }
+});
+</script>
+
+        </div>
+    </div>
+</div>
+
+<!-- Create Multilingual Compliance Record Modal -->
+<div class="modal fade" id="createComplianceModal" tabindex="-1" aria-labelledby="createComplianceModalLabel" aria-hidden="true" style="z-index: 9999;">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Form</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="complianceForm" action="{{ url_for('create_compliance_record') }}" method="post" enctype="multipart/form-data">
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="title" class="form-label">Form Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Select Category</option>
+                                <option value="house_rules">House Rules</option>
+                                <option value="safety">Safety Guidelines</option>
+                                <option value="conduct">Code of Conduct</option>
+                                <option value="maintenance">Maintenance Instructions</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- English Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="border rounded p-3" style="border-left: 4px solid #007bff;">
+                                <h6 class="text-primary mb-3">Regulations/Instructions (English)</h6>
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label for="english_text" class="form-label">Text Input</label>
+                                        <textarea class="form-control" id="english_text" name="english_text" rows="3"></textarea>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="english_pdf" class="form-label">PDF Upload</label>
+                                        <input type="file" class="form-control" id="english_pdf" name="english_pdf" accept=".pdf">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="english_image1" class="form-label">Image Upload 1</label>
+                                        <input type="file" class="form-control" id="english_image1" name="english_image1" accept="image/*">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="english_image2" class="form-label">Image Upload 2</label>
+                                        <input type="file" class="form-control" id="english_image2" name="english_image2" accept="image/*">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="english_image3" class="form-label">Image Upload 3</label>
+                                        <input type="file" class="form-control" id="english_image3" name="english_image3" accept="image/*">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bengali Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="border rounded p-3" style="border-left: 4px solid #28a745;">
+                                <h6 class="text-success mb-3">Regulations/Instructions (বাংলা (Bengali))</h6>
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label for="bengali_text" class="form-label">Text Input</label>
+                                        <textarea class="form-control" id="bengali_text" name="bengali_text" rows="3"></textarea>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="bengali_pdf" class="form-label">PDF Upload</label>
+                                        <input type="file" class="form-control" id="bengali_pdf" name="bengali_pdf" accept=".pdf">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="bengali_image1" class="form-label">Image Upload 1</label>
+                                        <input type="file" class="form-control" id="bengali_image1" name="bengali_image1" accept="image/*">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="bengali_image2" class="form-label">Image Upload 2</label>
+                                        <input type="file" class="form-control" id="bengali_image2" name="bengali_image2" accept="image/*">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="bengali_image3" class="form-label">Image Upload 3</label>
+                                        <input type="file" class="form-control" id="bengali_image3" name="bengali_image3" accept="image/*">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Myanmar Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="border rounded p-3" style="border-left: 4px solid #ffc107;">
+                                <h6 class="text-warning mb-3">Regulations/Instructions (မြန်မာ (Myanmar))</h6>
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label for="myanmar_text" class="form-label">Text Input</label>
+                                        <textarea class="form-control" id="myanmar_text" name="myanmar_text" rows="3"></textarea>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="myanmar_pdf" class="form-label">PDF Upload</label>
+                                        <input type="file" class="form-control" id="myanmar_pdf" name="myanmar_pdf" accept=".pdf">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="myanmar_image1" class="form-label">Image Upload 1</label>
+                                        <input type="file" class="form-control" id="myanmar_image1" name="myanmar_image1" accept="image/*">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="myanmar_image2" class="form-label">Image Upload 2</label>
+                                        <input type="file" class="form-control" id="myanmar_image2" name="myanmar_image2" accept="image/*">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="myanmar_image3" class="form-label">Image Upload 3</label>
+                                        <input type="file" class="form-control" id="myanmar_image3" name="myanmar_image3" accept="image/*">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tamil Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="border rounded p-3" style="border-left: 4px solid #dc3545;">
+                                <h6 class="text-danger mb-3">Regulations/Instructions (தமிழ் (Tamil))</h6>
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label for="tamil_text" class="form-label">Text Input</label>
+                                        <textarea class="form-control" id="tamil_text" name="tamil_text" rows="3"></textarea>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="tamil_pdf" class="form-label">PDF Upload</label>
+                                        <input type="file" class="form-control" id="tamil_pdf" name="tamil_pdf" accept=".pdf">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="tamil_image1" class="form-label">Image Upload 1</label>
+                                        <input type="file" class="form-control" id="tamil_image1" name="tamil_image1" accept="image/*">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="tamil_image2" class="form-label">Image Upload 2</label>
+                                        <input type="file" class="form-control" id="tamil_image2" name="tamil_image2" accept="image/*">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="tamil_image3" class="form-label">Image Upload 3</label>
+                                        <input type="file" class="form-control" id="tamil_image3" name="tamil_image3" accept="image/*">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chinese Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="border rounded p-3" style="border-left: 4px solid #6f42c1;">
+                                <h6 class="text-info mb-3">Regulations/Instructions (中文 (Chinese))</h6>
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label for="chinese_text" class="form-label">Text Input</label>
+                                        <textarea class="form-control" id="chinese_text" name="chinese_text" rows="3"></textarea>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="chinese_pdf" class="form-label">PDF Upload</label>
+                                        <input type="file" class="form-control" id="chinese_pdf" name="chinese_pdf" accept=".pdf">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="chinese_image1" class="form-label">Image Upload 1</label>
+                                        <input type="file" class="form-control" id="chinese_image1" name="chinese_image1" accept="image/*">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="chinese_image2" class="form-label">Image Upload 2</label>
+                                        <input type="file" class="form-control" id="chinese_image2" name="chinese_image2" accept="image/*">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="chinese_image3" class="form-label">Image Upload 3</label>
+                                        <input type="file" class="form-control" id="chinese_image3" name="chinese_image3" accept="image/*">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="complianceForm">
+                    <i class="fas fa-plus me-2"></i>Create Form
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize Bootstrap dropdown
+document.addEventListener('DOMContentLoaded', function() {
+    // Ensure Bootstrap dropdown is working
+    const dropdownElementList = document.querySelectorAll('.dropdown-toggle')
+    const dropdownList = [...dropdownElementList].map(dropdownToggleEl => new bootstrap.Dropdown(dropdownToggleEl))
+});
+
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const complianceForm = document.querySelector('#complianceForm');
+    if (complianceForm) {
+        complianceForm.addEventListener('submit', function(e) {
+            console.log('Submitting compliance form');
+        });
+    }
+});
+</script>
+
+{% endblock %}

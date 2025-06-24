@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resident Check-in & Resident Check-Out Records - TS Management Services Pte Ltd</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            border: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border: none;
+            border-radius: 25px;
+            padding: 8px 20px;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            border: none;
+            border-radius: 25px;
+            padding: 8px 20px;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: none;
+            border-radius: 25px;
+            padding: 8px 20px;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            border: none;
+            border-radius: 25px;
+            padding: 8px 20px;
+        }
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 8px 12px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        .table {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .table thead th {
+            background: #f8f9fa;
+            border: none;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .company-logo {
+            max-height: 60px;
+            margin-bottom: 10px;
+        }
+        .photo-thumbnail {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .reason-badge {
+            border-radius: 15px;
+            padding: 5px 12px;
+            font-size: 0.85em;
+        }
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        .action-buttons {
+            margin-bottom: 20px;
+        }
+        .modal-content {
+            border-radius: 15px;
+        }
+        .photo-modal img {
+            max-width: 100%;
+            border-radius: 15px;
+        }
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.9em;
+            }
+            .btn {
+                padding: 6px 12px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="container text-center">
+            {% if logo_exists %}
+            <img src="{{ url_for('static', filename='ts_logo.svg') }}" alt="TS Management Services" class="company-logo">
+            {% endif %}
+            <h1><i class="fas fa-clipboard-list me-2"></i>Resident Check-in & Resident Check-Out Records</h1>
+            <p class="lead">View and manage all resident check-in and check-out records</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <h5><i class="fas fa-filter me-2"></i>Filter Records</h5>
+            <form method="GET" action="{{ url_for('resident_checkout_records') }}">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" 
+                               value="{{ request.args.get('start_date', '') }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" 
+                               value="{{ request.args.get('end_date', '') }}">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="name_filter" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name_filter" name="name_filter" 
+                               placeholder="Search name..." value="{{ request.args.get('name_filter', '') }}">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="fin_filter" class="form-label">FIN</label>
+                        <input type="text" class="form-control" id="fin_filter" name="fin_filter" 
+                               placeholder="Search FIN..." value="{{ request.args.get('fin_filter', '') }}">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="reason_filter" class="form-label">Reason</label>
+                        <select class="form-select" id="reason_filter" name="reason_filter">
+                            <option value="">All Reasons</option>
+                            <option value="HOME LEAVE" {{ 'selected' if request.args.get('reason_filter') == 'HOME LEAVE' }}>HOME LEAVE</option>
+                            <option value="CHECK-OUT" {{ 'selected' if request.args.get('reason_filter') == 'CHECK-OUT' }}>CHECK-OUT</option>
+                            <option value="OTHER" {{ 'selected' if request.args.get('reason_filter') == 'OTHER' }}>OTHER</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-2"></i>Apply Filter
+                    </button>
+                    <a href="{{ url_for('resident_checkout_records') }}" class="btn btn-secondary">
+                        <i class="fas fa-undo me-2"></i>Clear Filter
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <div class="row">
+                <div class="col-md-6">
+                    <button type="button" class="btn btn-danger" id="bulk-delete-btn" disabled>
+                        <i class="fas fa-trash me-2"></i>Delete Selected
+                    </button>
+                    <button type="button" class="btn btn-success" id="bulk-export-btn" disabled>
+                        <i class="fas fa-file-excel me-2"></i>Export Selected
+                    </button>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('resident_checkout_export_pdf') }}{{ '?' + request.query_string.decode() if request.query_string else '' }}" 
+                       class="btn btn-warning" target="_blank">
+                        <i class="fas fa-file-pdf me-2"></i>Download PDF
+                    </a>
+                    <a href="{{ url_for('resident_checkout_scan') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>New Check-Out
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Records Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-table me-2"></i>Check-Out Records 
+                    <span class="badge bg-light text-dark ms-2">{{ records|length }} records</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="select-all" class="form-check-input">
+                                </th>
+                                <th>S/No</th>
+                                <th>Photo</th>
+                                <th>Date & Time</th>
+                                <th>Resident Name</th>
+                                <th>FIN</th>
+                                <th>Company</th>
+                                <th>Reason</th>
+                                <th>Details</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if records %}
+                                {% for record in records %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input record-checkbox" 
+                                               value="{{ record.id }}">
+                                    </td>
+                                    <td>{{ loop.index }}</td>
+                                    <td>
+                                        {% if record.selfie_photo %}
+                                        <img src="{{ record.selfie_photo }}" alt="Selfie" 
+                                             class="photo-thumbnail" data-bs-toggle="modal" 
+                                             data-bs-target="#photoModal" data-photo="{{ record.selfie_photo }}"
+                                             data-name="{{ record.resident_name }}">
+                                        {% else %}
+                                        <i class="fas fa-user-circle text-muted" style="font-size: 2rem;"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if record.get_singapore_time() %}
+                                        {{ record.get_singapore_time().strftime('%d/%m/%Y<br>%I:%M %p')|safe }}
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ record.resident_name }}</td>
+                                    <td>{{ record.fin }}</td>
+                                    <td>{{ record.company_name }}</td>
+                                    <td>
+                                        {% if record.reason == 'HOME LEAVE' %}
+                                        <span class="badge bg-info reason-badge">{{ record.reason }}</span>
+                                        {% elif record.reason == 'CHECK-OUT' %}
+                                        <span class="badge bg-success reason-badge">{{ record.reason }}</span>
+                                        {% else %}
+                                        <span class="badge bg-warning reason-badge">{{ record.reason }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if record.details %}
+                                        <span title="{{ record.details }}">
+                                            {{ record.details[:30] }}{{ '...' if record.details|length > 30 else '' }}
+                                        </span>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger delete-single" 
+                                                data-id="{{ record.id }}" data-name="{{ record.resident_name }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="10" class="text-center py-4">
+                                    <i class="fas fa-inbox text-muted" style="font-size: 3rem;"></i>
+                                    <p class="mt-2 text-muted">No check-out records found</p>
+                                    <a href="{{ url_for('resident_checkout_scan') }}" class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i>Add First Check-Out
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Modal -->
+    <div class="modal fade" id="photoModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="photoModalTitle">Resident Photo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center photo-modal">
+                    <img id="modalPhoto" src="" alt="Resident Photo">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="deleteMessage">Are you sure you want to delete this record?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Select All functionality
+        document.getElementById('select-all').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.record-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBulkButtons();
+        });
+
+        // Individual checkbox change
+        document.querySelectorAll('.record-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', updateBulkButtons);
+        });
+
+        function updateBulkButtons() {
+            const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+            const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+            const bulkExportBtn = document.getElementById('bulk-export-btn');
+            
+            if (checkedBoxes.length > 0) {
+                bulkDeleteBtn.disabled = false;
+                bulkExportBtn.disabled = false;
+            } else {
+                bulkDeleteBtn.disabled = true;
+                bulkExportBtn.disabled = true;
+            }
+        }
+
+        // Photo modal
+        document.querySelectorAll('.photo-thumbnail').forEach(img => {
+            img.addEventListener('click', function() {
+                const photo = this.getAttribute('data-photo');
+                const name = this.getAttribute('data-name');
+                document.getElementById('modalPhoto').src = photo;
+                document.getElementById('photoModalTitle').textContent = name + ' - Photo';
+            });
+        });
+
+        // Delete functionality
+        let deleteId = null;
+        let deleteType = 'single';
+
+        document.querySelectorAll('.delete-single').forEach(btn => {
+            btn.addEventListener('click', function() {
+                deleteId = this.getAttribute('data-id');
+                deleteType = 'single';
+                const name = this.getAttribute('data-name');
+                document.getElementById('deleteMessage').textContent = 
+                    `Are you sure you want to delete the check-out record for ${name}?`;
+                new bootstrap.Modal(document.getElementById('deleteModal')).show();
+            });
+        });
+
+        document.getElementById('bulk-delete-btn').addEventListener('click', function() {
+            const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+            if (checkedBoxes.length > 0) {
+                deleteType = 'bulk';
+                document.getElementById('deleteMessage').textContent = 
+                    `Are you sure you want to delete ${checkedBoxes.length} selected record(s)?`;
+                new bootstrap.Modal(document.getElementById('deleteModal')).show();
+            }
+        });
+
+        document.getElementById('confirmDelete').addEventListener('click', function() {
+            if (deleteType === 'single' && deleteId) {
+                // Single delete
+                fetch(`{{ url_for('resident_checkout_delete') }}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ids: [deleteId] })
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Error deleting record');
+                    }
+                });
+            } else if (deleteType === 'bulk') {
+                // Bulk delete
+                const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+                const ids = Array.from(checkedBoxes).map(cb => cb.value);
+                
+                fetch(`{{ url_for('resident_checkout_delete') }}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ids: ids })
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Error deleting records');
+                    }
+                });
+            }
+        });
+
+        // Bulk export Excel
+        document.getElementById('bulk-export-btn').addEventListener('click', function() {
+            const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+            const ids = Array.from(checkedBoxes).map(cb => cb.value);
+            
+            if (ids.length > 0) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ url_for("resident_checkout_export_excel") }}';
+                
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'selected_ids';
+                input.value = JSON.stringify(ids);
+                form.appendChild(input);
+                
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+            }
+        });
+
+        // Bulk export PDF
+        document.getElementById('download-pdf-btn').addEventListener('click', function() {
+            const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+            const ids = Array.from(checkedBoxes).map(cb => cb.value);
+            
+            if (ids.length === 0) {
+                alert('Please select at least one record to download PDF.');
+                return;
+            }
+            
+            // Create a form to submit the POST request for PDF download
+            fetch('{{ url_for("resident_checkout_export_pdf") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ids: ids })
+            }).then(response => {
+                if (response.ok) {
+                    return response.blob();
+                } else {
+                    throw new Error('Failed to generate PDF');
+                }
+            }).then(blob => {
+                // Create download link for the PDF
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'resident_checkout_records.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Error generating PDF. Please try again.');
+            });
+        });
+    </script>
+</body>
+</html>

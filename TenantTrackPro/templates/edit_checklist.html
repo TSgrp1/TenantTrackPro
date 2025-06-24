@@ -1,0 +1,897 @@
+{% extends "base.html" %}
+<!-- Edit Room Inventory Checklist - Full Interactive Format -->
+{% block title %}Edit Room Inventory Checklist{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-edit me-2"></i>Edit Room Inventory Checklist</h2>
+                <div>
+                    <button class="btn btn-success me-2" onclick="addNewRow()">
+                        <i class="fas fa-plus me-1"></i>Add Item
+                    </button>
+                    <button class="btn btn-primary me-2" onclick="updateChecklist()">
+                        <i class="fas fa-save me-1"></i>Update Checklist
+                    </button>
+                    <button class="btn btn-info me-2" onclick="exportToPDF()">
+                        <i class="fas fa-file-pdf me-1"></i>Export to PDF
+                    </button>
+                    <button class="btn btn-warning me-2" onclick="printChecklist()">
+                        <i class="fas fa-print me-1"></i>Print
+                    </button>
+                    <button class="btn btn-secondary me-2" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel me-1"></i>Export to Excel
+                    </button>
+                    <a href="/room-handovers" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to List
+                    </a>
+                </div>
+            </div>
+
+            <!-- Room Details Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Room Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">Room Number</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="roomNumber" value="{{ checklist.room_number }}" onchange="markEdited(this)">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Company Name</label>
+                            <input type="text" class="form-control" id="companyName" value="{{ checklist.company_name }}" onchange="markEdited(this)">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-control" id="checklistDate" value="{{ checklist.checklist_date[:10] if checklist.checklist_date else '' }}" onchange="markEdited(this)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Checklist Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Inventory Checklist</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover mb-0" id="checklistTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 60px;">S/NO</th>
+                                    <th style="width: 250px;">DESCRIPTION</th>
+                                    <th style="width: 80px;">QTY</th>
+                                    <th style="width: 120px;">Condition</th>
+                                    <th>Defects/Remarks</th>
+                                    <th style="width: 60px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="checklistBody">
+                                <!-- Items will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meter Readings Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Meter Readings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Water Meter Reading</label>
+                            <input type="number" class="form-control" id="waterMeterReading" 
+                                   value="{{ checklist.water_meter_reading or '' }}" 
+                                   placeholder="Enter reading" onchange="markEdited(this)">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Electricity Meter Reading</label>
+                            <input type="number" class="form-control" id="electricityMeterReading" 
+                                   value="{{ checklist.electricity_meter_reading or '' }}" 
+                                   placeholder="Enter reading" onchange="markEdited(this)">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Reading Date</label>
+                            <input type="date" class="form-control" id="meterReadingDate" 
+                                   value="{{ checklist.water_meter_datetime[:10] if checklist.water_meter_datetime else '' }}" 
+                                   onchange="markEdited(this)">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Reading Time</label>
+                            <input type="time" class="form-control" id="meterReadingTime" 
+                                   value="{{ checklist.water_meter_datetime[11:16] if checklist.water_meter_datetime else '' }}" 
+                                   onchange="markEdited(this)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Digital Signatures Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Digital Signatures</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="signature-section">
+                                <h6>Handover Signature</h6>
+                                <div class="signature-pad-container">
+                                    <canvas id="handoverSignaturePad" class="signature-pad"></canvas>
+                                    <div class="signature-controls mt-2">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearSignature('handover')">Clear</button>
+                                        <input type="text" class="form-control mt-2" id="handoverSignatureName" 
+                                               placeholder="Full Name" value="{{ handover_signature.get('name', '') if handover_signature else '' }}" onchange="markEdited(this)">
+                                        <input type="text" class="form-control mt-2" id="handoverSignatureFin" 
+                                               placeholder="FIN/NRIC" value="{{ handover_signature.get('finNumber', '') if handover_signature else '' }}" onchange="markEdited(this)">
+                                        <input type="text" class="form-control mt-2" id="handoverSignaturePosition" 
+                                               placeholder="Position" value="{{ handover_signature.get('designation', '') if handover_signature else '' }}" onchange="markEdited(this)">
+                                        <input type="date" class="form-control mt-2" id="handoverSignatureDate" 
+                                               value="{{ handover_signature.get('dateTime', '')[:10] if handover_signature and handover_signature.get('dateTime') else '' }}" onchange="markEdited(this)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="signature-section">
+                                <h6>Takeover Signature</h6>
+                                <div class="signature-pad-container">
+                                    <canvas id="takeoverSignaturePad" class="signature-pad"></canvas>
+                                    <div class="signature-controls mt-2">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="clearSignature('takeover')">Clear</button>
+                                        <input type="text" class="form-control mt-2" id="takeoverSignatureName" 
+                                               placeholder="Full Name" value="{{ takeover_signature.get('name', '') if takeover_signature else '' }}" onchange="markEdited(this)">
+                                        <input type="text" class="form-control mt-2" id="takeoverSignatureFin" 
+                                               placeholder="FIN/NRIC" value="{{ takeover_signature.get('finNumber', '') if takeover_signature else '' }}" onchange="markEdited(this)">
+                                        <input type="text" class="form-control mt-2" id="takeoverSignaturePosition" 
+                                               placeholder="Position" value="{{ takeover_signature.get('designation', '') if takeover_signature else '' }}" onchange="markEdited(this)">
+                                        <input type="date" class="form-control mt-2" id="takeoverSignatureDate" 
+                                               value="{{ takeover_signature.get('dateTime', '')[:10] if takeover_signature and takeover_signature.get('dateTime') else '' }}" onchange="markEdited(this)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.condition-select.good { background-color: #d4edda !important; color: #155724 !important; }
+.condition-select.bad { background-color: #f8d7da !important; color: #721c24 !important; }
+.condition-select.missing { background-color: #fff3cd !important; color: #856404 !important; }
+.condition-select.others { background-color: #cce7ff !important; color: #004085 !important; }
+
+.signature-pad-container {
+    border: 2px solid #dee2e6;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #f8f9fa;
+}
+
+.signature-canvas {
+    width: 100%;
+    height: 120px;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+    background-color: white;
+    cursor: crosshair;
+}
+
+.signature-controls {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.table th, .table td {
+    vertical-align: middle;
+}
+
+.section-header {
+    font-weight: bold;
+    background-color: #6c757d !important;
+    color: white !important;
+}
+
+.edited-row {
+    background-color: #fff3cd;
+}
+
+/* Signature Pad Styling */
+.signature-section {
+    text-align: center;
+}
+
+.signature-pad-container {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    margin-bottom: 15px;
+}
+
+.signature-pad {
+    width: 100%;
+    height: 150px;
+    border: 1px solid #ccc;
+    background-color: white;
+    cursor: crosshair;
+    border-radius: 4px;
+}
+
+.signature-controls {
+    margin-top: 10px;
+}
+
+.signature-controls button {
+    margin-bottom: 10px;
+}
+
+@media print {
+    .btn, .signature-controls {
+        display: none !important;
+    }
+}
+</style>
+
+<script>
+// Global variables
+let existingItems = {{ checklist_items|tojson if checklist_items else '[]'|safe }};
+let hasUnsavedChanges = false;
+let signaturePads = {};
+
+// Debug logging
+console.log('Raw existingItems from backend:', existingItems);
+console.log('Type of existingItems:', typeof existingItems);
+console.log('Length of existingItems:', existingItems ? existingItems.length : 'null/undefined');
+
+// Initialize page when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSignaturePads();
+    loadExistingItems();
+    
+    // Populate form fields with existing data after signature pads are initialized
+    setTimeout(() => {
+        populateFormFields();
+    }, 100);
+    
+    // Set up warning for unsaved changes
+    window.addEventListener('beforeunload', function(e) {
+        if (hasUnsavedChanges) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+});
+
+function initializeSignaturePads() {
+    const canvasIds = ['handoverSignaturePad', 'takeoverSignaturePad'];
+    
+    canvasIds.forEach(canvasId => {
+        const canvas = document.getElementById(canvasId);
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false;
+            
+            // Set canvas size
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 120;
+            
+            // Mouse events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            
+            // Touch events for mobile
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('touchmove', handleTouch);
+            canvas.addEventListener('touchend', stopDrawing);
+            
+            function startDrawing(e) {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                ctx.beginPath();
+                ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+                markEdited(canvas);
+            }
+            
+            function draw(e) {
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#000';
+                ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+                ctx.stroke();
+            }
+            
+            function stopDrawing() {
+                isDrawing = false;
+            }
+            
+            function handleTouch(e) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                                  e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }
+            
+            signaturePads[canvasId] = { canvas, ctx };
+        }
+    });
+}
+
+function clearSignature(type) {
+    const canvasId = type === 'handover' ? 'handoverSignaturePad' : 'takeoverSignaturePad';
+    const canvas = document.getElementById(canvasId);
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        markEdited(canvas);
+    }
+}
+
+function loadExistingItems() {
+    const tbody = document.getElementById('checklistBody');
+    if (!tbody) return;
+    
+    // Clear existing content
+    tbody.innerHTML = '';
+    
+    // If we have existing items, use them
+    if (existingItems && existingItems.length > 0) {
+        console.log('Loading existing items:', existingItems);
+        
+        // Group existing items by section
+        const groupedItems = {};
+        existingItems.forEach(item => {
+            const section = item.section || 'others';
+            if (!groupedItems[section]) {
+                groupedItems[section] = [];
+            }
+            groupedItems[section].push(item);
+        });
+        
+        // Render existing items
+        Object.keys(groupedItems).forEach(section => {
+            addSectionHeader(section);
+            groupedItems[section].forEach((item, index) => {
+                addItemRow(section, index + 1, item);
+            });
+        });
+        
+        return; // Exit early - don't load defaults
+    }
+    
+    // Only load defaults if no existing items
+    console.log('No existing items found, loading default structure');
+    
+    // Default sections and items structure (same as room_checklist.html)
+    const defaultSections = {
+        'electrical': [
+            { description: 'EXIT light unit', quantity: '1' },
+            { description: 'DB Board', quantity: '1' },
+            { description: 'Light switch panel', quantity: '' },
+            { description: 'Water Heater switch', quantity: '1' },
+            { description: 'Exhaust fan', quantity: '' },
+            { description: 'Ceiling fan', quantity: '' },
+            { description: 'Wall fan', quantity: 'NA' },
+            { description: 'Stand Fan', quantity: '2' },
+            { description: '13A Single Wall Socket', quantity: '4' },
+            { description: '13A Twin Wall Socket', quantity: '17' },
+            { description: '20W LED Tube Lights', quantity: '' },
+            { description: '2 x 20W LED Tube Lights w Guard', quantity: '' },
+            { description: 'Emergency Light Unit', quantity: '' }
+        ],
+        'bedroom': [
+            { description: 'Bunk bed w/ladder', quantity: '' },
+            { description: 'Locker w/ accessories', quantity: '' },
+            { description: 'Table', quantity: '' },
+            { description: 'Chair', quantity: '' },
+            { description: 'Mattress', quantity: '' },
+            { description: 'Pillow', quantity: '' },
+            { description: 'Bed Sheet', quantity: '' },
+            { description: 'Pillow Case', quantity: '' },
+            { description: 'Blanket', quantity: '' }
+        ],
+        'plumbing': [
+            { description: 'Wash basin', quantity: '1' },
+            { description: 'Water tap', quantity: '3' },
+            { description: 'Flexible hose', quantity: '1' },
+            { description: 'Shower head', quantity: '1' },
+            { description: 'Toilet bowl', quantity: '1' },
+            { description: 'Toilet paper holder', quantity: '1' },
+            { description: 'Floor trap', quantity: '3' },
+            { description: 'Shower curtain', quantity: '1' },
+            { description: 'Toilet brush', quantity: '1' },
+            { description: 'Water heater', quantity: '1' }
+        ],
+        'civil': [
+            { description: 'Wardrobe', quantity: '1' },
+            { description: 'Window', quantity: '' },
+            { description: 'Window grille', quantity: '' },
+            { description: 'Door', quantity: '' },
+            { description: 'Door lock', quantity: '' },
+            { description: 'Mirror', quantity: '1' },
+            { description: 'Towel hook', quantity: '4' },
+            { description: 'Cloth hanging line', quantity: '1' },
+            { description: 'Dustbin', quantity: '1' }
+        ],
+        'fire_protection': [
+            { description: 'Strobe light', quantity: '1' },
+            { description: 'Smoke detector', quantity: '1' }
+        ],
+        'others': [
+            { description: 'Air freshener', quantity: '1' },
+            { description: 'Toilet paper', quantity: '1' },
+            { description: 'Hand soap', quantity: '1' },
+            { description: 'Cleaning supplies', quantity: '1' },
+            { description: 'First aid kit', quantity: '1' },
+            { description: 'Room key', quantity: '2' },
+            { description: 'Access card', quantity: '1' },
+            { description: 'Information board', quantity: '1' },
+            { description: 'Emergency contact list', quantity: '1' },
+            { description: 'Wi-Fi information card', quantity: '1' },
+            { description: 'Room rules notice', quantity: '1' }
+        ]
+    };
+    
+    // If we have existing items, use them, otherwise use defaults
+    if (existingItems && existingItems.length > 0) {
+        // Group existing items by section
+        const groupedItems = {};
+        existingItems.forEach(item => {
+            const section = item.section || 'others';
+            if (!groupedItems[section]) {
+                groupedItems[section] = [];
+            }
+            groupedItems[section].push(item);
+        });
+        
+        // Render existing items
+        Object.keys(groupedItems).forEach(section => {
+            addSectionHeader(section);
+            groupedItems[section].forEach((item, index) => {
+                addItemRow(section, index + 1, item);
+            });
+        });
+    } else {
+        // Use default structure
+        Object.keys(defaultSections).forEach(section => {
+            addSectionHeader(section);
+            defaultSections[section].forEach((item, index) => {
+                addItemRow(section, index + 1, {
+                    description: item.description,
+                    quantity: item.quantity,
+                    condition: 'Good',
+                    defectsRemarks: ''
+                });
+            });
+        });
+    }
+}
+
+function addSectionHeader(section) {
+    const tbody = document.getElementById('checklistBody');
+    const sectionName = section.charAt(0).toUpperCase() + section.slice(1).replace('_', ' ');
+    
+    const row = document.createElement('tr');
+    row.className = 'table-secondary section-header';
+    row.dataset.section = section;
+    row.innerHTML = `
+        <td colspan="5" class="fw-bold">${sectionName}</td>
+        <td class="text-center">
+            <button class="btn btn-sm btn-success" onclick="addRowToSection('${section}')">
+                <i class="fas fa-plus"></i> Add
+            </button>
+        </td>
+    `;
+    tbody.appendChild(row);
+}
+
+function addItemRow(section, rowNumber, item = {}) {
+    const tbody = document.getElementById('checklistBody');
+    
+    const row = document.createElement('tr');
+    row.dataset.row = rowNumber;
+    row.dataset.section = section;
+    
+    // Handle different possible field names for the item data
+    const description = item.description || item.item || '';
+    const quantity = item.quantity || item.qty || '';
+    const condition = item.condition || item.status || 'Good';
+    const defectsRemarks = item.defectsRemarks || item.defects_remarks || item.remarks || item.defects || '';
+    
+    const qtyInput = ['NA', 'N/A'].includes(quantity) ? 
+        `<input type="text" class="form-control border-0" value="${quantity}" onchange="markEdited(this)">` :
+        `<input type="number" class="form-control border-0" value="${quantity}" onchange="markEdited(this)">`;
+    
+    row.innerHTML = `
+        <td class="text-center">${rowNumber}</td>
+        <td><input type="text" class="form-control border-0" value="${description}" onchange="markEdited(this)"></td>
+        <td>${qtyInput}</td>
+        <td>
+            <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                <option value="Good" class="bg-success text-white" ${condition === 'Good' ? 'selected' : ''}>Good</option>
+                <option value="Bad" class="bg-danger text-white" ${condition === 'Bad' ? 'selected' : ''}>Bad</option>
+                <option value="Missing" class="bg-warning text-dark" ${condition === 'Missing' ? 'selected' : ''}>Missing</option>
+                <option value="Others" class="bg-primary text-white" ${condition === 'Others' ? 'selected' : ''}>Others</option>
+            </select>
+        </td>
+        <td><input type="text" class="form-control border-0" value="${defectsRemarks}" placeholder="Enter defects/remarks if any" onchange="markEdited(this)"></td>
+        <td class="text-center">
+            <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(row);
+    updateConditionColor(row.querySelector('.condition-select'));
+}
+
+function addRowToSection(section) {
+    const tbody = document.getElementById('checklistBody');
+    const sectionRows = tbody.querySelectorAll(`tr[data-section="${section}"]:not(.section-header)`);
+    const newRowNumber = sectionRows.length + 1;
+    
+    // Find the last row of this section
+    let insertAfter = null;
+    const allRows = Array.from(tbody.querySelectorAll('tr'));
+    
+    for (let i = allRows.length - 1; i >= 0; i--) {
+        if (allRows[i].dataset.section === section) {
+            insertAfter = allRows[i];
+            break;
+        }
+    }
+    
+    // Create new row
+    const newRow = document.createElement('tr');
+    newRow.dataset.row = newRowNumber;
+    newRow.dataset.section = section;
+    newRow.innerHTML = `
+        <td class="text-center">${newRowNumber}</td>
+        <td><input type="text" class="form-control border-0" placeholder="Enter item description" onchange="markEdited(this)"></td>
+        <td><input type="number" class="form-control border-0" onchange="markEdited(this)"></td>
+        <td>
+            <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                <option value="Good" class="bg-success text-white" selected>Good</option>
+                <option value="Bad" class="bg-danger text-white">Bad</option>
+                <option value="Missing" class="bg-warning text-dark">Missing</option>
+                <option value="Others" class="bg-primary text-white">Others</option>
+            </select>
+        </td>
+        <td><input type="text" class="form-control border-0" placeholder="Enter defects/remarks if any" onchange="markEdited(this)"></td>
+        <td class="text-center">
+            <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    if (insertAfter) {
+        insertAfter.parentNode.insertBefore(newRow, insertAfter.nextSibling);
+    } else {
+        tbody.appendChild(newRow);
+    }
+    
+    updateConditionColor(newRow.querySelector('.condition-select'));
+    renumberSection(section);
+    markEdited(newRow);
+}
+
+function removeRow(button) {
+    const row = button.closest('tr');
+    const section = row.dataset.section;
+    
+    if (confirm('Are you sure you want to remove this item?')) {
+        row.remove();
+        renumberSection(section);
+        markEdited(document.getElementById('checklistTable'));
+    }
+}
+
+function renumberSection(section) {
+    const tbody = document.getElementById('checklistBody');
+    const sectionRows = tbody.querySelectorAll(`tr[data-section="${section}"]:not(.section-header)`);
+    
+    sectionRows.forEach((row, index) => {
+        row.dataset.row = index + 1;
+        const numberCell = row.querySelector('td:first-child');
+        if (numberCell) {
+            numberCell.textContent = index + 1;
+        }
+    });
+}
+
+function addNewRow() {
+    const section = 'others'; // Default section for new items
+    addRowToSection(section);
+}
+
+function updateConditionColor(select) {
+    const value = select.value.toLowerCase();
+    select.className = `form-select border-0 condition-select ${value}`;
+}
+
+function markEdited(element) {
+    hasUnsavedChanges = true;
+    const row = element.closest('tr');
+    if (row && !row.classList.contains('section-header')) {
+        row.classList.add('edited-row');
+    }
+}
+
+function collectChecklistData() {
+    const checklistItems = [];
+    const tbody = document.getElementById('checklistBody');
+    const rows = tbody.querySelectorAll('tr:not(.section-header)');
+    
+    rows.forEach(row => {
+        const section = row.dataset.section;
+        const description = row.querySelector('td:nth-child(2) input').value;
+        const quantity = row.querySelector('td:nth-child(3) input').value;
+        const condition = row.querySelector('td:nth-child(4) select').value;
+        const defectsRemarks = row.querySelector('td:nth-child(5) input').value;
+        
+        if (description.trim()) {
+            checklistItems.push({
+                section: section,
+                description: description,
+                quantity: quantity,
+                condition: condition,
+                defectsRemarks: defectsRemarks
+            });
+        }
+    });
+    
+    return checklistItems;
+}
+
+
+
+function updateChecklist() {
+    // Combine date and time for meter readings
+    const meterDate = document.getElementById('meterReadingDate').value;
+    const meterTime = document.getElementById('meterReadingTime').value;
+    const meterDateTime = meterDate && meterTime ? `${meterDate} ${meterTime}` : '';
+    
+    const checklistData = {
+        id: {{ checklist.id }},
+        roomNumber: document.getElementById('roomNumber').value,
+        companyName: document.getElementById('companyName').value,
+        date: document.getElementById('checklistDate').value,
+        waterMeterReading: document.getElementById('waterMeterReading').value,
+        waterMeterDateTime: meterDateTime,
+        electricityMeterReading: document.getElementById('electricityMeterReading').value,
+        electricityMeterDateTime: meterDateTime,
+        checklistItems: collectChecklistData(),
+        signatures: {
+            handover: {
+                name: document.getElementById('handoverSignatureName').value,
+                position: document.getElementById('handoverSignaturePosition').value,
+                fin: document.getElementById('handoverSignatureFin').value,
+                date: document.getElementById('handoverSignatureDate').value,
+                signature: getSignatureData('handoverSignaturePad')
+            },
+            takeover: {
+                name: document.getElementById('takeoverSignatureName').value,
+                position: document.getElementById('takeoverSignaturePosition').value,
+                fin: document.getElementById('takeoverSignatureFin').value,
+                date: document.getElementById('takeoverSignatureDate').value,
+                signature: getSignatureData('takeoverSignaturePad')
+            }
+        }
+    };
+    
+    fetch('/update_checklist', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(checklistData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Checklist updated successfully!');
+            hasUnsavedChanges = false;
+            window.location.href = '/room-handovers';
+        } else {
+            alert('Error updating checklist: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating checklist');
+    });
+}
+
+function exportToPDF() {
+    const checklistData = collectChecklistData();
+    const formData = {
+        roomNumber: document.getElementById('roomNumber').value,
+        companyName: document.getElementById('companyName').value,
+        date: document.getElementById('checklistDate').value,
+        checklistItems: checklistData
+    };
+    
+    fetch('/export_checklist_pdf', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `room_checklist_${formData.roomNumber}_${formData.date}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error exporting PDF');
+    });
+}
+
+function exportToExcel() {
+    const checklistData = collectChecklistData();
+    const formData = {
+        roomNumber: document.getElementById('roomNumber').value,
+        companyName: document.getElementById('companyName').value,
+        date: document.getElementById('checklistDate').value,
+        checklistItems: checklistData
+    };
+    
+    fetch('/export_checklist_excel', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `room_checklist_${formData.roomNumber}_${formData.date}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error exporting Excel');
+    });
+}
+
+function printChecklist() {
+    window.print();
+}
+
+function populateFormFields() {
+    // Populate basic form fields
+    const checklist = {{ checklist|tojson|safe }};
+    const handoverSignature = {{ handover_signature|tojson|safe }};
+    const takeoverSignature = {{ takeover_signature|tojson|safe }};
+    
+    console.log('Populating form fields with:', { checklist, handoverSignature, takeoverSignature });
+    
+    // Set form field values
+    if (checklist.room_number) {
+        document.getElementById('roomNumber').value = checklist.room_number;
+    }
+    if (checklist.company_name) {
+        document.getElementById('companyName').value = checklist.company_name;
+    }
+    if (checklist.checklist_date) {
+        document.getElementById('checklistDate').value = checklist.checklist_date;
+    }
+    
+    // Set meter readings
+    if (checklist.water_meter_reading) {
+        document.getElementById('waterMeterReading').value = checklist.water_meter_reading;
+    }
+    if (checklist.electricity_meter_reading) {
+        document.getElementById('electricityMeterReading').value = checklist.electricity_meter_reading;
+    }
+    if (checklist.water_meter_datetime) {
+        const meterDate = new Date(checklist.water_meter_datetime).toISOString().slice(0, 10);
+        const meterTime = new Date(checklist.water_meter_datetime).toTimeString().slice(0, 5);
+        document.getElementById('meterReadingDate').value = meterDate;
+        document.getElementById('meterReadingTime').value = meterTime;
+    }
+    
+    // Set handover signature fields
+    if (handoverSignature) {
+        if (handoverSignature.name) {
+            document.getElementById('handoverSignatureName').value = handoverSignature.name;
+        }
+        if (handoverSignature.position) {
+            document.getElementById('handoverSignaturePosition').value = handoverSignature.position;
+        }
+        if (handoverSignature.fin) {
+            document.getElementById('handoverSignatureFin').value = handoverSignature.fin;
+        }
+        if (handoverSignature.date) {
+            document.getElementById('handoverSignatureDate').value = handoverSignature.date;
+        }
+        if (handoverSignature.signature) {
+            loadSignatureToCanvas('handoverSignaturePad', handoverSignature.signature);
+        }
+    }
+    
+    // Set takeover signature fields
+    if (takeoverSignature) {
+        if (takeoverSignature.name) {
+            document.getElementById('takeoverSignatureName').value = takeoverSignature.name;
+        }
+        if (takeoverSignature.position) {
+            document.getElementById('takeoverSignaturePosition').value = takeoverSignature.position;
+        }
+        if (takeoverSignature.fin) {
+            document.getElementById('takeoverSignatureFin').value = takeoverSignature.fin;
+        }
+        if (takeoverSignature.date) {
+            document.getElementById('takeoverSignatureDate').value = takeoverSignature.date;
+        }
+        if (takeoverSignature.signature) {
+            loadSignatureToCanvas('takeoverSignaturePad', takeoverSignature.signature);
+        }
+    }
+}
+
+function loadSignatureToCanvas(canvasId, signatureData) {
+    const canvas = document.getElementById(canvasId);
+    if (canvas && signatureData && signatureData.length > 0 && signatureData.startsWith('data:image/')) {
+        try {
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = function() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = signatureData;
+        } catch (error) {
+            console.error('Error loading signature to canvas:', canvasId, error);
+        }
+    } else if (signatureData && signatureData.length > 0) {
+        console.warn('Invalid signature data format for canvas:', canvasId, 'Data:', signatureData.substring(0, 50) + '...');
+    }
+}
+
+function getSignatureData(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (canvas) {
+        return canvas.toDataURL();
+    }
+    return '';
+}
+</script>
+{% endblock %}

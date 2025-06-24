@@ -1,0 +1,652 @@
+{% extends "base.html" %}
+
+{% block title %}Pioneer Utility - TS Management Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header with gradient background -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem 1.5rem;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="fas fa-tachometer-alt me-3"></i>
+                                Pioneer Utility
+                            </h2>
+                            <p class="mb-0 opacity-75">
+                                Track water, electricity, and gas meter readings across all dormitory units
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <button class="btn btn-light" onclick="window.location.reload()">
+                                <i class="fas fa-sync-alt me-2"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-tint fa-2x mb-2"></i>
+                    <h3 class="mb-1">0</h3>
+                    <small>Water Meters</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-bolt fa-2x mb-2"></i>
+                    <h3 class="mb-1">0</h3>
+                    <small>Electricity Meters</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-fire fa-2x mb-2"></i>
+                    <h3 class="mb-1">0</h3>
+                    <small>Gas Meters</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-check fa-2x mb-2"></i>
+                    <h3 class="mb-1">0</h3>
+                    <small>This Month</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tasks me-2"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" onclick="window.location.href='{{ url_for('create_meter_company') }}'">
+                                <i class="fas fa-building me-2"></i>
+                                Step 1: Create Company
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-info w-100" onclick="showCompaniesForRooms()">
+                                <i class="fas fa-door-open me-2"></i>
+                                Step 2: Add Rooms
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-success w-100" onclick="showCompaniesForReadings()">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Step 3: Record Readings
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-warning w-100" onclick="viewConsumption()">
+                                <i class="fas fa-chart-line me-2"></i>
+                                View Reports
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Search -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-filter me-2"></i>
+                        Filter Readings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" id="filterForm">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Company</label>
+                                <select class="form-select" name="company_name" id="companyFilter">
+                                    <option value="">All Companies</option>
+                                    {% for company in companies %}
+                                    <option value="{{ company.company_name }}" {% if company_name == company.company_name %}selected{% endif %}>
+                                        {{ company.company_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3" id="roomNumberSection">
+                                <label class="form-label">Room Number</label>
+                                <input type="text" class="form-control" name="room_number" id="roomFilter" 
+                                       value="{{ room_number or '' }}" placeholder="e.g., 80-01-001">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Date From</label>
+                                <input type="date" class="form-control" name="start_date" id="dateFromFilter" 
+                                       value="{{ start_date or '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Date To</label>
+                                <input type="date" class="form-control" name="end_date" id="dateToFilter" 
+                                       value="{{ end_date or '' }}">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i>Apply Filters
+                                </button>
+                                <a href="{{ url_for('meter_readings') }}" class="btn btn-secondary ms-2">
+                                    <i class="fas fa-times me-2"></i>Clear
+                                </a>
+                                {% if company_name %}
+                                <div class="float-end">
+                                    <button type="button" class="btn btn-success me-2" onclick="exportReadings('excel')">
+                                        <i class="fas fa-file-excel me-1"></i>Export Excel
+                                    </button>
+                                    <button type="button" class="btn btn-danger" onclick="exportReadings('pdf')">
+                                        <i class="fas fa-file-pdf me-1"></i>Export PDF
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Company Totals Display -->
+    {% if company_name %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        {{ company_name }} - Utility Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-tint fa-2x mb-2"></i>
+                                    <h4 class="mb-1">{{ water_totals.count }}</h4>
+                                    <small>Water Readings</small>
+                                    <hr class="my-2">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <strong>{{ "%.2f"|format(water_totals.total_consumption) }}</strong>
+                                            <small class="d-block">Total Consumption</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <strong>${{ "%.2f"|format(water_totals.total_amount) }}</strong>
+                                            <small class="d-block">Total Amount</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-bolt fa-2x mb-2"></i>
+                                    <h4 class="mb-1">{{ electricity_totals.count }}</h4>
+                                    <small>Electricity Readings</small>
+                                    <hr class="my-2">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <strong>{{ "%.2f"|format(electricity_totals.total_consumption) }}</strong>
+                                            <small class="d-block">Total Consumption</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <strong>${{ "%.2f"|format(electricity_totals.total_amount) }}</strong>
+                                            <small class="d-block">Total Amount</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Companies Navigation -->
+    {% if companies %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-building me-2"></i>
+                        Companies
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for company in companies %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <h6>{{ company.company_name }}</h6>
+                                    <p class="small text-muted">Created: {{ company.created_at.strftime('%Y-%m-%d') if company.created_at }}</p>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-primary btn-sm flex-grow-1" onclick="window.location.href='{{ url_for('meter_company_detail', company_id=company.id) }}'">
+                                            <i class="fas fa-eye me-1"></i>View Details
+                                        </button>
+                                        {% if get_user_page_permissions(current_user).get('meter_reading', {}).get('can_create', False) %}
+                                        <button type="button" 
+                                                class="btn btn-outline-danger btn-sm" 
+                                                onclick="deleteCompany({{ company.id }}, '{{ company.company_name }}')"
+                                                title="Delete Company">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pioneer Utility Data Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table me-2"></i>
+                        Recent Utility Readings
+                    </h5>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="exportToExcel()">
+                            <i class="fas fa-file-excel me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Room</th>
+                                    <th>Meter Type</th>
+                                    <th>Previous Reading</th>
+                                    <th>Current Reading</th>
+                                    <th>Consumption</th>
+                                    <th>Recorded By</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if water_readings or electricity_readings %}
+                                    {% for reading, room_number, company_name in water_readings %}
+                                    <tr>
+                                        <td>{{ reading.start_date.strftime('%Y-%m-%d') if reading.start_date }}</td>
+                                        <td>{{ room_number }}</td>
+                                        <td><span class="badge bg-primary">Water</span></td>
+                                        <td>{{ "%.2f"|format(reading.start_reading) }}</td>
+                                        <td>{{ "%.2f"|format(reading.end_reading) }}</td>
+                                        <td>{{ "%.2f"|format(reading.total_consumption) }}</td>
+                                        <td>{{ reading.created_by }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% for reading, room_number, company_name in electricity_readings %}
+                                    <tr>
+                                        <td>{{ reading.start_date.strftime('%Y-%m-%d') if reading.start_date }}</td>
+                                        <td>{{ room_number }}</td>
+                                        <td><span class="badge bg-warning">Electricity</span></td>
+                                        <td>{{ "%.2f"|format(reading.start_reading) }}</td>
+                                        <td>{{ "%.2f"|format(reading.end_reading) }}</td>
+                                        <td>{{ "%.2f"|format(reading.total_consumption) }}</td>
+                                        <td>{{ reading.created_by }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <i class="fas fa-tachometer-alt fa-2x text-muted mb-3"></i>
+                                        <h5>No Utility Readings</h5>
+                                        <p class="text-muted">
+                                            {% if company_name %}
+                                                No readings found for {{ company_name }}.
+                                            {% else %}
+                                                Select a company to view utility readings.
+                                            {% endif %}
+                                        </p>
+                                        <button class="btn btn-primary" onclick="recordReading()">
+                                            <i class="fas fa-plus me-2"></i>Record Reading
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Recording Reading -->
+<div class="modal fade" id="recordingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Record Meter Reading</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="meterReadingForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Room Number</label>
+                            <div class="input-group">
+                                <select class="form-select" name="room_number" id="roomNumberSelect" onchange="handleRoomSelection()" required>
+                                    <option value="">Select Room Number</option>
+                                    <option value="custom">+ Add Custom Room Number</option>
+                                    {% for room in room_numbers %}
+                                        <option value="{{ room.room_number }}">{{ room.room_number }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="text" class="form-control" id="customRoomNumber" name="custom_room_number" 
+                                       placeholder="Enter custom room number" style="display: none;">
+                                <button type="button" class="btn btn-outline-secondary" id="backToDropdown" 
+                                        onclick="switchBackToDropdown()" style="display: none;">
+                                    Back to List
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Meter Type</label>
+                            <select class="form-select" name="meter_type" required>
+                                <option value="">Select Type</option>
+                                <option value="water">Water</option>
+                                <option value="electricity">Electricity</option>
+                                <option value="gas">Gas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Previous Reading</label>
+                            <input type="number" class="form-control" name="previous_reading" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Current Reading</label>
+                            <input type="number" class="form-control" name="current_reading" step="0.01" placeholder="0.00" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Reading Date</label>
+                            <input type="date" class="form-control" name="reading_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Reading Time</label>
+                            <input type="time" class="form-control" name="reading_time">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" name="notes" rows="3" placeholder="Optional notes about the reading"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Consumption:</strong> <span id="calculatedConsumption">0.00</span> units
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                {% if can_user_create(current_user, 'meter_readings') %}
+                <button type="button" class="btn btn-primary" onclick="submitReading()">
+                    <i class="fas fa-save me-2"></i>Save Reading
+                </button>
+                {% else %}
+                <button class="btn btn-secondary" disabled title="View-only access - cannot save readings">
+                    <i class="fas fa-eye me-2"></i>View Only
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-scroll to room number section when page loads from Quick Actions
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if page was accessed from Quick Actions (from URL parameters or referrer)
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromQuickActions = urlParams.get('from') === 'quick-actions' || 
+                            document.referrer.includes('/dashboard') || 
+                            sessionStorage.getItem('scrollToRoomNumber') === 'true';
+    
+    if (fromQuickActions) {
+        setTimeout(function() {
+            const roomSection = document.getElementById('roomNumberSection');
+            if (roomSection) {
+                roomSection.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+                // Focus on the room number input field
+                const roomInput = document.getElementById('roomFilter');
+                if (roomInput) {
+                    roomInput.focus();
+                }
+            }
+        }, 500); // Small delay to ensure page is fully loaded
+        
+        // Clear the session storage flag
+        sessionStorage.removeItem('scrollToRoomNumber');
+    }
+});
+
+// Handle room number selection
+function handleRoomSelection() {
+    const select = document.getElementById('roomNumberSelect');
+    const customInput = document.getElementById('customRoomNumber');
+    const backButton = document.getElementById('backToDropdown');
+    
+    if (select.value === 'custom') {
+        select.style.display = 'none';
+        customInput.style.display = 'block';
+        backButton.style.display = 'block';
+        customInput.focus();
+        customInput.required = true;
+        select.required = false;
+    }
+}
+
+function switchBackToDropdown() {
+    const select = document.getElementById('roomNumberSelect');
+    const customInput = document.getElementById('customRoomNumber');
+    const backButton = document.getElementById('backToDropdown');
+    
+    select.style.display = 'block';
+    customInput.style.display = 'none';
+    backButton.style.display = 'none';
+    select.value = '';
+    customInput.value = '';
+    select.required = true;
+    customInput.required = false;
+}
+
+function recordReading() {
+    // Set today's date as default
+    document.querySelector('input[name="reading_date"]').value = new Date().toISOString().split('T')[0];
+    new bootstrap.Modal(document.getElementById('recordingModal')).show();
+}
+
+function bulkImport() {
+    alert('Bulk import feature will be implemented. This will allow importing multiple meter readings from Excel files.');
+}
+
+function generateBilling() {
+    alert('Billing generation feature will be implemented. This will create billing reports based on consumption data.');
+}
+
+function showCompaniesForRooms() {
+    {% if companies %}
+    const companies = [{% for company in companies %}'{{ company.company_name }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+    let message = 'Select a company to add rooms:\n\n';
+    companies.forEach((company, index) => {
+        message += `${index + 1}. ${company}\n`;
+    });
+    
+    const selection = prompt(message + '\nEnter company number:');
+    if (selection && selection >= 1 && selection <= companies.length) {
+        const companyIndex = parseInt(selection) - 1;
+        {% for company in companies %}
+        if (companyIndex === {{ loop.index0 }}) {
+            window.location.href = '{{ url_for("meter_company_detail", company_id=company.id) }}';
+        }
+        {% endfor %}
+    }
+    {% else %}
+    alert('No companies found. Please create a company first.');
+    {% endif %}
+}
+
+function showCompaniesForReadings() {
+    {% if companies %}
+    const companies = [{% for company in companies %}'{{ company.company_name }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+    let message = 'Select a company to record readings:\n\n';
+    companies.forEach((company, index) => {
+        message += `${index + 1}. ${company}\n`;
+    });
+    
+    const selection = prompt(message + '\nEnter company number:');
+    if (selection && selection >= 1 && selection <= companies.length) {
+        const companyIndex = parseInt(selection) - 1;
+        {% for company in companies %}
+        if (companyIndex === {{ loop.index0 }}) {
+            window.location.href = '{{ url_for("meter_company_detail", company_id=company.id) }}';
+        }
+        {% endfor %}
+    }
+    {% else %}
+    alert('No companies found. Please create a company first.');
+    {% endif %}
+}
+
+function viewConsumption() {
+    if ('{{ company_name }}') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const exportUrl = '{{ url_for("export_meter_readings", format="excel") }}' + '?' + urlParams.toString();
+        window.open(exportUrl, '_blank');
+    } else {
+        alert('Please select a company first to view reports.');
+    }
+}
+
+function exportReadings(format) {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('format', format);
+    
+    const exportUrl = '{{ url_for("export_meter_readings", format="excel") }}'.replace('excel', format) + '?' + urlParams.toString();
+    window.open(exportUrl, '_blank');
+}
+
+function clearFilters() {
+    document.getElementById('companyFilter').value = '';
+    document.getElementById('roomFilter').value = '';
+    document.getElementById('dateFromFilter').value = '';
+    document.getElementById('dateToFilter').value = '';
+}
+
+function deleteCompany(companyId, companyName) {
+    if (confirm(`Are you sure you want to delete company "${companyName}"?\n\nThis will permanently remove the company and all its rooms and meter readings. This action cannot be undone.`)) {
+        fetch(`/meter-readings/company/${companyId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Error deleting company. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting company. Please try again.');
+        });
+    }
+}
+
+function submitReading() {
+    const form = document.getElementById('meterReadingForm');
+    const formData = new FormData(form);
+    
+    // Simulate form submission
+    alert('Meter reading submission feature will be implemented. This will save the reading to the database.');
+    
+    // Close modal and reset form
+    bootstrap.Modal.getInstance(document.getElementById('recordingModal')).hide();
+    form.reset();
+}
+
+// Calculate consumption automatically
+document.addEventListener('DOMContentLoaded', function() {
+    const previousInput = document.querySelector('input[name="previous_reading"]');
+    const currentInput = document.querySelector('input[name="current_reading"]');
+    const consumptionDisplay = document.getElementById('calculatedConsumption');
+    
+    function calculateConsumption() {
+        const previous = parseFloat(previousInput.value) || 0;
+        const current = parseFloat(currentInput.value) || 0;
+        const consumption = Math.max(0, current - previous);
+        consumptionDisplay.textContent = consumption.toFixed(2);
+    }
+    
+    previousInput.addEventListener('input', calculateConsumption);
+    currentInput.addEventListener('input', calculateConsumption);
+});
+</script>
+{% endblock %}

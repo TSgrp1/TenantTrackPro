@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+
+{% block title %}Pioneer Lodge Visitor Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-gray-800">
+                    <i class="fas fa-users me-2"></i>Pioneer Lodge Visitor Records
+                </h1>
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('visitors_dashboard') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                    </a>
+                    <button class="btn btn-success" onclick="exportSelectedToExcel()">
+                        <i class="fas fa-file-excel me-1"></i>Export Excel
+                    </button>
+                    <button class="btn btn-danger" onclick="exportToPDF()">
+                        <i class="fas fa-file-pdf me-1"></i>Export PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Records
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_records }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Normal Sessions
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ normal_sessions }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Warnings (>5h)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ warning_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Incomplete Sessions
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ off_status_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter me-2"></i>Filters
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" id="filter-form">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="from_date" class="form-label">From Date</label>
+                        <input type="date" class="form-control" name="from_date" id="from_date" 
+                               value="{{ from_date or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="to_date" class="form-label">To Date</label>
+                        <input type="date" class="form-control" name="to_date" id="to_date" 
+                               value="{{ to_date or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="visitor_name_filter" class="form-label">Visitor Name</label>
+                        <select class="form-select" name="visitor_name_filter" id="visitor_name_filter">
+                            <option value="">All Visitors</option>
+                            {% for name in visitor_names %}
+                            <option value="{{ name }}" {% if name == visitor_name_filter %}selected{% endif %}>
+                                {{ name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="company_filter" class="form-label">Company</label>
+                        <select class="form-select" name="company_filter" id="company_filter">
+                            <option value="">All Companies</option>
+                            {% for company in companies %}
+                            <option value="{{ company }}" {% if company == company_filter %}selected{% endif %}>
+                                {{ company }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>Apply Filters
+                        </button>
+                        <a href="{{ url_for('visitors_records') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>Clear Filters
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Records Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Visitor Records</h6>
+            <div class="btn-group">
+                <button class="btn btn-sm btn-outline-primary" onclick="selectAll()">
+                    <i class="fas fa-check-square me-1"></i>Select All
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearSelection()">
+                    <i class="fas fa-square me-1"></i>Clear Selection
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="deleteSelected()" id="delete-btn" disabled>
+                    <i class="fas fa-trash me-1"></i>Delete Selected
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if paired_records %}
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAll()">
+                            </th>
+                            <th>S/NO</th>
+                            <th>Date</th>
+                            <th>Visitor Name</th>
+                            <th>Company</th>
+                            <th>Vehicle No</th>
+                            <th>Type</th>
+                            <th>Details</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Duration</th>
+                            <th>Start Photo</th>
+                            <th>End Photo</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in paired_records %}
+                        <tr class="{{ record.row_class }}" data-record-id="{{ record.id }}">
+                            <td>
+                                <input type="checkbox" class="record-checkbox" value="{{ record.id }}" 
+                                       onchange="updateDeleteButton()">
+                            </td>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ record.date }}</td>
+                            <td>{{ record.visitor_name }}</td>
+                            <td>{{ record.company }}</td>
+                            <td>{{ record.vehicle_number or '-' }}</td>
+                            <td>
+                                {% if record.type == 'Visit Session' %}
+                                <span class="badge badge-primary">{{ record.type }}</span>
+                                {% elif record.type == 'End Only' %}
+                                <span class="badge badge-warning">{{ record.type }}</span>
+                                {% else %}
+                                <span class="badge badge-info">{{ record.type }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ record.details or '-' }}</td>
+                            <td>{{ record.start_time or '-' }}</td>
+                            <td>{{ record.end_time or '-' }}</td>
+                            <td>{{ record.duration or '-' }}</td>
+                            <td class="text-center">
+                                {% if record.start_photo %}
+                                <img src="{{ record.start_photo }}" alt="Start Photo" 
+                                     class="img-thumbnail photo-thumbnail" style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
+                                     data-bs-toggle="modal" data-bs-target="#photoModal{{ loop.index }}_start">
+                                {% else %}
+                                <span class="text-muted">No Photo</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if record.end_photo %}
+                                <img src="{{ record.end_photo }}" alt="End Photo" 
+                                     class="img-thumbnail photo-thumbnail" style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
+                                     data-bs-toggle="modal" data-bs-target="#photoModal{{ loop.index }}_end">
+                                {% else %}
+                                <span class="text-muted">No Photo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if record.status == 'Normal' %}
+                                <span class="badge badge-success">{{ record.status }}</span>
+                                {% elif record.status == 'Warning' %}
+                                <span class="badge badge-warning">{{ record.status }}</span>
+                                {% else %}
+                                <span class="badge badge-secondary">{{ record.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <!-- Photo Modals -->
+                        {% if record.start_photo %}
+                        <div class="modal fade" id="photoModal{{ loop.index }}_start" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">{{ record.visitor_name }} - Start Photo</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <img src="{{ record.start_photo }}" alt="Start Photo" class="img-fluid">
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                Start Time: {{ record.start_date }} {{ record.start_time }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if record.end_photo %}
+                        <div class="modal fade" id="photoModal{{ loop.index }}_end" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">{{ record.visitor_name }} - End Photo</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <img src="{{ record.end_photo }}" alt="End Photo" class="img-fluid">
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                End Time: {{ record.end_date }} {{ record.end_time }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-inbox fa-3x text-gray-300 mb-3"></i>
+                <h6 class="text-gray-600">No visitor records found</h6>
+                <p class="text-muted">Try adjusting your filters or check back later.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5 id="loading-message">Processing...</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectAll() {
+    const checkboxes = document.querySelectorAll('.record-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    document.getElementById('select-all-checkbox').checked = true;
+    updateDeleteButton();
+}
+
+function clearSelection() {
+    const checkboxes = document.querySelectorAll('.record-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    document.getElementById('select-all-checkbox').checked = false;
+    updateDeleteButton();
+}
+
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    const checkboxes = document.querySelectorAll('.record-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    updateDeleteButton();
+}
+
+function updateDeleteButton() {
+    const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+    const deleteBtn = document.getElementById('delete-btn');
+    deleteBtn.disabled = checkedBoxes.length === 0;
+    
+    // Update select all checkbox state
+    const allCheckboxes = document.querySelectorAll('.record-checkbox');
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    selectAllCheckbox.checked = allCheckboxes.length > 0 && checkedBoxes.length === allCheckboxes.length;
+}
+
+function deleteSelected() {
+    const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('Please select records to delete.');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete ${checkedBoxes.length} selected record(s)?`)) {
+        return;
+    }
+    
+    const recordIds = Array.from(checkedBoxes).map(cb => cb.value);
+    
+    document.getElementById('loading-message').textContent = 'Deleting records...';
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+    
+    fetch('/visitors/delete', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            record_ids: recordIds
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingModal.hide();
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        loadingModal.hide();
+        alert('Network error: ' + error.message);
+    });
+}
+
+function exportSelectedToExcel() {
+    const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+    let url = '{{ url_for("export_visitors_excel") }}';
+    
+    // Add current filter parameters
+    const params = new URLSearchParams();
+    const fromDate = document.getElementById('from_date').value;
+    const toDate = document.getElementById('to_date').value;
+    const visitorName = document.getElementById('visitor_name_filter').value;
+    const company = document.getElementById('company_filter').value;
+    
+    if (fromDate) params.append('start_date', fromDate);
+    if (toDate) params.append('end_date', toDate);
+    if (visitorName) params.append('visitor_name', visitorName);
+    if (company) params.append('company_name', company);
+    
+    if (params.toString()) {
+        url += '?' + params.toString();
+    }
+    
+    window.open(url, '_blank');
+}
+
+function exportToPDF() {
+    let url = '{{ url_for("export_visitors_pdf") }}';
+    
+    // Add current filter parameters
+    const params = new URLSearchParams();
+    const fromDate = document.getElementById('from_date').value;
+    const toDate = document.getElementById('to_date').value;
+    const visitorName = document.getElementById('visitor_name_filter').value;
+    const company = document.getElementById('company_filter').value;
+    
+    if (fromDate) params.append('from_date', fromDate);
+    if (toDate) params.append('to_date', toDate);
+    if (visitorName) params.append('visitor_name_filter', visitorName);
+    if (company) params.append('company_filter', company);
+    
+    if (params.toString()) {
+        url += '?' + params.toString();
+    }
+    
+    window.open(url, '_blank');
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    updateDeleteButton();
+});
+</script>
+{% endblock %}

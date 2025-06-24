@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="200" height="60" fill="#1e3a8a" rx="5"/>
+  
+  <!-- Company initials -->
+  <text x="20" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">TS</text>
+  
+  <!-- Company name -->
+  <text x="55" y="25" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#fbbf24">TS Management Service</text>
+  <text x="55" y="40" font-family="Arial, sans-serif" font-size="10" fill="#e5e7eb">Pte Ltd</text>
+  
+  <!-- Decorative element -->
+  <circle cx="180" cy="30" r="15" fill="#3b82f6" opacity="0.7"/>
+  <circle cx="180" cy="30" r="8" fill="#fbbf24"/>
+</svg>

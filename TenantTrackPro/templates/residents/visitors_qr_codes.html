@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Pioneer Lodge Visitor QR Codes{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-qrcode me-2"></i>
+                        Pioneer Lodge Visitor QR Codes
+                    </h1>
+                    <p class="text-muted mb-0">{{ organization_name }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('visitors_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                    </a>
+                    <button onclick="window.print()" class="btn btn-primary">
+                        <i class="fas fa-print me-1"></i>Print QR Codes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="alert alert-info" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Instructions:</strong> Print these QR codes and place them at the Pioneer Lodge entrance. Visitors can scan them with their phones to check in and out with selfie verification.
+    </div>
+
+    <!-- QR Codes -->
+    <div class="row g-4">
+        <!-- Start Visit QR Code -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        VISITOR CHECK-IN
+                    </h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <img src="{{ start_qr }}" alt="Start Visit QR Code" class="img-fluid" style="max-width: 300px;">
+                    </div>
+                    <h5 class="text-success mb-3">Scan to Start Visit</h5>
+                    <p class="text-muted mb-3">Visitors scan this QR code when arriving at Pioneer Lodge</p>
+                    <div class="bg-light p-3 rounded">
+                        <small class="font-monospace text-break">{{ start_url }}</small>
+                    </div>
+                </div>
+                <div class="card-footer bg-success text-white text-center">
+                    <strong>TS Management Service Pte Ltd</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- End Visit QR Code -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-danger text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-sign-out-alt me-2"></i>
+                        VISITOR CHECK-OUT
+                    </h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <img src="{{ end_qr }}" alt="End Visit QR Code" class="img-fluid" style="max-width: 300px;">
+                    </div>
+                    <h5 class="text-danger mb-3">Scan to End Visit</h5>
+                    <p class="text-muted mb-3">Visitors scan this QR code when leaving Pioneer Lodge</p>
+                    <div class="bg-light p-3 rounded">
+                        <small class="font-monospace text-break">{{ end_url }}</small>
+                    </div>
+                </div>
+                <div class="card-footer bg-danger text-white text-center">
+                    <strong>TS Management Service Pte Ltd</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print-Only Version -->
+    <div class="d-print-block d-none">
+        <div style="page-break-after: always;">
+            <!-- Start Visit QR Code - Print Version -->
+            <div style="text-align: center; margin: 2cm; padding: 1cm; border: 3px solid #28a745;">
+                <div style="background-color: #28a745; color: white; padding: 20px; margin: -1cm -1cm 20px -1cm;">
+                    <h1 style="margin: 0; font-size: 36px;">
+                        VISITOR CHECK-IN
+                    </h1>
+                    <h2 style="margin: 10px 0 0 0; font-size: 24px;">Pioneer Lodge</h2>
+                </div>
+                
+                <img src="{{ start_qr }}" alt="Start Visit QR Code" style="width: 400px; height: 400px; margin: 20px 0;">
+                
+                <h2 style="color: #28a745; margin: 20px 0;">Scan to Start Visit</h2>
+                <p style="font-size: 18px; margin: 10px 0;">Point your phone camera at this QR code to check in</p>
+                
+                <div style="background-color: #f8f9fa; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                    <p style="font-family: monospace; font-size: 12px; word-break: break-all; margin: 0;">{{ start_url }}</p>
+                </div>
+                
+                <div style="background-color: #28a745; color: white; padding: 15px; margin: 20px -1cm -1cm -1cm;">
+                    <h3 style="margin: 0;">TS Management Service Pte Ltd</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div style="page-break-before: always;">
+            <!-- End Visit QR Code - Print Version -->
+            <div style="text-align: center; margin: 2cm; padding: 1cm; border: 3px solid #dc3545;">
+                <div style="background-color: #dc3545; color: white; padding: 20px; margin: -1cm -1cm 20px -1cm;">
+                    <h1 style="margin: 0; font-size: 36px;">
+                        VISITOR CHECK-OUT
+                    </h1>
+                    <h2 style="margin: 10px 0 0 0; font-size: 24px;">Pioneer Lodge</h2>
+                </div>
+                
+                <img src="{{ end_qr }}" alt="End Visit QR Code" style="width: 400px; height: 400px; margin: 20px 0;">
+                
+                <h2 style="color: #dc3545; margin: 20px 0;">Scan to End Visit</h2>
+                <p style="font-size: 18px; margin: 10px 0;">Point your phone camera at this QR code to check out</p>
+                
+                <div style="background-color: #f8f9fa; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                    <p style="font-family: monospace; font-size: 12px; word-break: break-all; margin: 0;">{{ end_url }}</p>
+                </div>
+                
+                <div style="background-color: #dc3545; color: white; padding: 15px; margin: 20px -1cm -1cm -1cm;">
+                    <h3 style="margin: 0;">TS Management Service Pte Ltd</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Instructions -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-instructions me-2"></i>
+                        Usage Instructions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-print me-2 text-primary"></i>Printing Guidelines</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>Print in color for best visibility</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Use A4 paper size</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Laminate for durability</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Place at eye level for easy scanning</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-mobile-alt me-2 text-info"></i>For Visitors</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>Open phone camera app</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Point camera at QR code</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Tap the notification to open link</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Fill in details and take selfie</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    /* Hide everything except print-only content */
+    body * {
+        visibility: hidden;
+    }
+    
+    .d-print-block, .d-print-block * {
+        visibility: visible;
+    }
+    
+    .d-print-block {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    
+    /* Remove page margins for full-page printing */
+    @page {
+        margin: 0;
+        size: A4;
+    }
+    
+    /* Ensure QR codes are crisp */
+    img {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+</style>
+{% endblock %}

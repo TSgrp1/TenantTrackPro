@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Language - House Acknowledge</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .language-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            height: 100%;
+        }
+        .language-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,123,255,0.3);
+        }
+
+        .language-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .language-subtitle {
+            color: #6c757d;
+            font-size: 1rem;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-section">
+        <div class="container text-center">
+            <i class="fas fa-home fa-3x mb-3"></i>
+            <h1>House Acknowledge</h1>
+            <p class="lead">{{ house_acknowledge.title }}</p>
+            <p>Please select your preferred language to continue</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row g-4">
+            <!-- English -->
+            <div class="col-lg-2 col-md-4 col-sm-6">
+                <div class="card language-card h-100" 
+                     onclick="selectLanguage('english')">
+                    <div class="card-body text-center">
+                        <div class="language-name">English</div>
+                        <div class="language-subtitle">English</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tamil -->
+            <div class="col-lg-2 col-md-4 col-sm-6">
+                <div class="card language-card h-100" 
+                     onclick="selectLanguage('tamil')">
+                    <div class="card-body text-center">
+                        <div class="language-name">Tamil</div>
+                        <div class="language-subtitle">தமிழ்</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chinese -->
+            <div class="col-lg-2 col-md-4 col-sm-6">
+                <div class="card language-card h-100" 
+                     onclick="selectLanguage('chinese')">
+                    <div class="card-body text-center">
+                        <div class="language-name">Chinese</div>
+                        <div class="language-subtitle">中文</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Myanmar -->
+            <div class="col-lg-2 col-md-4 col-sm-6">
+                <div class="card language-card h-100" 
+                     onclick="selectLanguage('myanmar')">
+                    <div class="card-body text-center">
+                        <div class="language-name">Myanmar</div>
+                        <div class="language-subtitle">မြန်မာ</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bengali -->
+            <div class="col-lg-2 col-md-4 col-sm-6">
+                <div class="card language-card h-100" 
+                     onclick="selectLanguage('bengali')">
+                    <div class="card-body text-center">
+                        <div class="language-name">Bengali</div>
+                        <div class="language-subtitle">বাংলা</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <p class="text-muted">
+                <i class="fas fa-info-circle me-2"></i>
+                Select your language to view the house rules and regulations
+            </p>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function selectLanguage(language) {
+            // Add loading effect
+            const cards = document.querySelectorAll('.language-card');
+            cards.forEach(card => {
+                if (card.onclick.toString().includes(language)) {
+                    card.style.transform = 'scale(0.95)';
+                    card.style.opacity = '0.8';
+                }
+            });
+            
+            // Navigate to the language-specific view
+            setTimeout(() => {
+                window.location.href = `{{ url_for('house_acknowledge_view', acknowledge_id=house_acknowledge.id, language='PLACEHOLDER') }}`.replace('PLACEHOLDER', language);
+            }, 200);
+        }
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            const languages = ['english', 'tamil', 'chinese', 'myanmar', 'bengali'];
+            const keyMap = {
+                '1': 'english',
+                '2': 'tamil', 
+                '3': 'chinese',
+                '4': 'myanmar',
+                '5': 'bengali'
+            };
+            
+            if (keyMap[e.key]) {
+                selectLanguage(keyMap[e.key]);
+            }
+        });
+    </script>
+</body>
+</html>

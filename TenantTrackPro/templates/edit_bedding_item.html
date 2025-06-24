@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Bedding Item{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>Edit Bedding Item - {{ item.serial_number }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <!-- Basic Information -->
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">Basic Information</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="serial_number" class="form-label">Serial Number</label>
+                                    <input type="text" class="form-control" id="serial_number" value="{{ item.serial_number }}" readonly disabled>
+                                    <div class="form-text">Serial number cannot be changed after creation.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="item_name" class="form-label">Item Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="item_name" name="item_name" value="{{ item.item_name }}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="category_id" class="form-label">Category <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="category_id" name="category_id" required>
+                                        <option value="">Select category...</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.id }}" {% if category.id == item.category_id %}selected{% endif %}>
+                                            {{ category.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="In Store" {% if item.status == 'In Store' %}selected{% endif %}>In Store</option>
+                                        <option value="In Room" {% if item.status == 'In Room' %}selected{% endif %}>In Room</option>
+                                        <option value="Damaged" {% if item.status == 'Damaged' %}selected{% endif %}>Damaged</option>
+                                        <option value="Others" {% if item.status == 'Others' %}selected{% endif %}>Others</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="condition" class="form-label">Condition</label>
+                                    <select class="form-select" id="condition" name="condition">
+                                        <option value="Excellent" {% if item.condition == 'Excellent' %}selected{% endif %}>Excellent</option>
+                                        <option value="Good" {% if item.condition == 'Good' %}selected{% endif %}>Good</option>
+                                        <option value="Fair" {% if item.condition == 'Fair' %}selected{% endif %}>Fair</option>
+                                        <option value="Poor" {% if item.condition == 'Poor' %}selected{% endif %}>Poor</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description" name="description" rows="3">{{ item.description or '' }}</textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Assignment & Product Details -->
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">Assignment Details</h5>
+                                
+                                <div class="mb-3" id="room_field" {% if item.status != 'In Room' %}style="display: none;"{% endif %}>
+                                    <label for="room_number" class="form-label">Room Number</label>
+                                    <input type="text" class="form-control" id="room_number" name="room_number" value="{{ item.room_number or '' }}">
+                                </div>
+                                
+                                <div class="mb-3" id="resident_field" {% if item.status != 'In Room' %}style="display: none;"{% endif %}>
+                                    <label for="resident_name" class="form-label">Resident Name</label>
+                                    <input type="text" class="form-control" id="resident_name" name="resident_name" value="{{ item.resident_name or '' }}">
+                                </div>
+                                
+                                <div class="mb-3" id="company_field" {% if item.status != 'In Room' %}style="display: none;"{% endif %}>
+                                    <label for="company_name" class="form-label">Company Name</label>
+                                    <input type="text" class="form-control" id="company_name" name="company_name" value="{{ item.company_name or '' }}">
+                                </div>
+                                
+                                <h5 class="text-primary mb-3 mt-4">Product Details</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="brand" class="form-label">Brand</label>
+                                    <input type="text" class="form-control" id="brand" name="brand" value="{{ item.brand or '' }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="model" class="form-label">Model</label>
+                                    <input type="text" class="form-control" id="model" name="model" value="{{ item.model or '' }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="purchase_date" class="form-label">Purchase Date</label>
+                                    <input type="date" class="form-control" id="purchase_date" name="purchase_date" 
+                                           value="{{ item.purchase_date.strftime('%Y-%m-%d') if item.purchase_date else '' }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="purchase_price" class="form-label">Purchase Price</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="purchase_price" name="purchase_price" 
+                                               step="0.01" min="0" value="{{ item.purchase_price or '' }}">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="warranty_expiry" class="form-label">Warranty Expiry</label>
+                                    <input type="date" class="form-control" id="warranty_expiry" name="warranty_expiry" 
+                                           value="{{ item.warranty_expiry.strftime('%Y-%m-%d') if item.warranty_expiry else '' }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Maintenance Details -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">Maintenance Information</h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="last_maintenance_date" class="form-label">Last Maintenance Date</label>
+                                    <input type="date" class="form-control" id="last_maintenance_date" name="last_maintenance_date" 
+                                           value="{{ item.last_maintenance_date.strftime('%Y-%m-%d') if item.last_maintenance_date else '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="next_maintenance_date" class="form-label">Next Maintenance Date</label>
+                                    <input type="date" class="form-control" id="next_maintenance_date" name="next_maintenance_date" 
+                                           value="{{ item.next_maintenance_date.strftime('%Y-%m-%d') if item.next_maintenance_date else '' }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Movement Reason (only shown when status/assignment changes) -->
+                        <div class="row mt-3" id="movement_section" style="display: none;">
+                            <div class="col-12">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-warning">
+                                            <i class="fas fa-info-circle me-1"></i>Movement Record Required
+                                        </h6>
+                                        <p class="card-text small">
+                                            Changes to status, room assignment, or resident will create a movement record.
+                                        </p>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="movement_reason" class="form-label">Movement Reason</label>
+                                                    <input type="text" class="form-control" id="movement_reason" name="movement_reason" 
+                                                           placeholder="Reason for this change...">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="movement_notes" class="form-label">Additional Notes</label>
+                                                    <textarea class="form-control" id="movement_notes" name="movement_notes" 
+                                                              rows="2" placeholder="Optional additional details..."></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Form Actions -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <hr>
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <a href="{{ url_for('bedding_items') }}" class="btn btn-secondary">
+                                            <i class="fas fa-arrow-left me-1"></i>Cancel
+                                        </a>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-info" onclick="viewMovementHistory()">
+                                            <i class="fas fa-history me-1"></i>View Movement History
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i>Update Bedding Item
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Movement History Modal -->
+<div class="modal fade" id="movementHistoryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Movement History - {{ item.serial_number }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="movementHistoryContent">
+                <!-- Movement history will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Store original values to detect changes
+const originalValues = {
+    status: '{{ item.status }}',
+    room_number: '{{ item.room_number or '' }}',
+    resident_name: '{{ item.resident_name or '' }}'
+};
+
+// Handle status change to show/hide assignment fields
+document.getElementById('status').addEventListener('change', function() {
+    const status = this.value;
+    const roomField = document.getElementById('room_field');
+    const residentField = document.getElementById('resident_field');
+    const companyField = document.getElementById('company_field');
+    
+    if (status === 'In Room') {
+        roomField.style.display = 'block';
+        residentField.style.display = 'block';
+        companyField.style.display = 'block';
+        document.getElementById('room_number').required = true;
+        document.getElementById('resident_name').required = true;
+    } else {
+        roomField.style.display = 'none';
+        residentField.style.display = 'none';
+        companyField.style.display = 'none';
+        document.getElementById('room_number').required = false;
+        document.getElementById('resident_name').required = false;
+        
+        // Clear values if changing away from "In Room"
+        if (originalValues.status === 'In Room' && status !== 'In Room') {
+            document.getElementById('room_number').value = '';
+            document.getElementById('resident_name').value = '';
+            document.getElementById('company_name').value = '';
+        }
+    }
+    
+    checkForChanges();
+});
+
+// Monitor for changes that would require movement record
+function checkForChanges() {
+    const currentStatus = document.getElementById('status').value;
+    const currentRoom = document.getElementById('room_number').value;
+    const currentResident = document.getElementById('resident_name').value;
+    
+    const hasChanges = (
+        currentStatus !== originalValues.status ||
+        currentRoom !== originalValues.room_number ||
+        currentResident !== originalValues.resident_name
+    );
+    
+    const movementSection = document.getElementById('movement_section');
+    if (hasChanges) {
+        movementSection.style.display = 'block';
+        document.getElementById('movement_reason').required = true;
+    } else {
+        movementSection.style.display = 'none';
+        document.getElementById('movement_reason').required = false;
+    }
+}
+
+// Add event listeners to monitor changes
+document.getElementById('room_number').addEventListener('input', checkForChanges);
+document.getElementById('resident_name').addEventListener('input', checkForChanges);
+
+// Auto-populate next maintenance date when last maintenance is selected
+document.getElementById('last_maintenance_date').addEventListener('change', function() {
+    if (this.value) {
+        const lastDate = new Date(this.value);
+        const nextDate = new Date(lastDate);
+        nextDate.setMonth(nextDate.getMonth() + 6); // Default to 6 months later
+        
+        const nextMaintenanceField = document.getElementById('next_maintenance_date');
+        if (!nextMaintenanceField.value) {
+            nextMaintenanceField.value = nextDate.toISOString().split('T')[0];
+        }
+    }
+});
+
+// View movement history
+function viewMovementHistory() {
+    fetch(`/bedding-items/{{ item.id }}/movements`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let html = `
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Reason</th>
+                                    <th>Processed By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                if (data.movements.length === 0) {
+                    html += `
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">
+                                No movement records found
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    data.movements.forEach(movement => {
+                        html += `
+                            <tr>
+                                <td>${movement.movement_date}</td>
+                                <td><span class="badge bg-primary">${movement.movement_type}</span></td>
+                                <td>
+                                    ${movement.from_status || '-'}
+                                    ${movement.from_room ? `<br><small class="text-muted">Room: ${movement.from_room}</small>` : ''}
+                                    ${movement.from_resident ? `<br><small class="text-muted">Resident: ${movement.from_resident}</small>` : ''}
+                                </td>
+                                <td>
+                                    ${movement.to_status || '-'}
+                                    ${movement.to_room ? `<br><small class="text-muted">Room: ${movement.to_room}</small>` : ''}
+                                    ${movement.to_resident ? `<br><small class="text-muted">Resident: ${movement.to_resident}</small>` : ''}
+                                </td>
+                                <td>
+                                    ${movement.reason}
+                                    ${movement.notes ? `<br><small class="text-muted">${movement.notes}</small>` : ''}
+                                </td>
+                                <td>${movement.processed_by}</td>
+                            </tr>
+                        `;
+                    });
+                }
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                document.getElementById('movementHistoryContent').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('movementHistoryModal')).show();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading movement history');
+        });
+}
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const status = document.getElementById('status').value;
+    if (status === 'In Room') {
+        const roomNumber = document.getElementById('room_number').value;
+        const residentName = document.getElementById('resident_name').value;
+        
+        if (!roomNumber || !residentName) {
+            e.preventDefault();
+            alert('Room number and resident name are required for items assigned to rooms.');
+            return false;
+        }
+    }
+    
+    // Check if movement reason is required
+    const movementSection = document.getElementById('movement_section');
+    if (movementSection.style.display !== 'none') {
+        const movementReason = document.getElementById('movement_reason').value;
+        if (!movementReason.trim()) {
+            e.preventDefault();
+            alert('Please provide a reason for the status or assignment change.');
+            document.getElementById('movement_reason').focus();
+            return false;
+        }
+    }
+});
+
+// Initial check for changes
+checkForChanges();
+</script>
+{% endblock %}

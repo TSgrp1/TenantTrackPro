@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Create House Rules Acknowledgement Form{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-home me-2"></i>Create House Rules Acknowledgement Form</h2>
+                <a href="{{ url_for('house_acknowledge_storage') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Storage
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-plus me-2"></i>New House Rules Acknowledgement Form</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" id="houseAcknowledgeForm">
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="title" class="form-label">Title *</label>
+                                <input type="text" class="form-control" id="title" name="title" required 
+                                       placeholder="e.g., House Rules and Regulations">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"
+                                          placeholder="Brief description of the acknowledge content"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Language Tabs -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-globe me-2"></i>Multi-Language Content</h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- Language Navigation Tabs -->
+                                <ul class="nav nav-tabs" id="languageTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="english-tab" data-bs-toggle="tab" 
+                                                data-bs-target="#english" type="button" role="tab">
+                                            <i class="fas fa-flag me-1"></i>English
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="tamil-tab" data-bs-toggle="tab" 
+                                                data-bs-target="#tamil" type="button" role="tab">
+                                            <i class="fas fa-flag me-1"></i>Tamil
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="chinese-tab" data-bs-toggle="tab" 
+                                                data-bs-target="#chinese" type="button" role="tab">
+                                            <i class="fas fa-flag me-1"></i>Chinese
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="myanmar-tab" data-bs-toggle="tab" 
+                                                data-bs-target="#myanmar" type="button" role="tab">
+                                            <i class="fas fa-flag me-1"></i>Myanmar
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="bengali-tab" data-bs-toggle="tab" 
+                                                data-bs-target="#bengali" type="button" role="tab">
+                                            <i class="fas fa-flag me-1"></i>Bengali
+                                        </button>
+                                    </li>
+                                </ul>
+
+                                <!-- Tab Content -->
+                                <div class="tab-content mt-3" id="languageTabContent">
+                                    <!-- English -->
+                                    <div class="tab-pane fade show active" id="english" role="tabpanel">
+                                        <div class="mb-3">
+                                            <label for="english_text" class="form-label">Text Content *</label>
+                                            <textarea class="form-control" id="english_text" name="english_text" rows="6" required
+                                                      placeholder="Enter the house rules and regulations in English..."></textarea>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="english_image1" class="form-label">Image 1</label>
+                                                <input type="file" class="form-control" id="english_image1" name="english_image1" 
+                                                       accept="image/*">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="english_image2" class="form-label">Image 2</label>
+                                                <input type="file" class="form-control" id="english_image2" name="english_image2" 
+                                                       accept="image/*">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="english_image3" class="form-label">Image 3</label>
+                                                <input type="file" class="form-control" id="english_image3" name="english_image3" 
+                                                       accept="image/*">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tamil -->
+                                    <div class="tab-pane fade" id="tamil" role="tabpanel">
+                                        <div class="mb-3">
+                                            <label for="tamil_text" class="form-label">Text Content *</label>
+                                            <textarea class="form-control" id="tamil_text" name="tamil_text" rows="6" required
+                                                      placeholder="தமிழில் வீட்டு விதிகள் மற்றும் ஒழுங்குமுறைகளை உள்ளிடவும்..."></textarea>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="tamil_image1" class="form-label">Image 1</label>
+                                                <input type="file" class="form-control" id="tamil_image1" name="tamil_image1" 
+                                                       accept="image/*">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="tamil_image2" class="form-label">Image 2</label>
+                                                <input type="file" class="form-control" id="tamil_image2" name="tamil_image2" 
+                                                       accept="image/*">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="tamil_image3" class="form-label">Image 3</label>
+                                                <input type="file" class="form-control" id="tamil_image3" name="tamil_image3" 
+                                                       accept="image/*">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Chinese -->
+                                    <div class="tab-pane fade" id="chinese" role="tabpanel">
+                                        <div class="mb-3">
+                                            <label for="chinese_text" class="form-label">Text Content *</label>
+                                            <textarea class="form-control" id="chinese_text" name="chinese_text" rows="6" required
+                                                      placeholder="用中文输入宿舍规章制度..."></textarea>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="chinese_image1" class="form-label">Image 1</label>
+                                                <input type="file" class="form-control" id="chinese_image1" name="chinese_image1" 
+                                                       accept="image/*">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="chinese_image2" class="form-label">Image 2</label>
+                                                <input type="file" class="form-control" id="chinese_image2" name="chinese_image2" 
+                                                       accept="image/*">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="chinese_image3" class="form-label">Image 3</label>
+                                                <input type="file" class="form-control" id="chinese_image3" name="chinese_image3" 
+                                                       accept="image/*">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Myanmar -->
+                                    <div class="tab-pane fade" id="myanmar" role="tabpanel">
+                                        <div class="mb-3">
+                                            <label for="myanmar_text" class="form-label">Text Content *</label>
+                                            <textarea class="form-control" id="myanmar_text" name="myanmar_text" rows="6" required
+                                                      placeholder="မြန်မာဘာသာဖြင့် အိမ်စည်းမျဉ်းများနှင့် စည်းကမ်းများ ရေးပါ..."></textarea>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="myanmar_image1" class="form-label">Image 1</label>
+                                                <input type="file" class="form-control" id="myanmar_image1" name="myanmar_image1" 
+                                                       accept="image/*">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="myanmar_image2" class="form-label">Image 2</label>
+                                                <input type="file" class="form-control" id="myanmar_image2" name="myanmar_image2" 
+                                                       accept="image/*">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="myanmar_image3" class="form-label">Image 3</label>
+                                                <input type="file" class="form-control" id="myanmar_image3" name="myanmar_image3" 
+                                                       accept="image/*">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bengali -->
+                                    <div class="tab-pane fade" id="bengali" role="tabpanel">
+                                        <div class="mb-3">
+                                            <label for="bengali_text" class="form-label">Text Content *</label>
+                                            <textarea class="form-control" id="bengali_text" name="bengali_text" rows="6" required
+                                                      placeholder="বাংলায় ঘরের নিয়ম ও বিধিবিধান লিখুন..."></textarea>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="bengali_image1" class="form-label">Image 1</label>
+                                                <input type="file" class="form-control" id="bengali_image1" name="bengali_image1" 
+                                                       accept="image/*">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="bengali_image2" class="form-label">Image 2</label>
+                                                <input type="file" class="form-control" id="bengali_image2" name="bengali_image2" 
+                                                       accept="image/*">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="bengali_image3" class="form-label">Image 3</label>
+                                                <input type="file" class="form-control" id="bengali_image3" name="bengali_image3" 
+                                                       accept="image/*">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="text-end mt-4">
+                            <button type="button" class="btn btn-secondary me-2" onclick="history.back()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-qrcode me-2"></i>Create House Acknowledge & Generate QR Code
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add form validation
+    const form = document.getElementById('houseAcknowledgeForm');
+    form.addEventListener('submit', function(e) {
+        const requiredFields = ['title', 'english_text', 'tamil_text', 'chinese_text', 'myanmar_text', 'bengali_text'];
+        let isValid = true;
+        
+        requiredFields.forEach(fieldName => {
+            const field = document.getElementById(fieldName);
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fill in all required fields for all languages.');
+        }
+    });
+});
+</script>
+{% endblock %}

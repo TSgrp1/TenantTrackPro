@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TS Management System{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}" type="image/x-icon">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"?v=1>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Top Brand Bar -->
+    <div class="brand-bar">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="logo-container me-3" style="background-color: rgba(255,255,255,0.9); padding: 8px 12px; border-radius: 6px;">
+                        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="TS Group" height="35">
+                    </div>
+                    <span class="fw-bold" style="color: #d1d5db;">TS Management Services Pte Ltd</span>
+                </div>
+                {% if current_user.is_authenticated %}
+                <div class="d-flex align-items-center">
+                    <span class="me-3" style="color: #d1d5db;">Welcome, {{ current_user.full_name or current_user.username or current_user.email or 'User' }}</span>
+                    <a href="{{ url_for('logout') }}" class="text-decoration-none" style="color: #d1d5db;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    {% if current_user.is_authenticated %}
+    <nav class="main-navbar">
+        <div class="container-fluid">
+            {% set user_permissions = get_user_dashboard_permissions(current_user) %}
+            {% set current_route = request.endpoint %}
+            
+            <div class="d-flex justify-content-center align-items-center flex-wrap w-100" style="gap: 2px;">
+                {% set page_permissions = get_user_page_permissions(current_user) %}
+                    
+                    <!-- Dashboard - Always visible for authenticated users -->
+                    <a class="nav-item-custom {% if current_route == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <div class="nav-text">Dashboard</div>
+                        </div>
+                    </a>
+
+                    <!-- House Acknowledge Dropdown -->
+                    {% if session.get('role') == 'admin' or is_admin_user(current_user) or page_permissions.get('house_acknowledge', {}).get('can_access', False) %}
+                    <div class="dropdown">
+                        <button class="nav-item-custom dropdown-toggle {% if current_route in ['house_acknowledge_create', 'house_acknowledge_storage'] %}active{% endif %}" type="button" id="houseAcknowledgeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="nav-icon-container">
+                                <i class="fas fa-home"></i>
+                                <div class="nav-text">House Acknowledge</div>
+                            </div>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="houseAcknowledgeDropdown">
+                            {% if session.get('role') == 'admin' or can_user_create(current_user, 'house_acknowledge') %}
+                            <li><a class="dropdown-item" href="{{ url_for('house_acknowledge_create') }}">
+                                <i class="fas fa-plus me-2"></i>Create Acknowledgement
+                            </a></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="{{ url_for('house_acknowledge_storage') }}">
+                                <i class="fas fa-database me-2"></i>House Rules Acknowledgement Data
+                            </a></li>
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <!-- QR Codes -->
+                    {% if session.get('role') == 'admin' or is_admin_user(current_user) or page_permissions.get('qr_codes', {}).get('can_access', False) %}
+                    <a class="nav-item-custom {% if current_route == 'qr_codes' %}active{% endif %}" href="{{ url_for('qr_codes') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-qrcode"></i>
+                            <div class="nav-text">QR Codes</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    <!-- Key Management -->
+                    <a class="nav-item-custom {% if current_route == 'key.key_management' %}active{% endif %}" href="/key-management">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-key"></i>
+                            <div class="nav-text">Key Management</div>
+                        </div>
+                    </a>
+
+                    <!-- Asset Management -->
+                    {% if session.get('role') == 'admin' or is_admin_user(current_user) or page_permissions.get('asset_management', {}).get('can_access', False) %}
+                    <a class="nav-item-custom {% if current_route == 'asset_management' %}active{% endif %}" href="{{ url_for('asset_management') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-boxes"></i>
+                            <div class="nav-text">Asset Management</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    <!-- Room Handover -->
+                    {% if is_admin_user(current_user) or page_permissions.get('room_checklist', {}).get('can_access', False) %}
+                    <a class="nav-item-custom {% if current_route == 'room_handovers' %}active{% endif %}" href="{{ url_for('room_handovers') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-handshake"></i>
+                            <div class="nav-text">Room Handover</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    <!-- Room Checklist -->
+                    {% if is_admin_user(current_user) or page_permissions.get('room_checklist', {}).get('can_access', False) %}
+                    <a class="nav-item-custom {% if current_route == 'room_checklist' %}active{% endif %}" href="{{ url_for('room_checklist') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-clipboard-check"></i>
+                            <div class="nav-text">Room Checklist</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    <!-- Offence Records -->
+                    {% if is_admin_user(current_user) or page_permissions.get('offense_records', {}).get('can_access', False) %}
+                    <a class="nav-item-custom {% if current_route == 'offense_records' %}active{% endif %}" href="{{ url_for('offense_records') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div class="nav-text">Offence Records</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    <!-- MSRF -->
+                    {% if is_admin_user(current_user) or page_permissions.get('msrf_management', {}).get('can_access', False) %}
+                    <a class="nav-item-custom {% if current_route == 'msrf_management' %}active{% endif %}" href="{{ url_for('msrf_management') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-shield-alt"></i>
+                            <div class="nav-text">MSRF</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    <!-- Pioneer Utility -->
+                    {% if is_admin_user(current_user) or page_permissions.get('meter_reading', {}).get('can_access', False) %}
+                    <a class="nav-item-custom {% if current_route == 'meter_readings' %}active{% endif %}" href="{{ url_for('meter_readings') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-bolt"></i>
+                            <div class="nav-text">Pioneer Utility</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+
+
+                    <!-- Purchase Section -->
+                    {% if session.get('role') == 'admin' or is_admin_user(current_user) or page_permissions.get('purchase', {}).get('can_access', False) %}
+                    <div class="dropdown">
+                        <button class="nav-item-custom dropdown-toggle {% if current_route in ['purchase_form', 'stock_storage', 'purchase_form_storage'] %}active{% endif %}" type="button" id="purchaseDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="nav-icon-container">
+                                <i class="fas fa-shopping-cart"></i>
+                                <div class="nav-text">Purchase</div>
+                            </div>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="purchaseDropdown">
+                            {% if session.get('role') == 'admin' or can_user_create(current_user, 'purchase') %}
+                            <li><a class="dropdown-item" href="/purchase-form">
+                                <i class="fas fa-file-alt me-2"></i>Purchase Form
+                            </a></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="/stock-storage">
+                                <i class="fas fa-warehouse me-2"></i>Stock Storage
+                            </a></li>
+                            <li><a class="dropdown-item" href="/purchase-form-storage">
+                                <i class="fas fa-archive me-2"></i>Purchase Form Storage
+                            </a></li>
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <!-- FIN Search -->
+                    <a class="nav-item-custom {% if current_route == 'fin_search' %}active{% endif %}" href="{{ url_for('fin_search') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-search"></i>
+                            <div class="nav-text">FIN Search</div>
+                        </div>
+                    </a>
+
+                    <!-- Food Locker Management -->
+                    {% if is_admin_user(current_user) or page_permissions.get('food_locker', {}).get('can_access', False) %}
+                    <a class="nav-item-custom {% if current_route == 'food_locker_management' %}active{% endif %}" href="{{ url_for('food_locker_management') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-utensils"></i>
+                            <div class="nav-text">Food Locker Management</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    <!-- Bedding Items -->
+                    {% if is_admin_user(current_user) or page_permissions.get('bedding_management', {}).get('can_access', False) %}
+                    <a class="nav-item-custom {% if current_route == 'bedding_items' %}active{% endif %}" href="{{ url_for('bedding_items') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-bed"></i>
+                            <div class="nav-text">Bedding Items</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    <!-- Pioneer Lodge Visitors -->
+                    {% if is_admin_user(current_user) or page_permissions.get('pioneer_lodge_visitors', {}).get('can_access', False) %}
+                    <a class="nav-item-custom {% if current_route in ['visitors_dashboard', 'visitors_records'] %}active{% endif %}" href="{{ url_for('visitors_dashboard') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-users"></i>
+                            <div class="nav-text">Pioneer Lodge Visitors</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    <!-- Staff Attendance -->
+                    {% if is_admin_user(current_user) or page_permissions.get('staff_attendance', {}).get('can_access', False) %}
+                    <a class="nav-item-custom {% if current_route in ['staff_attendance', 'staff_records'] %}active{% endif %}" href="{{ url_for('staff_attendance') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-clock"></i>
+                            <div class="nav-text">Staff Attendance</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    <!-- Resident Check-in & Check-out -->
+                    {% if is_admin_user(current_user) or page_permissions.get('resident_checkin', {}).get('can_access', False) %}
+                    <a class="nav-item-custom {% if current_route in ['resident_checkin_checkout_dashboard', 'residents'] %}active{% endif %}" href="{{ url_for('resident_checkin_checkout_dashboard') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-user-check"></i>
+                            <div class="nav-text">Resident Check-in & Check-Out</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+
+
+                    <!-- Settings - Admin Only -->
+                    {% if page_permissions.get('settings', {}).get('can_access', False) or is_admin_user(current_user) %}
+                    <a class="nav-item-custom {% if current_route == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-cog"></i>
+                            <div class="nav-text">Settings</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    <!-- Admin - Admin Only -->
+                    {% if page_permissions.get('admin', {}).get('can_access', False) or is_admin_user(current_user) %}
+                    <a class="nav-item-custom {% if current_route == 'admin' %}active{% endif %}" href="{{ url_for('admin') }}">
+                        <div class="nav-icon-container">
+                            <i class="fas fa-user-shield"></i>
+                            <div class="nav-text">Admin</div>
+                        </div>
+                    </a>
+                    {% endif %}
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Main Content Area -->
+    <div class="content-area">
+        <div class="container-fluid">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Scripts -->
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

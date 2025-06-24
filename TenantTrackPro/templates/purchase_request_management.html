@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Request Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            Purchase Request Management
+                        </h4>
+                        <a href="{{ url_for('purchase_request_form') }}" class="btn btn-light btn-sm">
+                            <i class="fas fa-plus me-1"></i>
+                            New Request
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Search Bar -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <form method="GET" class="input-group">
+                                <input type="text" class="form-control" name="search" 
+                                       placeholder="Search by PR number, requester, or category..." 
+                                       value="{{ search_query or '' }}">
+                                <button class="btn btn-outline-secondary" type="submit">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                {% if search_query %}
+                                <a href="{{ url_for('purchase_request_management') }}" class="btn btn-outline-danger">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                                {% endif %}
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-end">
+                                <span class="badge bg-info">{{ purchase_requests|length }} total requests</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bulk Actions -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div id="bulkActions" style="display: none;" class="alert alert-info">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span id="selectedCount">0 selected</span>
+                                    <div class="btn-group">
+                                        <button class="btn btn-outline-danger btn-sm" onclick="bulkDelete()">
+                                            <i class="fas fa-trash me-1"></i> Delete Selected
+                                        </button>
+                                        <button class="btn btn-outline-success btn-sm" onclick="bulkExportExcel()">
+                                            <i class="fas fa-file-excel me-1"></i> Export to Excel
+                                        </button>
+                                        <button class="btn btn-outline-primary btn-sm" onclick="bulkExportPDF()">
+                                            <i class="fas fa-file-pdf me-1"></i> Export to PDF
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Purchase Requests Table -->
+                    {% if purchase_requests %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll" class="form-check-input"></th>
+                                    <th>PR Number</th>
+                                    <th>Date</th>
+                                    <th>Requested By</th>
+                                    <th>Category</th>
+                                    <th>Status</th>
+                                    <th>Items</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in purchase_requests %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input request-checkbox" value="{{ request.id }}">
+                                    </td>
+                                    <td>
+                                        <strong class="text-primary">{{ request.request_number }}</strong>
+                                    </td>
+                                    <td>{{ request.request_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ request.requested_by }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ request.category }}</span>
+                                    </td>
+                                    <td>
+                                        {% if request.status == 'Pending' %}
+                                            <span class="badge bg-warning">{{ request.status }}</span>
+                                        {% elif request.status == 'Approved' %}
+                                            <span class="badge bg-success">{{ request.status }}</span>
+                                        {% elif request.status == 'Rejected' %}
+                                            <span class="badge bg-danger">{{ request.status }}</span>
+                                        {% else %}
+                                            <span class="badge bg-info">{{ request.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ request.items|length }} items</span>
+                                    </td>
+                                    <td>{{ request.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-primary" 
+                                                    onclick="viewRequest('{{ request.id }}')" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-warning" 
+                                                    onclick="editRequest('{{ request.id }}')" title="Edit Request">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-outline-info dropdown-toggle" 
+                                                        data-bs-toggle="dropdown" title="Update Status">
+                                                    <i class="fas fa-tasks"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="updateStatus('{{ request.id }}', 'Pending')">
+                                                        <i class="fas fa-clock text-warning me-2"></i>Pending
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="updateStatus('{{ request.id }}', 'Approved')">
+                                                        <i class="fas fa-check text-success me-2"></i>Approved
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="updateStatus('{{ request.id }}', 'Rejected')">
+                                                        <i class="fas fa-times text-danger me-2"></i>Rejected
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="updateStatus('{{ request.id }}', 'In Progress')">
+                                                        <i class="fas fa-spinner text-info me-2"></i>In Progress
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="updateStatus('{{ request.id }}', 'Completed')">
+                                                        <i class="fas fa-check-circle text-primary me-2"></i>Completed
+                                                    </a></li>
+                                                </ul>
+                                            </div>
+                                            <button type="button" class="btn btn-outline-secondary" 
+                                                    onclick="downloadPDF('{{ request.id }}')" title="Download PDF">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Purchase Requests Found</h5>
+                        <p class="text-muted">
+                            {% if search_query %}
+                                No requests match your search criteria.
+                            {% else %}
+                                Start by creating your first purchase request.
+                            {% endif %}
+                        </p>
+                        <a href="{{ url_for('purchase_request_form') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>
+                            Create New Request
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Purchase Request Details Modal -->
+<div class="modal fade" id="requestDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Purchase Request Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="requestDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table th {
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-top: none;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Ensure bootstrap is available
+    if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap is not loaded');
+        return;
+    }
+    
+    // Make functions global so they can be called from onclick attributes
+    window.viewRequest = function(requestId) {
+        try {
+            // Show loading state
+            const modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
+            const content = document.getElementById('requestDetailsContent');
+            content.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+            modal.show();
+            
+            // Fetch request details
+            fetch(`/api/purchase-request/${requestId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        displayRequestDetails(data.request);
+                    } else {
+                        content.innerHTML = '<div class="alert alert-danger">Error: ' + (data.error || 'Unknown error') + '</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    content.innerHTML = '<div class="alert alert-danger">Error loading request details: ' + error.message + '</div>';
+                });
+        } catch (error) {
+            console.error('Error in viewRequest:', error);
+            alert('Error loading request details');
+        }
+    };
+
+    function displayRequestDetails(request) {
+        const content = document.getElementById('requestDetailsContent');
+        
+        let itemsHtml = '';
+        if (request.items && request.items.length > 0) {
+            itemsHtml = `
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Unit Cost</th>
+                                <th>Qty</th>
+                                <th>Total</th>
+                                <th>Room</th>
+                                <th>Unit</th>
+                                <th>Cost Code</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+            
+            request.items.forEach(item => {
+                itemsHtml += `
+                    <tr>
+                        <td>${item.description || '-'}</td>
+                        <td>$${(item.unit_cost || 0).toFixed(2)}</td>
+                        <td>${item.quantity || '-'}</td>
+                        <td>$${(item.total_cost || 0).toFixed(2)}</td>
+                        <td>${item.room_no || '-'}</td>
+                        <td>${item.unit || '-'}</td>
+                        <td>${item.cost_code || '-'}</td>
+                    </tr>`;
+            });
+            
+            itemsHtml += `
+                        </tbody>
+                    </table>
+                </div>`;
+        }
+        
+        content.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Request Information</h6>
+                    <table class="table table-sm table-borderless">
+                        <tr><td><strong>PR Number:</strong></td><td>${request.request_number || '-'}</td></tr>
+                        <tr><td><strong>Date:</strong></td><td>${request.request_date || '-'}</td></tr>
+                        <tr><td><strong>Category:</strong></td><td>${request.category || '-'}</td></tr>
+                        <tr><td><strong>Requested By:</strong></td><td>${request.requested_by || '-'}</td></tr>
+                        <tr><td><strong>Status:</strong></td><td><span class="badge bg-${request.status === 'Pending' ? 'warning' : request.status === 'Approved' ? 'success' : 'danger'}">${request.status || 'Unknown'}</span></td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6>Approval Chain</h6>
+                    <table class="table table-sm table-borderless">
+                        <tr><td><strong>D/C & O/E:</strong></td><td>${request.dc_name || '-'}</td></tr>
+                        <tr><td><strong>Operation Manager:</strong></td><td>${request.operation_manager || '-'}</td></tr>
+                        <tr><td><strong>General Manager:</strong></td><td>${request.general_manager || '-'}</td></tr>
+                        <tr><td><strong>Created:</strong></td><td>${request.created_at || '-'}</td></tr>
+                    </table>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <h6>Items (${request.items ? request.items.length : 0})</h6>
+            ${itemsHtml || '<p class="text-muted">No items found</p>'}
+        `;
+    }
+
+    window.downloadPDF = function(requestId) {
+        try {
+            // Create a form to submit the request for PDF generation
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/generate_purchase_request_pdf/${requestId}`;
+            form.style.display = 'none';
+            
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+        } catch (error) {
+            console.error('Error in downloadPDF:', error);
+            alert('Error downloading PDF');
+        }
+    };
+
+    window.editRequest = function(requestId) {
+        try {
+            window.location.href = `/purchase-request-edit/${requestId}`;
+        } catch (error) {
+            console.error('Error in editRequest:', error);
+            alert('Error navigating to edit page');
+        }
+    };
+
+    window.updateStatus = function(requestId, newStatus) {
+        try {
+            if (confirm(`Are you sure you want to update the status to "${newStatus}"?`)) {
+                fetch(`/api/purchase-request/${requestId}/status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        location.reload(); // Refresh the page to show updated status
+                    } else {
+                        alert('Error updating status: ' + (data.message || data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating status: ' + error.message);
+                });
+            }
+        } catch (error) {
+            console.error('Error in updateStatus:', error);
+            alert('Error updating status');
+        }
+    };
+});
+</script>
+
+
+
+{% endblock %}

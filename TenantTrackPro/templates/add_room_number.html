@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Room Numbers</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .btn-custom {
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 500;
+        }
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #dee2e6;
+            padding: 12px 16px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        .nav-pills .nav-link {
+            border-radius: 25px;
+            margin-right: 10px;
+        }
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+        }
+        .example-box {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 1rem;
+            color: #6c757d;
+        }
+        .predefined-box {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border-radius: 10px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2><i class="fas fa-plus me-3"></i>Add Room Numbers</h2>
+                        <p class="text-muted mb-0">Add room numbers individually or in bulk</p>
+                    </div>
+                    <a href="{{ url_for('room_numbers') }}" class="btn btn-outline-secondary btn-custom">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Room Numbers
+                    </a>
+                </div>
+
+                <!-- Form -->
+                <div class="card">
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('add_room_number') }}">
+                            <!-- Type Selection -->
+                            <div class="mb-4">
+                                <ul class="nav nav-pills" id="roomTypeTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="single-tab" data-bs-toggle="pill" 
+                                                data-bs-target="#single" type="button" role="tab">
+                                            <i class="fas fa-door-open me-2"></i>Single Room
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="bulk-tab" data-bs-toggle="pill" 
+                                                data-bs-target="#bulk" type="button" role="tab">
+                                            <i class="fas fa-building me-2"></i>Bulk Add
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Tab Content -->
+                            <div class="tab-content" id="roomTypeTabContent">
+                                <!-- Single Room Tab -->
+                                <div class="tab-pane fade show active" id="single" role="tabpanel">
+                                    <input type="hidden" name="room_type" value="single" disabled>
+                                    
+                                    <div class="mb-4">
+                                        <label for="room_number" class="form-label">
+                                            <i class="fas fa-door-open me-2"></i>Room Number
+                                        </label>
+                                        
+                                        <!-- Room Number Input Options -->
+                                        <div class="input-group">
+                                            <select class="form-select" id="roomNumberSelect" onchange="handleRoomSelection()">
+                                                <option value="">Select from existing rooms</option>
+                                                <option value="custom">+ Enter Custom Room Number</option>
+                                                {% for room in existing_rooms %}
+                                                    <option value="{{ room.room_number }}">{{ room.room_number }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <input type="text" class="form-control" id="room_number" name="room_number" 
+                                                   placeholder="e.g., 80-01-001" style="display: none;" required>
+                                            <button type="button" class="btn btn-outline-secondary" id="backToDropdown" 
+                                                    onclick="switchBackToDropdown()" style="display: none;">
+                                                Back to List
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="form-text">
+                                            Format: Building-Floor-Unit (e.g., 80-01-001)
+                                        </div>
+                                    </div>
+                                    
+                                    <script>
+                                        function handleRoomSelection() {
+                                            const select = document.getElementById('roomNumberSelect');
+                                            const input = document.getElementById('room_number');
+                                            const backBtn = document.getElementById('backToDropdown');
+                                            
+                                            if (select.value === 'custom') {
+                                                select.style.display = 'none';
+                                                input.style.display = 'block';
+                                                backBtn.style.display = 'block';
+                                                input.focus();
+                                                input.value = '';
+                                            } else if (select.value) {
+                                                input.value = select.value;
+                                            }
+                                        }
+                                        
+                                        function switchBackToDropdown() {
+                                            const select = document.getElementById('roomNumberSelect');
+                                            const input = document.getElementById('room_number');
+                                            const backBtn = document.getElementById('backToDropdown');
+                                            
+                                            select.style.display = 'block';
+                                            input.style.display = 'none';
+                                            backBtn.style.display = 'none';
+                                            select.value = '';
+                                            input.value = '';
+                                        }
+                                    </script>
+
+                                    <div class="example-box mb-4">
+                                        <h6><i class="fas fa-info-circle me-2"></i>Examples:</h6>
+                                        <ul class="mb-0">
+                                            <li><code>80-01-001</code> - Building 80, Floor 01, Unit 001</li>
+                                            <li><code>81-02-115</code> - Building 81, Floor 02, Unit 115</li>
+                                            <li><code>88-03-810</code> - Building 88, Floor 03, Unit 810</li>
+                                        </ul>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary btn-custom">
+                                        <i class="fas fa-plus me-2"></i>Add Room Number
+                                    </button>
+                                </div>
+
+                                <!-- Bulk Add Tab -->
+                                <div class="tab-pane fade" id="bulk" role="tabpanel">
+                                    <input type="hidden" name="room_type" value="bulk" id="bulkRoomType" disabled>
+                                    
+                                    <div class="mb-4">
+                                        <label for="bulk_ranges" class="form-label">
+                                            <i class="fas fa-building me-2"></i>Bulk Room Ranges
+                                        </label>
+                                        <textarea class="form-control" id="bulk_ranges" name="bulk_ranges" 
+                                                  rows="10" placeholder="Enter room ranges, one per line..."></textarea>
+                                        <div class="form-text">
+                                            Enter ranges in format: "START to END" (one range per line)
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <div class="example-box">
+                                                <h6><i class="fas fa-info-circle me-2"></i>Format Examples:</h6>
+                                                <div style="font-family: 'Courier New', monospace; font-size: 0.9rem;">
+                                                    80-01-001 to 80-01-015<br>
+                                                    81-02-101 to 81-02-115<br>
+                                                    82-03-201 to 82-03-215
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="predefined-box">
+                                                <h6><i class="fas fa-list me-2"></i>Predefined Ranges:</h6>
+                                                <div>
+                                                    80-01-001 to 80-01-015<br>
+                                                    80-02-001 to 80-02-015<br>
+                                                    80-03-001 to 80-03-015<br>
+                                                    80-04-001 to 80-04-015<br>
+                                                    81-01-101 to 81-01-115<br>
+                                                    81-02-101 to 81-02-115<br>
+                                                    81-03-101 to 81-03-115<br>
+                                                    81-04-101 to 81-04-115<br>
+                                                    82-01-201 to 82-01-215<br>
+                                                    82-02-201 to 82-02-215<br>
+                                                    82-03-201 to 82-03-215<br>
+                                                    82-04-201 to 82-04-215<br>
+                                                    83-01-301 to 83-01-315<br>
+                                                    83-02-301 to 83-02-315<br>
+                                                    83-03-301 to 83-03-315<br>
+                                                    83-04-301 to 83-04-315<br>
+                                                    88-02-801 to 88-02-828<br>
+                                                    88-03-801 to 88-03-810<br>
+                                                    88-04-801 to 88-04-810
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex gap-3">
+                                        <button type="button" class="btn btn-outline-secondary btn-custom" onclick="copyPredefined()">
+                                            <i class="fas fa-copy me-2"></i>Copy Predefined Ranges
+                                        </button>
+                                        <button type="submit" class="btn btn-primary btn-custom" id="bulkSubmitBtn">
+                                            <i class="fas fa-upload me-2"></i>Add Bulk Rooms
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    // Remove alert for normal use
+    console.log('JavaScript file loaded successfully');
+    
+    // Add debugging for bulk add functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, setting up bulk add debugging');
+        
+        // Test button click
+        const bulkSubmitBtn = document.getElementById('bulkSubmitBtn');
+        if (bulkSubmitBtn) {
+            console.log('Bulk submit button found');
+            // Force form submission
+            bulkSubmitBtn.onclick = function(e) {
+                console.log('Button clicked - forcing form submission');
+                
+                // Enable the bulk room type input
+                const bulkInput = document.getElementById('bulkRoomType');
+                if (bulkInput) {
+                    bulkInput.disabled = false;
+                    console.log('Enabled bulk input');
+                }
+                
+                // Get form and submit directly
+                const form = document.querySelector('form');
+                if (form) {
+                    console.log('Submitting form directly');
+                    form.submit();
+                } else {
+                    console.log('Form not found!');
+                }
+                
+                return false; // Prevent default button behavior
+            };
+        }
+    });
+    </script>
+    <script>
+        function copyPredefined() {
+            const predefinedRanges = `80-01-001 to 80-01-015
+80-02-001 to 80-02-015
+80-03-001 to 80-03-015
+80-04-001 to 80-04-015
+81-01-101 to 81-01-115
+81-02-101 to 81-02-115
+81-03-101 to 81-03-115
+81-04-101 to 81-04-115
+82-01-201 to 82-01-215
+82-02-201 to 82-02-215
+82-03-201 to 82-03-215
+82-04-201 to 82-04-215
+83-01-301 to 83-01-315
+83-02-301 to 83-02-315
+83-03-301 to 83-03-315
+83-04-301 to 83-04-315
+88-02-801 to 88-02-828
+88-03-801 to 88-03-810
+88-04-801 to 88-04-810`;
+            
+            document.getElementById('bulk_ranges').value = predefinedRanges;
+        }
+
+        // Update form action based on active tab
+        document.querySelectorAll('#roomTypeTabs .nav-link').forEach(tab => {
+            tab.addEventListener('click', function() {
+                console.log('Tab clicked:', this.getAttribute('data-bs-target'));
+                const targetTab = this.getAttribute('data-bs-target');
+                // Enable the correct room_type input for the active tab
+                document.querySelectorAll('input[name="room_type"]').forEach(input => {
+                    input.disabled = true;
+                });
+                const activeInput = document.querySelector(targetTab + ' input[name="room_type"]');
+                if (activeInput) {
+                    activeInput.disabled = false;
+                    console.log('Enabled input for:', targetTab, 'with value:', activeInput.value);
+                }
+            });
+        });
+
+        // Ensure the initial active tab has the correct input enabled
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded - setting up tabs');
+            const activeTab = document.querySelector('#roomTypeTabs .nav-link.active');
+            if (activeTab) {
+                const targetTab = activeTab.getAttribute('data-bs-target');
+                const activeInput = document.querySelector(targetTab + ' input[name="room_type"]');
+                if (activeInput) {
+                    activeInput.disabled = false;
+                    console.log('Initial tab enabled:', targetTab, 'with value:', activeInput.value);
+                }
+            }
+            
+            // Enable bulk input when bulk tab is clicked
+            const bulkTab = document.getElementById('bulk-tab');
+            if (bulkTab) {
+                bulkTab.addEventListener('shown.bs.tab', function () {
+                    const bulkInput = document.getElementById('bulkRoomType');
+                    if (bulkInput) {
+                        bulkInput.disabled = false;
+                        console.log('Bulk tab shown, enabled bulk input');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

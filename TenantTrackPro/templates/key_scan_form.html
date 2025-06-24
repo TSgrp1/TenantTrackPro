@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Key {{ scan_type.title() }} - TS Management Services</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .form-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            margin-top: 30px;
+            margin-bottom: 30px;
+        }
+        .company-logo {
+            max-height: 80px;
+            margin-bottom: 20px;
+        }
+        .scan-type-badge {
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            border-radius: 25px;
+            margin-bottom: 20px;
+        }
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px 16px;
+            font-size: 16px;
+        }
+        .form-control:focus {
+            border-color: {% if scan_type == 'out' %}#dc3545{% else %}#198754{% endif %};
+            box-shadow: 0 0 0 0.2rem {% if scan_type == 'out' %}rgba(220, 53, 69, 0.25){% else %}rgba(25, 135, 84, 0.25){% endif %};
+        }
+        .btn-submit {
+            background: {% if scan_type == 'out' %}linear-gradient(135deg, #dc3545, #c82333){% else %}linear-gradient(135deg, #198754, #157347){% endif %};
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px {% if scan_type == 'out' %}rgba(220, 53, 69, 0.3){% else %}rgba(25, 135, 84, 0.3){% endif %};
+            color: white;
+        }
+        .scan-icon {
+            font-size: 4rem;
+            color: {% if scan_type == 'out' %}#dc3545{% else %}#198754{% endif %};
+            margin-bottom: 20px;
+        }
+        .required-field {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8">
+                <div class="form-container">
+                    <div class="text-center mb-4">
+                        <img src="{{ url_for('static', filename='ts_group_logo.png') }}" alt="TS Group" class="company-logo">
+                        <h1 class="h3 mb-3">Key Management System</h1>
+                        
+                        <i class="fas fa-{% if scan_type == 'out' %}sign-out-alt{% else %}sign-in-alt{% endif %} scan-icon"></i>
+                        
+                        <div class="scan-type-badge badge {% if scan_type == 'out' %}bg-danger{% else %}bg-success{% endif %}">
+                            <i class="fas fa-key me-2"></i>Key {{ scan_type.title() }}
+                        </div>
+                        
+                        <p class="text-muted">
+                            {% if scan_type == 'out' %}
+                                Please fill in your details to take the key out
+                            {% else %}
+                                Please fill in your details to return the key
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <!-- Display any flash messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" id="keyScanForm">
+                        <div class="mb-3">
+                            <label for="room_number" class="form-label">
+                                <i class="fas fa-door-open me-2"></i>Room Number <span class="required-field">*</span>
+                            </label>
+                            {% if room_numbers %}
+                            <select class="form-control" id="room_number" name="room_number" required>
+                                <option value="">Select Room Number</option>
+                                {% for room in room_numbers %}
+                                    <option value="{{ room.room_number }}">{{ room.room_number }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Select your room number from the list</small>
+                            {% else %}
+                            <input type="text" class="form-control" id="room_number" name="room_number" 
+                                   placeholder="e.g., 101, A-23, B-105" required>
+                            <small class="form-text text-muted">Enter your room number</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="resident_name" class="form-label">
+                                <i class="fas fa-user me-2"></i>Resident Name <span class="required-field">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="resident_name" name="resident_name" 
+                                   placeholder="Enter your full name" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="company_name" class="form-label">
+                                <i class="fas fa-building me-2"></i>Company Name <span class="required-field">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="company_name" name="company_name" 
+                                   placeholder="Enter your company name" required>
+                        </div>
+
+                        <!-- Current Date and Time Display -->
+                        <div class="mb-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title mb-2">
+                                        <i class="fas fa-calendar-alt me-2"></i>Scan Date & Time (Singapore)
+                                    </h6>
+                                    <p class="card-text h5 text-primary" id="currentDateTime"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-submit">
+                                <i class="fas fa-{% if scan_type == 'out' %}sign-out-alt{% else %}sign-in-alt{% endif %} me-2"></i>
+                                Submit Key {{ scan_type.title() }}
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <small class="text-muted">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Your information is securely recorded in our system
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Update current date and time
+        function updateDateTime() {
+            const now = new Date();
+            const singaporeTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Singapore"}));
+            
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZone: 'Asia/Singapore'
+            };
+            
+            document.getElementById('currentDateTime').textContent = 
+                singaporeTime.toLocaleDateString('en-US', options);
+        }
+
+        // Update time every second
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+
+        // Form validation
+        document.getElementById('keyScanForm').addEventListener('submit', function(e) {
+            const roomNumber = document.getElementById('room_number').value.trim();
+            const residentName = document.getElementById('resident_name').value.trim();
+            const companyName = document.getElementById('company_name').value.trim();
+
+            if (!roomNumber || !residentName || !companyName) {
+                e.preventDefault();
+                alert('Please fill in all required fields before submitting.');
+                return false;
+            }
+
+            // Disable submit button to prevent double submission
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        });
+
+        // Auto-focus on first input
+        document.getElementById('room_number').focus();
+    </script>
+</body>
+</html>

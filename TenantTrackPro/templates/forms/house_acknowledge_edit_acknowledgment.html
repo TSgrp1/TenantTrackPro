@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Acknowledgment - Pioneer Lodge Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-edit me-2"></i>Edit Acknowledgment Record</h2>
+                <a href="{{ url_for('house_acknowledge_storage') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Storage
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-edit me-2"></i>Editing: {{ acknowledgment.name }} ({{ acknowledgment.fin }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('update_house_acknowledgment', acknowledgment_id=acknowledgment.id) }}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                           value="{{ acknowledgment.name }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fin" class="form-label">FIN Number *</label>
+                                    <input type="text" class="form-control" id="fin" name="fin" 
+                                           value="{{ acknowledgment.fin }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="company_name" class="form-label">Company Name *</label>
+                                    <input type="text" class="form-control" id="company_name" name="company_name" 
+                                           value="{{ acknowledgment.company_name }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="room_number" class="form-label">Room Number *</label>
+                                    <select class="form-select" id="room_number" name="room_number" required>
+                                        <option value="">Select Room Number</option>
+                                        {% for room in room_numbers %}
+                                        <option value="{{ room.room_number }}" 
+                                                {% if room.room_number == acknowledgment.room_number %}selected{% endif %}>
+                                            {{ room.room_number }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="phone_number" class="form-label">Phone Number *</label>
+                                    <input type="tel" class="form-control" id="phone_number" name="phone_number" 
+                                           value="{{ acknowledgment.phone_number }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="e_signature" class="form-label">E-Signature</label>
+                                    <input type="text" class="form-control" id="e_signature" name="e_signature" 
+                                           value="{{ acknowledgment.e_signature or '' }}" 
+                                           placeholder="Digital signature">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle me-2"></i>Acknowledgment Details</h6>
+                                    <p class="mb-1"><strong>House Rules:</strong> {{ house_acknowledge.title }}</p>
+                                    <p class="mb-1"><strong>Language Selected:</strong> {{ acknowledgment.language_selected.title() }}</p>
+                                    <p class="mb-1"><strong>Acknowledged Date:</strong> {{ acknowledgment.acknowledged_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                                    <p class="mb-0"><strong>IP Address:</strong> {{ acknowledgment.ip_address or 'N/A' }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('house_acknowledge_storage') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Update Acknowledgment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

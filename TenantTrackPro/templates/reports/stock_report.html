@@ -1,0 +1,1345 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Inventory - TS Management Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header with stock inventory design -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
+                <div class="card-header text-white border-0" style="background: transparent; padding: 1.5rem;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">
+                                <i class="fas fa-cube me-2"></i>
+                                Stock Inventory
+                            </h3>
+                        </div>
+                        <div class="text-end">
+                            <button class="btn btn-primary" onclick="addNewStock()">
+                                <i class="fas fa-plus me-1"></i>
+                                Add New Items
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Stock Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-boxes fa-2x mb-2"></i>
+                    <h3 class="mb-1">{{ assets|length }}</h3>
+                    <small>Total Items</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <h3 class="mb-1">{{ assets|selectattr('status', 'equalto', 'Active')|list|length }}</h3>
+                    <small>In Stock</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                    <h3 class="mb-1">0</h3>
+                    <small>Low Stock</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-times-circle fa-2x mb-2"></i>
+                    <h3 class="mb-1">{{ assets|selectattr('status', 'equalto', 'Inactive')|list|length }}</h3>
+                    <small>Out of Stock</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tasks me-2"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="{{ url_for('purchase_request_form') }}" class="btn btn-primary w-100">
+                                <i class="fas fa-shopping-cart me-2"></i>
+                                Purchase Request Form (RF)
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-info w-100" onclick="updateStockLevels()">
+                                <i class="fas fa-edit me-2"></i>
+                                Update Stock
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-success w-100" onclick="addNewItem()">
+                                <i class="fas fa-plus me-2"></i>
+                                Add New Item
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('stock_info') }}" class="btn btn-secondary w-100">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Stock Info
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-3">
+                            <a href="{{ url_for('used_info') }}" class="btn btn-warning w-100">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Used Info
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-danger w-100" onclick="exportToPDF()">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                Export PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Search -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-filter me-2"></i>
+                        Filter Stock Items
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Stock Items</label>
+                            <div class="position-relative">
+                                <input type="text" class="form-control" id="itemSearchInput" placeholder="Type to search items..." onkeyup="searchStockItems()" onfocus="showSearchResults()">
+                                <div id="searchResults" class="dropdown-menu w-100" style="max-height: 200px; overflow-y: auto;"></div>
+                            </div>
+                            <input type="hidden" id="selectedItemId" name="selected_item_id">
+                            <div id="selectedItemInfo" class="mt-2" style="display: none;">
+                                <div class="alert alert-info p-2">
+                                    <small id="itemStockInfo"></small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">All Status</option>
+                                <option value="received">Received</option>
+                                <option value="unreceived">Unreceived</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Search</label>
+                            <input type="text" class="form-control" id="searchFilter" placeholder="Search by name">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button class="btn btn-primary" onclick="applyFilters()">
+                                <i class="fas fa-search me-2"></i>Apply Filters
+                            </button>
+                            <button class="btn btn-secondary ms-2" onclick="clearFilters()">
+                                <i class="fas fa-times me-2"></i>Clear
+                            </button>
+                            <button class="btn btn-success ms-2" onclick="exportToExcel()">
+                                <i class="fas fa-file-excel me-2"></i>Export Excel
+                            </button>
+                            <button class="btn btn-danger ms-2" onclick="exportToPDF()">
+                                <i class="fas fa-file-pdf me-2"></i>Export PDF
+                            </button>
+                            <button class="btn btn-info ms-2" onclick="importFromExcel()">
+                                <i class="fas fa-file-upload me-2"></i>Import from Excel
+                            </button>
+                            <button class="btn btn-warning ms-2" onclick="exportSelected()" id="exportSelectedBtn" style="display: none;">
+                                <i class="fas fa-download me-2"></i>Export Selected
+                            </button>
+                            <button class="btn btn-danger ms-2" onclick="deleteSelected()" id="deleteSelectedBtn" style="display: none;">
+                                <i class="fas fa-trash me-2"></i>Delete Selected
+                            </button>
+                            <button class="btn btn-primary ms-2" onclick="addNewItem()">
+                                <i class="fas fa-plus me-2"></i>Add to Stock
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Items Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table me-2"></i>
+                        Stock Inventory
+                    </h5>
+                    <div>
+                        <span class="badge bg-primary">Total: {{ assets|length }} items</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="stockTable">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                    </th>
+                                    <th>S.No</th>
+                                    <th>Item Name</th>
+                                    <th>Category</th>
+                                    <th>Quantity</th>
+                                    <th>Status</th>
+
+                                    <th>Room No</th>
+                                    <th>Purchase Date</th>
+                                    <th>Cost</th>
+                                    <th>Serial Number</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if assets %}
+                                    {% for asset in assets %}
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" class="row-checkbox" value="{{ asset.id }}">
+                                        </td>
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <strong>{{ asset.name }}</strong>
+                                            {% if asset.description %}
+                                            <br><small class="text-muted">{{ asset.description }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ asset.category if asset.category else 'Uncategorized' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{% if asset.quantity > 10 %}success{% elif asset.quantity > 5 %}warning{% else %}danger{% endif %}">
+                                                {{ asset.quantity }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if asset.status == 'received' %}
+                                                <span class="badge bg-success">Received</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">Unreceived</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>{{ asset.room_no or '-' }}</td>
+                                        <td>{{ asset.purchase_date.strftime('%Y-%m-%d') if asset.purchase_date else '-' }}</td>
+                                        <td>
+                                            {% if asset.purchase_cost %}
+                                            ${{ "%.2f"|format(asset.purchase_cost) }}
+                                            {% else %}
+                                            -
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ asset.serial_number or '-' }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="editStock({{ asset.id }})" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success" onclick="updateQuantity({{ asset.id }})" title="Update Quantity">
+                                                    <i class="fas fa-plus-minus"></i>
+                                                </button>
+                                                <button class="btn btn-outline-{% if asset.status == 'received' %}warning{% else %}success{% endif %}" 
+                                                        onclick="changeStatus({{ asset.id }}, '{% if asset.status == 'received' %}unreceived{% else %}received{% endif %}')" 
+                                                        title="{% if asset.status == 'received' %}Mark as Unreceived{% else %}Mark as Received{% endif %}">
+                                                    <i class="fas fa-{% if asset.status == 'received' %}times{% else %}check{% endif %}"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info" onclick="viewHistory({{ asset.id }})" title="View History">
+                                                    <i class="fas fa-history"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="11" class="text-center py-4">
+                                        <i class="fas fa-warehouse fa-2x text-muted mb-3"></i>
+                                        <h5>No Stock Items</h5>
+                                        <p class="text-muted">Stock items will appear here when added to the system.</p>
+                                        <button class="btn btn-primary" onclick="addNewItem()">
+                                            <i class="fas fa-plus me-2"></i>Add First Item
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Updating Quantity -->
+<div class="modal fade" id="quantityModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Stock Quantity</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quantityForm">
+                    <input type="hidden" id="assetId" name="asset_id">
+                    <div class="mb-3">
+                        <label class="form-label">Item Name</label>
+                        <input type="text" class="form-control" id="itemName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Current Quantity</label>
+                        <input type="number" class="form-control" id="currentQuantity" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Adjustment Type</label>
+                        <select class="form-select" id="adjustmentType" required>
+                            <option value="">Select Type</option>
+                            <option value="add">Add Stock (+)</option>
+                            <option value="remove">Remove Stock (-)</option>
+                            <option value="set">Set Exact Amount</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="adjustmentQuantity" min="0" required>
+                    </div>
+                    <div class="mb-3" id="availabilityInfo" style="display: none;">
+                        <div class="alert alert-info">
+                            <h6>Current Stock Status:</h6>
+                            <div id="stockDetails"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <textarea class="form-control" id="adjustmentReason" rows="3" placeholder="Reason for adjustment"></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>New Quantity:</strong> <span id="newQuantity">0</span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitQuantityUpdate()">
+                    <i class="fas fa-save me-2"></i>Update Quantity
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function generateStockReport() {
+    alert('Stock report generation feature will be implemented. This will create comprehensive PDF reports with current stock levels, valuations, and analytics.');
+}
+
+function updateStockLevels() {
+    alert('Bulk stock update feature will be implemented. This will allow updating multiple items at once via Excel import.');
+}
+
+function addNewItem() {
+    window.location.href = "{{ url_for('asset_management') }}";
+}
+
+function stockAudit() {
+    alert('Stock audit feature will be implemented. This will help conduct physical stock counts and identify discrepancies.');
+}
+
+function applyFilters() {
+    const itemFilter = document.getElementById('itemFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+    
+    const table = document.getElementById('stockTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.cells.length < 9) continue; // Skip empty state row
+        
+        const name = row.cells[2].textContent.toLowerCase(); // Item name is in column 2
+        const itemName = row.cells[2].textContent.trim(); // Item name for filtering
+        const statusText = row.cells[5].textContent.trim(); // Status is in column 5
+        
+        // Map displayed status text to filter values
+        let itemStatus = '';
+        if (statusText.includes('Received')) {
+            itemStatus = 'received';
+        } else if (statusText.includes('Unreceived')) {
+            itemStatus = 'unreceived';
+        }
+        
+        let show = true;
+        
+        if (itemFilter && itemName.toLowerCase() !== itemFilter.toLowerCase()) show = false;
+        if (statusFilter && statusFilter !== itemStatus) show = false;
+        if (searchFilter && !name.includes(searchFilter)) show = false;
+        
+        row.style.display = show ? '' : 'none';
+    }
+}
+
+function clearFilters() {
+    document.getElementById('itemFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('searchFilter').value = '';
+    applyFilters();
+}
+
+function exportToExcel() {
+    window.location.href = '/stock/export/excel';
+}
+
+function editStock(assetId) {
+    window.location.href = `/assets/${assetId}/edit`;
+}
+
+function viewHistory(stockId) {
+    fetch(`/api/stock/movements/${stockId}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.movements) {
+            let historyHtml = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Date</th><th>Type</th><th>Quantity</th><th>Previous</th><th>New</th><th>Reason</th><th>By</th></tr></thead><tbody>';
+            
+            data.movements.forEach(movement => {
+                const typeClass = movement.movement_type === 'IN' ? 'success' : movement.movement_type === 'OUT' ? 'danger' : 'warning';
+                historyHtml += `
+                    <tr>
+                        <td>${movement.created_at}</td>
+                        <td><span class="badge bg-${typeClass}">${movement.movement_type}</span></td>
+                        <td>${movement.quantity}</td>
+                        <td>${movement.previous_quantity}</td>
+                        <td>${movement.new_quantity}</td>
+                        <td>${movement.reason || '-'}</td>
+                        <td>${movement.created_by}</td>
+                    </tr>
+                `;
+            });
+            
+            historyHtml += '</tbody></table></div>';
+            
+            // Create and show modal
+            const modalHtml = `
+                <div class="modal fade" id="historyModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Stock Movement History</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                ${historyHtml}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('historyModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add new modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            new bootstrap.Modal(document.getElementById('historyModal')).show();
+        } else {
+            alert('Error loading stock history: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while loading stock history.');
+    });
+}
+
+function updateQuantity(assetId) {
+    // This would normally fetch asset details from the server
+    // For now, we'll show the modal with placeholder data
+    document.getElementById('assetId').value = assetId;
+    document.getElementById('itemName').value = 'Sample Item';
+    document.getElementById('currentQuantity').value = '10';
+    new bootstrap.Modal(document.getElementById('quantityModal')).show();
+}
+
+function submitQuantityUpdate() {
+    const stockId = document.getElementById('assetId').value;
+    const adjustmentType = document.getElementById('adjustmentType').value;
+    const adjustmentQuantity = parseInt(document.getElementById('adjustmentQuantity').value) || 0;
+    const reason = document.getElementById('adjustmentReason').value;
+    const currentQuantity = parseInt(document.getElementById('currentQuantity').value) || 0;
+    
+    let adjustment = 0;
+    
+    switch(adjustmentType) {
+        case 'add':
+            adjustment = adjustmentQuantity;
+            break;
+        case 'remove':
+            adjustment = -adjustmentQuantity;
+            break;
+        case 'set':
+            adjustment = adjustmentQuantity - currentQuantity;
+            break;
+    }
+    
+    fetch('/api/stock/update-quantity', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            stock_id: stockId,
+            adjustment: adjustment,
+            reason: reason,
+            notes: `${adjustmentType.charAt(0).toUpperCase() + adjustmentType.slice(1)} operation: ${adjustmentQuantity}`
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Stock quantity updated successfully!');
+            location.reload(); // Refresh the page to show updated quantities
+        } else {
+            alert('Error updating stock: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating stock quantity.');
+    });
+    
+    bootstrap.Modal.getInstance(document.getElementById('quantityModal')).hide();
+}
+
+// Bulk selection functions
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+    
+    updateBulkButtons();
+}
+
+function updateBulkButtons() {
+    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    const exportBtn = document.getElementById('exportSelectedBtn');
+    const deleteBtn = document.getElementById('deleteSelectedBtn');
+    
+    if (checkboxes.length > 0) {
+        exportBtn.style.display = 'inline-block';
+        deleteBtn.style.display = 'inline-block';
+    } else {
+        exportBtn.style.display = 'none';
+        deleteBtn.style.display = 'none';
+    }
+}
+
+function exportSelected() {
+    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (selectedIds.length === 0) {
+        alert('Please select items to export');
+        return;
+    }
+    
+    // Create form to submit selected IDs for export
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/stock/export/selected';
+    
+    selectedIds.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_ids';
+        input.value = id;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+function deleteSelected() {
+    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (selectedIds.length === 0) {
+        alert('Please select items to delete');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to delete ${selectedIds.length} selected items? This action cannot be undone.`)) {
+        fetch('/api/stock/delete-multiple', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                stock_ids: selectedIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Successfully deleted ${data.deleted_count} items`);
+                location.reload();
+            } else {
+                alert('Error deleting items: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting items.');
+        });
+    }
+}
+
+function openPurchaseRequestForm() {
+    console.log('Opening Purchase Request Form modal...');
+    // Show the Purchase Request Form modal
+    const modalHtml = `
+        <div class="modal fade" id="purchaseRequestModal" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title text-center w-100">
+                            <strong>PURCHASE REQUISITION FORM</strong>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="purchaseRequestForm">
+                            <!-- Header Information -->
+                            <div class="row mb-4">
+                                <div class="col-md-4">
+                                    <label for="prNumber" class="form-label"><strong>PR NO:</strong></label>
+                                    <input type="text" class="form-control" id="prNumber" readonly placeholder="Auto-generated">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="plNumber" class="form-label"><strong>PL/25/</strong></label>
+                                    <input type="text" class="form-control" id="plNumber" placeholder="Enter PL number">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="requestDate" class="form-label"><strong>Date *</strong></label>
+                                    <input type="date" class="form-control" id="requestDate" required>
+                                </div>
+                            </div>
+
+                            <!-- Category Selection -->
+                            <div class="mb-4">
+                                <label class="form-label"><strong>Category:</strong></label>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="category" id="purchaseStock" value="Purchase Stock" checked>
+                                            <label class="form-check-label" for="purchaseStock">
+                                                Purchase Stock
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="category" id="vehicleMaintenance" value="Vehicle maintenance">
+                                            <label class="form-check-label" for="vehicleMaintenance">
+                                                Vehicle maintenance
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="category" id="operationalItems" value="Operational Items (Non-Stock)">
+                                            <label class="form-check-label" for="operationalItems">
+                                                Operational Items (Non-Stock)
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="category" id="stationerySupplies" value="Stationery/Office Supplies">
+                                            <label class="form-check-label" for="stationerySupplies">
+                                                Stationery/Office Supplies
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="category" id="generalRepairs" value="General Repairs & Office maintenance">
+                                            <label class="form-check-label" for="generalRepairs">
+                                                General Repairs & Office maintenance
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Requested By Section -->
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <label for="requestedBy" class="form-label"><strong>Requested By *</strong></label>
+                                    <input type="text" class="form-control" id="requestedBy" required>
+                                </div>
+                            </div>
+
+                            <!-- Approval Section -->
+                            <div class="row mb-4">
+                                <div class="col-md-4 text-center">
+                                    <label class="form-label"><strong>D/C & O/E</strong></label>
+                                    <div class="border p-3" style="height: 120px;">
+                                        <div class="mb-2">
+                                            <input type="text" class="form-control form-control-sm" placeholder="Name" id="dcName">
+                                        </div>
+                                        <div style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 40px;">
+                                            <small>Signature</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <label class="form-label"><strong>Operation Manager</strong></label>
+                                    <div class="border p-3" style="height: 120px;">
+                                        <div class="mb-2">
+                                            <input type="text" class="form-control form-control-sm" placeholder="Name" id="operationManager">
+                                        </div>
+                                        <div style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 40px;">
+                                            <small>Signature</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <label class="form-label"><strong>General Manager</strong></label>
+                                    <div class="border p-3" style="height: 120px;">
+                                        <div class="mb-2">
+                                            <input type="text" class="form-control form-control-sm" placeholder="Name" id="generalManager">
+                                        </div>
+                                        <div style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 40px;">
+                                            <small>Signature</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Items Table -->
+                            <div class="mb-4">
+                                <h6 class="fw-bold">Items / Description</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" id="itemsTable">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 4%;">No</th>
+                                                <th style="width: 22%;">Item / Description</th>
+                                                <th style="width: 10%;">Unit Cost</th>
+                                                <th style="width: 6%;">Qty</th>
+                                                <th style="width: 10%;">Total</th>
+                                                <th style="width: 8%;">Room No</th>
+                                                <th style="width: 12%;">Unit (kg,pcs,etc)</th>
+                                                <th style="width: 9%;">Cost Code</th>
+                                                <th style="width: 9%;">Remarks</th>
+                                                <th style="width: 4%;">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="itemsTableBody">
+                                            <tr class="item-row">
+                                                <td>1</td>
+                                                <td><input type="text" class="form-control form-control-sm" name="item_description[]" required></td>
+                                                <td><input type="number" class="form-control form-control-sm" name="unit_cost[]" step="0.01" onchange="calculateTotal(this)"></td>
+                                                <td><input type="number" class="form-control form-control-sm" name="quantity[]" min="1" required onchange="calculateTotal(this)"></td>
+                                                <td><input type="number" class="form-control form-control-sm" name="total_cost[]" step="0.01" readonly></td>
+                                                <td><input type="text" class="form-control form-control-sm" name="room_no[]" placeholder=""></td>
+                                                <td><input type="text" class="form-control form-control-sm" name="unit[]" placeholder="kg, pcs, etc"></td>
+                                                <td><input type="text" class="form-control form-control-sm" name="cost_code[]"></td>
+                                                <td><input type="text" class="form-control form-control-sm" name="remarks[]"></td>
+                                                <td><button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)" style="display: none;"><i class="fas fa-minus"></i></button></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button type="button" class="btn btn-success btn-sm" onclick="addItemRow()">
+                                    <i class="fas fa-plus me-2"></i>Add Item
+                                </button>
+                            </div>
+
+                            <!-- Footer Approval -->
+                            <div class="row">
+                                <div class="col-md-6 text-center">
+                                    <label class="form-label"><strong>Requested By</strong></label>
+                                    <div class="border p-3" style="height: 80px;">
+                                        <div class="mb-2">
+                                            <input type="text" class="form-control form-control-sm text-center" placeholder="Name" id="requestedByFooter">
+                                        </div>
+                                        <div style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 20px;">
+                                            <small>DC/Site In Charge/Admin</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-center">
+                                    <label class="form-label"><strong>Recommended By</strong></label>
+                                    <div class="border p-3" style="height: 80px;">
+                                        <div class="mb-2">
+                                            <input type="text" class="form-control form-control-sm text-center" placeholder="Name" id="recommendedByFooter">
+                                        </div>
+                                        <div style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 20px;">
+                                            <small>SEM/PM/AM</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitPurchaseRequest()">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Request
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('purchaseRequestModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Set today's date as default
+    document.getElementById('requestDate').value = new Date().toISOString().split('T')[0];
+    
+    // Show modal with error handling
+    try {
+        console.log('Attempting to show modal...');
+        const modalElement = document.getElementById('purchaseRequestModal');
+        console.log('Modal element found:', modalElement);
+        
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            console.log('Modal shown successfully');
+        } else {
+            console.error('Bootstrap not loaded, using fallback');
+            modalElement.style.display = 'block';
+            modalElement.classList.add('show');
+            document.body.classList.add('modal-open');
+        }
+    } catch (error) {
+        console.error('Error showing modal:', error);
+        alert('Error opening form. Please try again.');
+    }
+}
+
+function addItemRow() {
+    const tbody = document.getElementById('itemsTableBody');
+    const rowCount = tbody.querySelectorAll('.item-row').length + 1;
+    
+    const newRow = `
+        <tr class="item-row">
+            <td>${rowCount}</td>
+            <td><input type="text" class="form-control form-control-sm" name="item_description[]" required></td>
+            <td><input type="number" class="form-control form-control-sm" name="unit_cost[]" step="0.01" onchange="calculateTotal(this)"></td>
+            <td><input type="number" class="form-control form-control-sm" name="quantity[]" min="1" required onchange="calculateTotal(this)"></td>
+            <td><input type="number" class="form-control form-control-sm" name="total_cost[]" step="0.01" readonly></td>
+            <td><input type="text" class="form-control form-control-sm" name="unit[]" placeholder="kg, pcs, etc"></td>
+            <td><input type="text" class="form-control form-control-sm" name="cost_code[]"></td>
+            <td><input type="text" class="form-control form-control-sm" name="remarks[]"></td>
+            <td><button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)"><i class="fas fa-minus"></i></button></td>
+        </tr>
+    `;
+    
+    tbody.insertAdjacentHTML('beforeend', newRow);
+    updateRemoveButtons();
+}
+
+function removeItemRow(button) {
+    const row = button.closest('tr');
+    row.remove();
+    
+    // Renumber the rows
+    const rows = document.querySelectorAll('#itemsTableBody .item-row');
+    rows.forEach((row, index) => {
+        row.querySelector('td:first-child').textContent = index + 1;
+    });
+    
+    updateRemoveButtons();
+}
+
+function updateRemoveButtons() {
+    const rows = document.querySelectorAll('#itemsTableBody .item-row');
+    rows.forEach((row, index) => {
+        const removeBtn = row.querySelector('.btn-danger');
+        if (index === 0 && rows.length === 1) {
+            removeBtn.style.display = 'none';
+        } else {
+            removeBtn.style.display = 'inline-block';
+        }
+    });
+}
+
+function calculateTotal(element) {
+    const row = element.closest('tr');
+    const unitCost = parseFloat(row.querySelector('input[name="unit_cost[]"]').value) || 0;
+    const quantity = parseFloat(row.querySelector('input[name="quantity[]"]').value) || 0;
+    const total = unitCost * quantity;
+    
+    row.querySelector('input[name="total_cost[]"]').value = total.toFixed(2);
+}
+
+function submitPurchaseRequest() {
+    const form = document.getElementById('purchaseRequestForm');
+    
+    // Validate required fields
+    if (!document.getElementById('requestDate').value) {
+        alert('Please enter the request date');
+        return;
+    }
+    
+    if (!document.getElementById('requestedBy').value.trim()) {
+        alert('Please enter who is requesting');
+        return;
+    }
+    
+    // Get selected category
+    const selectedCategory = document.querySelector('input[name="category"]:checked');
+    if (!selectedCategory) {
+        alert('Please select a category');
+        return;
+    }
+    
+    // Collect form data
+    const requestData = {
+        request_date: document.getElementById('requestDate').value,
+        pl_number: document.getElementById('plNumber').value,
+        category: selectedCategory.value,
+        requested_by: document.getElementById('requestedBy').value,
+        dc_name: document.getElementById('dcName').value,
+        operation_manager: document.getElementById('operationManager').value,
+        general_manager: document.getElementById('generalManager').value,
+        requested_by_footer: document.getElementById('requestedByFooter').value,
+        recommended_by_footer: document.getElementById('recommendedByFooter').value,
+        items: []
+    };
+    
+    // Collect all items from the table
+    const rows = document.querySelectorAll('#itemsTableBody .item-row');
+    let hasValidItems = false;
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const description = row.querySelector('input[name="item_description[]"]').value.trim();
+        const quantity = row.querySelector('input[name="quantity[]"]').value;
+        
+        if (description && quantity) {
+            hasValidItems = true;
+            requestData.items.push({
+                description: description,
+                unit_cost: parseFloat(row.querySelector('input[name="unit_cost[]"]').value) || 0,
+                quantity: parseInt(quantity),
+                total_cost: parseFloat(row.querySelector('input[name="total_cost[]"]').value) || 0,
+                room_no: row.querySelector('input[name="room_no[]"]').value.trim(),
+                unit: row.querySelector('input[name="unit[]"]').value.trim(),
+                cost_code: row.querySelector('input[name="cost_code[]"]').value.trim(),
+                remarks: row.querySelector('input[name="remarks[]"]').value.trim()
+            });
+        }
+    }
+    
+    if (!hasValidItems) {
+        alert('Please add at least one item with description and quantity');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = document.querySelector('button[onclick="submitPurchaseRequest()"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
+    submitBtn.disabled = true;
+    
+    // Submit the request
+    fetch('/api/purchase-request', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        
+        if (data.success) {
+            alert(`Purchase Requisition ${data.request_number} submitted successfully!`);
+            bootstrap.Modal.getInstance(document.getElementById('purchaseRequestModal')).hide();
+        } else {
+            alert('Error submitting request: ' + data.error);
+        }
+    })
+    .catch(error => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        console.error('Error:', error);
+        alert('An error occurred while submitting the request.');
+    });
+}
+
+function addNewItem() {
+    // Show the modal for adding new stock item
+    const modalHtml = `
+        <div class="modal fade" id="addStockModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add New Stock Item</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addStockForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="itemName" class="form-label">Item Name *</label>
+                                        <input type="text" class="form-control" id="itemName" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="itemCategory" class="form-label">Category</label>
+                                        <input type="text" class="form-control" id="itemCategory" placeholder="e.g., Electronics, Furniture">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="itemQuantity" class="form-label">Quantity *</label>
+                                        <input type="number" class="form-control" id="itemQuantity" min="0" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="itemStatus" class="form-label">Status</label>
+                                        <select class="form-control" id="itemStatus">
+                                            <option value="received">Received</option>
+                                            <option value="wait">Wait</option>
+                                            <option value="cancel">Cancel</option>
+                                            <option value="other">Other</option>
+                                            <option value="Active">Active</option>
+                                            <option value="Inactive">Inactive</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="itemLocation" class="form-label">Location</label>
+                                        <input type="text" class="form-control" id="itemLocation" placeholder="e.g., 80-01-001">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="itemCost" class="form-label">Purchase Cost</label>
+                                        <input type="number" class="form-control" id="itemCost" step="0.01" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="itemSerial" class="form-label">Serial Number</label>
+                                        <input type="text" class="form-control" id="itemSerial" placeholder="e.g., TSMS-XX-PL-0001">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="itemDate" class="form-label">Purchase Date</label>
+                                        <input type="date" class="form-control" id="itemDate">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="itemDescription" class="form-label">Description</label>
+                                <textarea class="form-control" id="itemDescription" rows="3" placeholder="Optional description"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitNewItem()">Add Item</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('addStockModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add new modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    new bootstrap.Modal(document.getElementById('addStockModal')).show();
+}
+
+function submitNewItem() {
+    const formData = {
+        name: document.getElementById('itemName').value,
+        category: document.getElementById('itemCategory').value,
+        quantity: parseInt(document.getElementById('itemQuantity').value) || 0,
+        status: document.getElementById('itemStatus').value,
+        location: document.getElementById('itemLocation').value,
+        purchase_cost: parseFloat(document.getElementById('itemCost').value) || null,
+        serial_number: document.getElementById('itemSerial').value,
+        purchase_date: document.getElementById('itemDate').value || null,
+        description: document.getElementById('itemDescription').value
+    };
+    
+    if (!formData.name) {
+        alert('Please enter an item name');
+        return;
+    }
+    
+    fetch('/api/stock/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Stock item added successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('addStockModal')).hide();
+            location.reload();
+        } else {
+            alert('Error adding stock item: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while adding the stock item.');
+    });
+}
+
+// PDF Export functionality
+function exportToPDF() {
+    window.open('/stock/export/pdf', '_blank');
+}
+
+// Status update functionality
+function updateStatus(stockId, newStatus) {
+    if (confirm(`Are you sure you want to mark this item as "${newStatus}"?`)) {
+        fetch('/api/stock/update-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                stock_id: stockId,
+                status: newStatus
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Status updated to "${newStatus}" successfully!`);
+                location.reload();
+            } else {
+                alert('Error updating status: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating status.');
+        });
+    }
+}
+
+// Add event listeners for checkbox changes
+document.addEventListener('DOMContentLoaded', function() {
+    // Update bulk buttons when individual checkboxes change
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('row-checkbox')) {
+            updateBulkButtons();
+        }
+    });
+    
+    // Calculate new quantity based on adjustment
+    const adjustmentType = document.getElementById('adjustmentType');
+    const adjustmentQuantity = document.getElementById('adjustmentQuantity');
+    const currentQuantity = document.getElementById('currentQuantity');
+    const newQuantity = document.getElementById('newQuantity');
+    
+    function calculateNewQuantity() {
+        const current = parseInt(currentQuantity.value) || 0;
+        const adjustment = parseInt(adjustmentQuantity.value) || 0;
+        const type = adjustmentType.value;
+        
+        let result = current;
+        
+        switch(type) {
+            case 'add':
+                result = current + adjustment;
+                break;
+            case 'remove':
+                result = Math.max(0, current - adjustment);
+                break;
+            case 'set':
+                result = adjustment;
+                break;
+        }
+        
+        newQuantity.textContent = result;
+    }
+    
+    adjustmentType.addEventListener('change', calculateNewQuantity);
+    adjustmentQuantity.addEventListener('input', calculateNewQuantity);
+});
+
+function importFromExcel() {
+    // Create file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls';
+    input.style.display = 'none';
+    
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Validate file type
+        const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+                           'application/vnd.ms-excel'];
+        if (!validTypes.includes(file.type)) {
+            alert('Please select a valid Excel file (.xlsx or .xls)');
+            return;
+        }
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('excel_file', file);
+        
+        // Show loading indicator
+        const originalButton = document.querySelector('button[onclick="importFromExcel()"]');
+        const originalText = originalButton.innerHTML;
+        originalButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Importing...';
+        originalButton.disabled = true;
+        
+        // Upload file
+        fetch('/api/stock/import-excel', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            originalButton.innerHTML = originalText;
+            originalButton.disabled = false;
+            
+            if (data.success) {
+                alert(`Successfully imported ${data.imported_count} items from Excel file`);
+                location.reload();
+            } else {
+                alert('Error importing Excel file: ' + data.error);
+            }
+        })
+        .catch(error => {
+            originalButton.innerHTML = originalText;
+            originalButton.disabled = false;
+            console.error('Error:', error);
+            alert('An error occurred while importing the Excel file.');
+        });
+        
+        // Clean up
+        document.body.removeChild(input);
+    };
+    
+    // Trigger file selection
+    document.body.appendChild(input);
+    input.click();
+}
+
+function changeStatus(itemId, newStatus) {
+    if (!confirm(`Are you sure you want to change status to ${newStatus}?`)) {
+        return;
+    }
+    
+    fetch(`/stock/change-status/${itemId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            status: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error changing status: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while changing the status.');
+    });
+}
+</script>
+{% endblock %}

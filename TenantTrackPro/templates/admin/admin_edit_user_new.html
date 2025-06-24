@@ -1,0 +1,496 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-user-edit me-2"></i>
+                        Edit User
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Basic Information -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ user.email or '' }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="organization_id" class="form-label">Organization</label>
+                                <select class="form-select" id="organization_id" name="organization_id">
+                                    <option value="">Select Organization</option>
+                                    {% for org in organizations %}
+                                    <option value="{{ org.id }}" 
+                                            {% if user.organization_id == org.id %}selected{% endif %}>
+                                        {{ org.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ user.first_name or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="{{ user.last_name or '' }}">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       value="{{ user.username or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="full_name" class="form-label">Full Name (Display)</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" 
+                                       value="{{ user.full_name or '' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">User ID</label>
+                                <input type="text" class="form-control" value="{{ user.id }}" readonly>
+                                <div class="form-text">User ID cannot be changed</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="access_level" class="form-label">Access Level</label>
+                                <select class="form-select" id="access_level" name="access_level">
+                                    <option value="full" {% if user.access_level == 'full' %}selected{% endif %}>Full Access</option>
+                                    <option value="view_only" {% if user.access_level == 'view_only' %}selected{% endif %}>View Only</option>
+                                    <option value="restricted" {% if user.access_level == 'restricted' %}selected{% endif %}>Restricted</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Account Created</label>
+                            <input type="text" class="form-control" 
+                                   value="{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') if user.created_at else 'Unknown' }}" readonly>
+                        </div>
+
+                        <!-- Password Management Section -->
+                        <div class="card mt-4 border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-key me-2"></i>Password Management
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="current_password_display" class="form-label">Current Password</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="current_password_display" 
+                                               value="••••••••••••" readonly>
+                                        <button class="btn btn-outline-secondary" type="button" id="showCurrentPassword">
+                                            <i class="fas fa-eye"></i> Show
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">New Password (Leave blank to keep current)</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="new_password" name="new_password" 
+                                               placeholder="Enter new password or leave blank">
+                                        <button class="btn btn-outline-secondary" type="button" id="toggleNewPassword">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-success" type="button" id="generatePassword">
+                                            <i class="fas fa-random"></i> Generate
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Page Access Permissions -->
+                        <div class="card mt-4 border-info">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-shield-alt me-2"></i>Page Access Permissions
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Attendance Management -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card border-primary">
+                                            <div class="card-header bg-primary text-white">
+                                                <h6 class="mb-0"><i class="fas fa-calendar-check me-2"></i>Attendance Management</h6>
+                                            </div>
+                                            <div class="card-body p-3">
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="staff_attendance" id="page_staff_attendance"
+                                                           {% if 'staff_attendance' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_staff_attendance">
+                                                        <i class="fas fa-user-clock me-2 text-primary"></i><strong>Staff Attendance</strong><br>
+                                                        <small class="text-muted">Staff attendance tracking</small>
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="pioneer_lodge" id="page_pioneer_lodge"
+                                                           {% if 'pioneer_lodge' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_pioneer_lodge">
+                                                        <i class="fas fa-users me-2 text-info"></i><strong>Pioneer Lodge Visitors</strong><br>
+                                                        <small class="text-muted">Visitor management system</small>
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="resident_checkin" id="page_resident_checkin"
+                                                           {% if 'resident_checkin' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_resident_checkin">
+                                                        <i class="fas fa-sign-in-alt me-2 text-success"></i><strong>Resident Check-in</strong><br>
+                                                        <small class="text-muted">Resident check-in management</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="card border-success">
+                                            <div class="card-header bg-success text-white">
+                                                <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Forms & Documentation</h6>
+                                            </div>
+                                            <div class="card-body p-3">
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="house_acknowledge" id="page_house_acknowledge"
+                                                           {% if 'house_acknowledge' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_house_acknowledge">
+                                                        <i class="fas fa-home me-2 text-success"></i><strong>House Acknowledge</strong><br>
+                                                        <small class="text-muted">House acknowledgment forms</small>
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="submissions" id="page_submissions"
+                                                           {% if 'submissions' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_submissions">
+                                                        <i class="fas fa-file-alt me-2 text-info"></i><strong>Submissions</strong><br>
+                                                        <small class="text-muted">Form submissions and data</small>
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="purchase_request" id="page_purchase_request"
+                                                           {% if 'purchase_request' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_purchase_request">
+                                                        <i class="fas fa-shopping-cart me-2 text-warning"></i><strong>Purchase Request</strong><br>
+                                                        <small class="text-muted">Purchase requisitions and approvals</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Management & Operations -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card border-warning">
+                                            <div class="card-header bg-warning text-dark">
+                                                <h6 class="mb-0"><i class="fas fa-boxes me-2"></i>Asset & Inventory</h6>
+                                            </div>
+                                            <div class="card-body p-3">
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="asset_management" id="page_asset_management"
+                                                           {% if 'asset_management' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_asset_management">
+                                                        <i class="fas fa-boxes me-2 text-warning"></i><strong>Asset Management</strong><br>
+                                                        <small class="text-muted">Inventory and asset tracking</small>
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="stock_report" id="page_stock_report"
+                                                           {% if 'stock_report' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_stock_report">
+                                                        <i class="fas fa-warehouse me-2 text-info"></i><strong>Stock Report</strong><br>
+                                                        <small class="text-muted">Stock and inventory reports</small>
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="food_locker" id="page_food_locker"
+                                                           {% if 'food_locker' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_food_locker">
+                                                        <i class="fas fa-utensils me-2 text-success"></i><strong>Food Locker Management</strong><br>
+                                                        <small class="text-muted">Food locker rental management</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="card border-info">
+                                            <div class="card-header bg-info text-white">
+                                                <h6 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Inspections & Tracking</h6>
+                                            </div>
+                                            <div class="card-body p-3">
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="room_checklist" id="page_room_checklist"
+                                                           {% if 'room_checklist' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_room_checklist">
+                                                        <i class="fas fa-clipboard-check me-2 text-primary"></i><strong>Room Checklist</strong><br>
+                                                        <small class="text-muted">Room inspection and maintenance</small>
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="meter_reading" id="page_meter_reading"
+                                                           {% if 'meter_reading' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_meter_reading">
+                                                        <i class="fas fa-tachometer-alt me-2 text-success"></i><strong>Meter Reading</strong><br>
+                                                        <small class="text-muted">Utility meter readings</small>
+                                                    </label>
+                                                </div>
+                                                
+                        
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Resident & Staff Management -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card border-danger">
+                                            <div class="card-header bg-danger text-white">
+                                                <h6 class="mb-0"><i class="fas fa-users me-2"></i>Resident Management</h6>
+                                            </div>
+                                            <div class="card-body p-3">
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="resident_checkout" id="page_resident_checkout"
+                                                           {% if 'resident_checkout' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_resident_checkout">
+                                                        <i class="fas fa-sign-out-alt me-2 text-danger"></i><strong>Resident Check-Out</strong><br>
+                                                        <small class="text-muted">Resident check-out scanning and management</small>
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="offense_records" id="page_offense_records"
+                                                           {% if 'offense_records' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_offense_records">
+                                                        <i class="fas fa-exclamation-triangle me-2 text-warning"></i><strong>Offense Records</strong><br>
+                                                        <small class="text-muted">Disciplinary record management</small>
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="fin_search" id="page_fin_search"
+                                                           {% if 'fin_search' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_fin_search">
+                                                        <i class="fas fa-search me-2 text-info"></i><strong>FIN Search</strong><br>
+                                                        <small class="text-muted">FIN number search functionality</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="card border-secondary">
+                                            <div class="card-header bg-secondary text-white">
+                                                <h6 class="mb-0"><i class="fas fa-tools me-2"></i>Utilities & Systems</h6>
+                                            </div>
+                                            <div class="card-body p-3">
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="qr_codes" id="page_qr_codes"
+                                                           {% if 'qr_codes' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_qr_codes">
+                                                        <i class="fas fa-qrcode me-2 text-primary"></i><strong>QR Codes</strong><br>
+                                                        <small class="text-muted">QR code management and generation</small>
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="msrf_management" id="page_msrf_management"
+                                                           {% if 'msrf_management' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_msrf_management">
+                                                        <i class="fas fa-clipboard-list me-2 text-success"></i><strong>MSRF Management</strong><br>
+                                                        <small class="text-muted">MSRF request management</small>
+                                                    </label>
+                                                </div>
+                                                
+                                                <div class="form-check mb-3">
+                                                    <input class="form-check-input" type="checkbox" name="page_access" value="settings" id="page_settings"
+                                                           {% if 'settings' in current_user_permissions %}checked{% endif %}>
+                                                    <label class="form-check-label w-100" for="page_settings">
+                                                        <i class="fas fa-cog me-2 text-dark"></i><strong>Settings</strong><br>
+                                                        <small class="text-muted">System settings and configuration</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Quick Access Options -->
+                                <div class="alert alert-warning border-0" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);">
+                                    <h6 class="text-dark"><i class="fas fa-bolt me-2"></i>Quick Access Options</h6>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-warning btn-sm" onclick="selectAllPermissions()">
+                                            <i class="fas fa-check-double me-1"></i>Select All
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="clearAllPermissions()">
+                                            <i class="fas fa-times me-1"></i>Clear All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="button" class="btn btn-secondary me-2" onclick="window.location.href='/admin'">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Update User
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Password visibility toggle
+    document.getElementById('toggleNewPassword').addEventListener('click', function() {
+        const passwordField = document.getElementById('new_password');
+        const icon = this.querySelector('i');
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            icon.className = 'fas fa-eye-slash';
+        } else {
+            passwordField.type = 'password';
+            icon.className = 'fas fa-eye';
+        }
+    });
+
+    // Generate random password
+    document.getElementById('generatePassword').addEventListener('click', function() {
+        const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+        let password = '';
+        for (let i = 0; i < 12; i++) {
+            password += charset.charAt(Math.floor(Math.random() * charset.length));
+        }
+        document.getElementById('new_password').value = password;
+        document.getElementById('new_password').type = 'text';
+        document.getElementById('toggleNewPassword').querySelector('i').className = 'fas fa-eye-slash';
+    });
+
+    // Show current password functionality
+    document.getElementById('showCurrentPassword').addEventListener('click', function() {
+        const userId = '{{ user.id }}';
+        const button = this;
+        const originalText = button.innerHTML;
+        
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+        button.disabled = true;
+        
+        fetch('/api/admin/user_password_info/' + userId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Current Password: ' + data.password_display);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error retrieving password: ' + error);
+            })
+            .finally(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+    });
+
+    // Handle access level restrictions
+    function updateFormAccess() {
+        const accessLevelSelect = document.getElementById('access_level');
+        const currentAccessLevel = accessLevelSelect ? accessLevelSelect.value : 'full';
+        const isViewOnly = currentAccessLevel === 'view_only';
+        
+        // For view_only users, keep page access enabled so admin can select which pages to give access to
+        if (isViewOnly) {
+            document.querySelectorAll('input[name="page_access"]').forEach(function(element) {
+                element.disabled = false;
+            });
+            
+            // Show info for view_only
+            showViewOnlyInfo();
+        } else {
+            document.querySelectorAll('input[name="page_access"]').forEach(function(element) {
+                element.disabled = false;
+            });
+            hideViewOnlyInfo();
+        }
+    }
+    
+    function showViewOnlyInfo() {
+        let info = document.getElementById('viewOnlyInfo');
+        if (!info) {
+            info = document.createElement('div');
+            info.id = 'viewOnlyInfo';
+            info.className = 'alert alert-info mt-3';
+            info.innerHTML = '<i class="fas fa-eye me-2"></i><strong>View Only Access:</strong> Select which pages this user can view. They will have read-only access and cannot create, edit, or delete data on selected pages.';
+            document.querySelector('.card-body').appendChild(info);
+        }
+    }
+    
+    function hideViewOnlyInfo() {
+        const info = document.getElementById('viewOnlyInfo');
+        if (info) {
+            info.remove();
+        }
+    }
+    
+    // Listen for access level changes
+    const accessLevelSelect = document.getElementById('access_level');
+    if (accessLevelSelect) {
+        accessLevelSelect.addEventListener('change', updateFormAccess);
+    }
+    
+    // Initial setup
+    updateFormAccess();
+});
+
+function selectAllPermissions() {
+    document.querySelectorAll('input[name="page_access"]').forEach(function(checkbox) {
+        if (!checkbox.disabled) {
+            checkbox.checked = true;
+        }
+    });
+}
+
+function clearAllPermissions() {
+    document.querySelectorAll('input[name="page_access"]').forEach(function(checkbox) {
+        checkbox.checked = false;
+    });
+}
+</script>
+{% endblock %}

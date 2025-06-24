@@ -1,0 +1,2695 @@
+{% extends "base.html" %}
+
+{% block title %}Room Inventory Checklist{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-clipboard-check me-2"></i>Room Inventory Checklist</h2>
+                <div>
+                    <button class="btn btn-success me-2" onclick="addNewRow()">
+                        <i class="fas fa-plus me-1"></i>Add Item
+                    </button>
+                    <button class="btn btn-primary me-2" onclick="saveChecklist()">
+                        <i class="fas fa-save me-1"></i>Save Checklist
+                    </button>
+                    <button class="btn btn-info me-2" onclick="exportToPDF()">
+                        <i class="fas fa-file-pdf me-1"></i>Export to PDF
+                    </button>
+                    <button class="btn btn-warning me-2" onclick="printChecklist()">
+                        <i class="fas fa-print me-1"></i>Print
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel me-1"></i>Export to Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Room Details Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Room Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">Room Number</label>
+                            <div class="input-group">
+                                <select class="form-select" id="roomNumber" onchange="handleRoomSelection()">
+                                    <option value="">Select Room Number</option>
+                                    <option value="custom">+ Add Custom Room Number</option>
+                                    {% for room in room_numbers %}
+                                        <option value="{{ room.room_number }}">{{ room.room_number }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="text" class="form-control" id="customRoomNumber" 
+                                       placeholder="Enter custom room number" 
+                                       style="display: none;">
+                                <button type="button" class="btn btn-outline-secondary" id="backToDropdown" 
+                                        onclick="switchBackToDropdown()" style="display: none;">
+                                    Back to List
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Company Name</label>
+                            <input type="text" class="form-control" id="companyName" placeholder="Enter company name">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-control" id="checklistDate" value="{{ today }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Checklist Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Inventory Checklist</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover mb-0" id="checklistTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 60px;">S/NO</th>
+                                    <th style="width: 250px;">DESCRIPTION</th>
+                                    <th style="width: 80px;">QTY</th>
+                                    <th style="width: 120px;">Condition</th>
+                                    <th>Defects/Remarks</th>
+                                    <th style="width: 60px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="checklistBody">
+                                <!-- Electrical Items Section -->
+                                <tr class="table-secondary section-header" data-section="electrical">
+                                    <td colspan="5" class="fw-bold">Electrical Items</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-success" onclick="addRowToSection('electrical')">
+                                            <i class="fas fa-plus"></i> Add
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="1" data-section="electrical">
+                                    <td class="text-center">1</td>
+                                    <td><input type="text" class="form-control border-0" value="EXIT light unit" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" placeholder="Enter defects/remarks if any" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="2" data-section="electrical">
+                                    <td class="text-center">2</td>
+                                    <td><input type="text" class="form-control border-0" value="Wireless router" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" placeholder="Enter defects/remarks if any" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="3" data-section="electrical">
+                                    <td class="text-center">3</td>
+                                    <td><input type="text" class="form-control border-0" value="Ceiling Fan switch (3 G / 1 G)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="4" data-section="electrical">
+                                    <td class="text-center">4</td>
+                                    <td><input type="text" class="form-control border-0" value="Lighting switch (1 gang)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="5" data-section="electrical">
+                                    <td class="text-center">5</td>
+                                    <td><input type="text" class="form-control border-0" value="Lighting switches (2 gang)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="6" data-section="electrical">
+                                    <td class="text-center">6</td>
+                                    <td><input type="text" class="form-control border-0" value="Ceiling Fan" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="7" data-section="electrical">
+                                    <td class="text-center">7</td>
+                                    <td><input type="text" class="form-control border-0" value="Wall fan" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="8" data-section="electrical">
+                                    <td class="text-center">8</td>
+                                    <td><input type="text" class="form-control border-0" value="Stand Fan" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="9" data-section="electrical">
+                                    <td class="text-center">9</td>
+                                    <td><input type="text" class="form-control border-0" value="13A Single Wall Socket" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="10" data-section="electrical">
+                                    <td class="text-center">10</td>
+                                    <td><input type="text" class="form-control border-0" value="13A Twin Wall Socket" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="11" data-section="electrical">
+                                    <td class="text-center">11</td>
+                                    <td><input type="text" class="form-control border-0" value="20W LED Tube Lights" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="12" data-section="electrical">
+                                    <td class="text-center">12</td>
+                                    <td><input type="text" class="form-control border-0" value="2 x 20W LED Tube Lights w Guard" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="13" data-section="electrical">
+                                    <td class="text-center">13</td>
+                                    <td><input type="text" class="form-control border-0" value="Emergency Light Unit" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Bedroom Section -->
+                                <tr class="table-secondary section-header" data-section="bedroom">
+                                    <td colspan="7" class="fw-bold">Bedroom</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-success" onclick="addRowToSection('bedroom')">
+                                            <i class="fas fa-plus"></i> Add
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="1" data-section="bedroom">
+                                    <td class="text-center">1</td>
+                                    <td><input type="text" class="form-control border-0" value="Bunk bed w/ladder" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="2" data-section="bedroom">
+                                    <td class="text-center">2</td>
+                                    <td><input type="text" class="form-control border-0" value="Locker w/ accessories" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="3" data-section="bedroom">
+                                    <td class="text-center">3</td>
+                                    <td><input type="text" class="form-control border-0" value="Luggage rack" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="4" data-section="bedroom">
+                                    <td class="text-center">4</td>
+                                    <td><input type="text" class="form-control border-0" value="Mattresses" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="2" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="5" data-section="bedroom">
+                                    <td class="text-center">5</td>
+                                    <td><input type="text" class="form-control border-0" value="Pillows" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="2" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Toilet Section -->
+                                <tr class="table-secondary section-header" data-section="toilet">
+                                    <td colspan="7" class="fw-bold">Toilet</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-success" onclick="addRowToSection('toilet')">
+                                            <i class="fas fa-plus"></i> Add
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="1" data-section="toilet">
+                                    <td class="text-center">1</td>
+                                    <td><input type="text" class="form-control border-0" value="Mirror" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="2" data-section="toilet">
+                                    <td class="text-center">2</td>
+                                    <td><input type="text" class="form-control border-0" value="Wash Basin tap" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="3" data-section="toilet">
+                                    <td class="text-center">3</td>
+                                    <td><input type="text" class="form-control border-0" value="Wash Basin + Drainstopper" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="4" data-section="toilet">
+                                    <td class="text-center">4</td>
+                                    <td><input type="text" class="form-control border-0" value="Wash Basin Bottle Trap (PVC)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="5" data-section="toilet">
+                                    <td class="text-center">5</td>
+                                    <td><input type="text" class="form-control border-0" value="Toilet cistern w/ Iid + seat (Including flushing system)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="6" data-section="toilet">
+                                    <td class="text-center">6</td>
+                                    <td><input type="text" class="form-control border-0" value="Bidet Tap" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="7" data-section="toilet">
+                                    <td class="text-center">7</td>
+                                    <td><input type="text" class="form-control border-0" value="Floor trap (4\" / 6\")" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="8" data-section="toilet">
+                                    <td class="text-center">8</td>
+                                    <td><input type="text" class="form-control border-0" value="Shower head & tap" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="9" data-section="toilet">
+                                    <td class="text-center">9</td>
+                                    <td><input type="text" class="form-control border-0" value="Cubicle door w/lock & hanger hook" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="10" data-section="toilet">
+                                    <td class="text-center">10</td>
+                                    <td><input type="text" class="form-control border-0" value="Partition boards & feet (cubicle/set)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="11" data-section="toilet">
+                                    <td class="text-center">11</td>
+                                    <td><input type="text" class="form-control border-0" value="Wall & floor tiles" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Kitchen Section -->
+                                <tr class="table-secondary section-header" data-section="kitchen">
+                                    <td colspan="7" class="fw-bold">Kitchen</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-success" onclick="addRowToSection('kitchen')">
+                                            <i class="fas fa-plus"></i> Add
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="1" data-section="kitchen">
+                                    <td class="text-center">1</td>
+                                    <td><input type="text" class="form-control border-0" value="Washer" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="2" data-section="kitchen">
+                                    <td class="text-center">2</td>
+                                    <td><input type="text" class="form-control border-0" value="Tap (washer)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="3" data-section="kitchen">
+                                    <td class="text-center">3</td>
+                                    <td><input type="text" class="form-control border-0" value="Fridge" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="4" data-section="kitchen">
+                                    <td class="text-center">4</td>
+                                    <td><input type="text" class="form-control border-0" value="Dining table" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="5" data-section="kitchen">
+                                    <td class="text-center">5</td>
+                                    <td><input type="text" class="form-control border-0" value="Chair" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="4" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="6" data-section="kitchen">
+                                    <td class="text-center">6</td>
+                                    <td><input type="text" class="form-control border-0" value="Induction stove" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="7" data-section="kitchen">
+                                    <td class="text-center">7</td>
+                                    <td><input type="text" class="form-control border-0" value="Kettle" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="8" data-section="kitchen">
+                                    <td class="text-center">8</td>
+                                    <td><input type="text" class="form-control border-0" value="Wash basin" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="9" data-section="kitchen">
+                                    <td class="text-center">9</td>
+                                    <td><input type="text" class="form-control border-0" value="Tap (basin)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="10" data-section="kitchen">
+                                    <td class="text-center">10</td>
+                                    <td><input type="text" class="form-control border-0" value="Prep area (tiles)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="11" data-section="kitchen">
+                                    <td class="text-center">11</td>
+                                    <td><input type="text" class="form-control border-0" value="Floor trap 6\"" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="12" data-section="kitchen">
+                                    <td class="text-center">12</td>
+                                    <td><input type="text" class="form-control border-0" value="Kitchen floor (tiles)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="13" data-section="kitchen">
+                                    <td class="text-center">13</td>
+                                    <td><input type="text" class="form-control border-0" value="Clothes hanger (above head/over window*)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="14" data-section="kitchen">
+                                    <td class="text-center">14</td>
+                                    <td><input type="text" class="form-control border-0" value="Clothes hanging poles*" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="15" data-section="kitchen">
+                                    <td class="text-center">15</td>
+                                    <td><input type="text" class="form-control border-0" value="Y Stick*" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="7" data-section="kitchen">
+                                    <td class="text-center">7</td>
+                                    <td><input type="text" class="form-control border-0" value="Top (stovetop)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Fire Protection Section -->
+                                <tr class="table-secondary section-header" data-section="fire-protection">
+                                    <td colspan="7" class="fw-bold">Fire Protection</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-success" onclick="addRowToSection('fire-protection')">
+                                            <i class="fas fa-plus"></i> Add
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="1" data-section="fire-protection">
+                                    <td class="text-center">1</td>
+                                    <td><input type="text" class="form-control border-0" value="Smoke detector" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="2" data-section="fire-protection">
+                                    <td class="text-center">2</td>
+                                    <td><input type="text" class="form-control border-0" value="Fire extinguisher" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Others Section -->
+                                <tr class="table-secondary section-header" data-section="others">
+                                    <td colspan="7" class="fw-bold">Others</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-success" onclick="addRowToSection('others')">
+                                            <i class="fas fa-plus"></i> Add
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="1" data-section="others">
+                                    <td class="text-center">1</td>
+                                    <td><input type="text" class="form-control border-0" value="Window with grilles / protector / coverings" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="2" data-section="others">
+                                    <td class="text-center">2</td>
+                                    <td><input type="text" class="form-control border-0" value="Main door w/ lock + key" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="3" data-section="others">
+                                    <td class="text-center">3</td>
+                                    <td><input type="text" class="form-control border-0" value="Floor (tiles/vinyl)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="4" data-section="others">
+                                    <td class="text-center">4</td>
+                                    <td><input type="text" class="form-control border-0" value="False ceiling grid / panel" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="5" data-section="others">
+                                    <td class="text-center">5</td>
+                                    <td><input type="text" class="form-control border-0" value="Wall (paint/cement/plaster board)" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="6" data-section="others">
+                                    <td class="text-center">6</td>
+                                    <td><input type="text" class="form-control border-0" value="Water Filter" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="7" data-section="others">
+                                    <td class="text-center">7</td>
+                                    <td><input type="text" class="form-control border-0" value="WiFi router" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="8" data-section="others">
+                                    <td class="text-center">8</td>
+                                    <td><input type="text" class="form-control border-0" value="Cable TV point" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="9" data-section="others">
+                                    <td class="text-center">9</td>
+                                    <td><input type="text" class="form-control border-0" value="Telephone point" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="10" data-section="others">
+                                    <td class="text-center">10</td>
+                                    <td><input type="text" class="form-control border-0" value="Common area access card" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="11" data-section="others">
+                                    <td class="text-center">11</td>
+                                    <td><input type="text" class="form-control border-0" value="Any other items" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- OTHERS Section -->
+                                <tr class="table-secondary section-header" data-section="others">
+                                    <td colspan="7" class="fw-bold">OTHERS</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-success" onclick="addRowToSection('others')">
+                                            <i class="fas fa-plus"></i> Add
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr data-row="9" data-section="others">
+                                    <td class="text-center">9</td>
+                                    <td><input type="text" class="form-control border-0" value="Main door + Cylinder Lock Mechanism" onchange="markEdited(this)"></td>
+                                    <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                                            <option value="GOOD" class="bg-success text-white">GOOD</option>
+                                            <option value="BAD" class="bg-danger text-white">BAD</option>
+                                            <option value="POOR" class="bg-warning text-dark">POOR</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td>
+                                        <select class="form-select border-0" onchange="markEdited(this)">
+                                            <option value="">-</option>
+                                            <option value="YES">YES</option>
+                                            <option value="NO">NO</option>
+                                            <option value="N/A">N/A</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meter Readings Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Meter Readings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 200px;">Water Meter Reader</th>
+                                    <th style="width: 200px;">Reading</th>
+                                    <th style="width: 200px;">Sign</th>
+                                    <th>Date / Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold">Water Meter</td>
+                                    <td>
+                                        <input type="text" class="form-control text-center" 
+                                               placeholder="12345678" 
+                                               maxlength="8" 
+                                               pattern="[0-9]{8}"
+                                               style="font-family: monospace; letter-spacing: 3px;">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control" placeholder="Signature">
+                                    </td>
+                                    <td>
+                                        <input type="datetime-local" class="form-control">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Electricity</td>
+                                    <td>
+                                        <input type="text" class="form-control text-center" 
+                                               placeholder="87654321" 
+                                               maxlength="8" 
+                                               pattern="[0-9]{8}"
+                                               style="font-family: monospace; letter-spacing: 3px;">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control" placeholder="Signature">
+                                    </td>
+                                    <td>
+                                        <input type="datetime-local" class="form-control">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signatures Section -->
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-signature me-2"></i>Electronic Signatures - Required</h5>
+                </div>
+                <div class="card-body signature-section">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-user me-2 text-primary"></i>Handover:</h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <label class="form-label">Name:</label>
+                                    <input type="text" class="form-control" id="handoverName">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Designation:</label>
+                                    <input type="text" class="form-control" id="handoverDesignation">
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-6">
+                                    <label class="form-label">FIN Number:</label>
+                                    <input type="text" class="form-control" id="handoverFIN" placeholder="e.g., S1234567A" maxlength="9">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Date/Time:</label>
+                                    <input type="datetime-local" class="form-control" id="handoverDateTime">
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <label class="form-label">Signature:</label>
+                                    <div class="position-relative">
+                                        <canvas id="handoverSignatureCanvas" 
+                                                class="border rounded signature-canvas" 
+                                                width="400" 
+                                                height="120"
+                                                style="cursor: crosshair; background-color: white;">
+                                        </canvas>
+                                        <div class="signature-controls mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSignature('handoverSignatureCanvas')">
+                                                <i class="fas fa-eraser me-1"></i>Clear
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="saveSignature('handoverSignatureCanvas', 'handoverSignatureData')">
+                                                <i class="fas fa-save me-1"></i>Save
+                                            </button>
+                                            <div class="signature-status mt-2" id="handoverSignatureStatus">
+                                                <small class="text-muted"><i class="fas fa-info-circle"></i> Please sign and save to proceed</small>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="handoverSignatureData">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-user-check me-2 text-success"></i>Takeover:</h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <label class="form-label">Name:</label>
+                                    <input type="text" class="form-control" id="takeoverName">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Designation:</label>
+                                    <input type="text" class="form-control" id="takeoverDesignation">
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-6">
+                                    <label class="form-label">FIN Number:</label>
+                                    <input type="text" class="form-control" id="takeoverFIN" placeholder="e.g., S1234567A" maxlength="9">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Date/Time:</label>
+                                    <input type="datetime-local" class="form-control" id="takeoverDateTime">
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <label class="form-label">Signature:</label>
+                                    <div class="position-relative">
+                                        <canvas id="takeoverSignatureCanvas" 
+                                                class="border rounded signature-canvas" 
+                                                width="400" 
+                                                height="120"
+                                                style="cursor: crosshair; background-color: white;">
+                                        </canvas>
+                                        <div class="signature-controls mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSignature('takeoverSignatureCanvas')">
+                                                <i class="fas fa-eraser me-1"></i>Clear
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="saveSignature('takeoverSignatureCanvas', 'takeoverSignatureData')">
+                                                <i class="fas fa-save me-1"></i>Save
+                                            </button>
+                                            <div class="signature-status mt-2" id="takeoverSignatureStatus">
+                                                <small class="text-muted"><i class="fas fa-info-circle"></i> Please sign and save to proceed</small>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="takeoverSignatureData">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.condition-select {
+    font-weight: bold;
+}
+
+.condition-select option[value="GOOD"] {
+    background-color: #28a745 !important;
+    color: white !important;
+}
+
+.condition-select option[value="BAD"] {
+    background-color: #dc3545 !important;
+    color: white !important;
+}
+
+.condition-select option[value="POOR"] {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.condition-good {
+    background-color: #d4edda !important;
+    color: #155724 !important;
+}
+
+.condition-bad {
+    background-color: #f8d7da !important;
+    color: #721c24 !important;
+}
+
+.condition-poor {
+    background-color: #fff3cd !important;
+    color: #856404 !important;
+}
+
+.edited-row {
+    background-color: #e3f2fd !important;
+}
+
+.table-responsive {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.form-control.border-0, .form-select.border-0 {
+    background-color: transparent;
+}
+
+/* Bright yellow background for DEFECTS, RECTIFIED, and REMARKS columns */
+#checklistTable tr td:nth-child(5) input.form-control.border-0,
+#checklistTable tr td:nth-child(6) select.form-select.border-0,
+#checklistTable tr td:nth-child(7) input.form-control.border-0 {
+    background-color: #ffff99 !important;
+    color: #000 !important;
+    font-weight: bold !important;
+    border: 2px solid #000 !important;
+    border-radius: 4px !important;
+}
+
+.form-control.border-0:focus, .form-select.border-0:focus {
+    background-color: #f8f9fa;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+/* Enhanced focus states for highlighted columns */
+#checklistTable tr td:nth-child(5) input.form-control.border-0:focus,
+#checklistTable tr td:nth-child(6) select.form-select.border-0:focus,
+#checklistTable tr td:nth-child(7) input.form-control.border-0:focus {
+    background-color: #ffffcc !important;
+    border: 3px solid #0066cc !important;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.signature-canvas {
+    border: 3px dashed #007bff !important;
+    transition: border-color 0.15s ease-in-out;
+    background-color: #f8f9fa !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.signature-canvas:hover {
+    border-color: #0056b3 !important;
+    background-color: white !important;
+}
+
+.signature-canvas.signing {
+    border-color: #28a745 !important;
+    border-style: solid !important;
+    background-color: white !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.signature-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.signature-section {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid #dee2e6;
+    margin-top: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.signature-section h6 {
+    color: #000000;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-align: center;
+    background-color: #f8f9fa;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.signature-section .form-label {
+    color: #000000;
+    font-weight: 600;
+}
+
+.signature-section .form-control {
+    background-color: #ffffff;
+    border: 2px solid #dee2e6;
+    color: #000000;
+}
+
+.signature-section .form-control:focus {
+    background-color: #ffffff;
+    border-color: #0d6efd;
+    color: #000000;
+}
+</style>
+
+<script>
+let rowCounter = 9;
+
+function updateConditionColor(select) {
+    const row = select.closest('tr');
+    const value = select.value;
+    
+    // Remove existing condition classes
+    row.classList.remove('condition-good', 'condition-bad', 'condition-poor');
+    
+    // Add appropriate class based on selection
+    if (value === 'GOOD') {
+        row.classList.add('condition-good');
+        select.style.backgroundColor = '#28a745';
+        select.style.color = 'white';
+    } else if (value === 'BAD') {
+        row.classList.add('condition-bad');
+        select.style.backgroundColor = '#dc3545';
+        select.style.color = 'white';
+    } else if (value === 'POOR') {
+        row.classList.add('condition-poor');
+        select.style.backgroundColor = '#ffc107';
+        select.style.color = '#212529';
+    }
+}
+
+function markEdited(element) {
+    const row = element.closest('tr');
+    row.classList.add('edited-row');
+}
+
+function addRowToSection(sectionName) {
+    rowCounter++;
+    const tbody = document.getElementById('checklistBody');
+    
+    // Find the section header
+    const sectionHeader = document.querySelector(`tr.section-header[data-section="${sectionName}"]`);
+    if (!sectionHeader) return;
+    
+    // Find the next section header or end of table
+    let nextSectionHeader = sectionHeader.nextElementSibling;
+    while (nextSectionHeader && !nextSectionHeader.classList.contains('section-header')) {
+        nextSectionHeader = nextSectionHeader.nextElementSibling;
+    }
+    
+    const newRow = document.createElement('tr');
+    newRow.setAttribute('data-row', rowCounter);
+    newRow.setAttribute('data-section', sectionName);
+    
+    newRow.innerHTML = `
+        <td class="text-center">${rowCounter}</td>
+        <td><input type="text" class="form-control border-0" placeholder="Enter description" onchange="markEdited(this)"></td>
+        <td><input type="number" class="form-control border-0" value="1" onchange="markEdited(this)"></td>
+        <td>
+            <select class="form-select border-0 condition-select" onchange="updateConditionColor(this); markEdited(this)">
+                <option value="GOOD" class="bg-success text-white">GOOD</option>
+                <option value="BAD" class="bg-danger text-white">BAD</option>
+                <option value="POOR" class="bg-warning text-dark">POOR</option>
+            </select>
+        </td>
+        <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+        <td>
+            <select class="form-select border-0" onchange="markEdited(this)">
+                <option value="">-</option>
+                <option value="YES">YES</option>
+                <option value="NO">NO</option>
+                <option value="N/A">N/A</option>
+            </select>
+        </td>
+        <td><input type="text" class="form-control border-0" onchange="markEdited(this)"></td>
+        <td class="text-center">
+            <button class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    // Insert the new row before the next section or at the end
+    if (nextSectionHeader) {
+        tbody.insertBefore(newRow, nextSectionHeader);
+    } else {
+        tbody.appendChild(newRow);
+    }
+    
+    // Initialize condition color for new row
+    const conditionSelect = newRow.querySelector('.condition-select');
+    updateConditionColor(conditionSelect);
+    
+    // Renumber all rows
+    renumberRows();
+}
+
+function addNewRow() {
+    // Add to the last section (OTHERS)
+    addRowToSection('others');
+}
+
+function removeRow(button) {
+    if (confirm('Are you sure you want to remove this item?')) {
+        const row = button.closest('tr');
+        row.remove();
+        
+        // Renumber remaining rows
+        renumberRows();
+    }
+}
+
+function renumberRows() {
+    const rows = document.querySelectorAll('#checklistBody tr[data-row]');
+    let counter = 1;
+    
+    rows.forEach(row => {
+        if (!row.classList.contains('section-header')) {
+            const firstCell = row.querySelector('td:first-child');
+            firstCell.textContent = counter;
+            row.setAttribute('data-row', counter);
+            counter++;
+        }
+    });
+    
+    rowCounter = counter - 1;
+}
+
+function saveChecklist() {
+    // Validate signatures first
+    if (!validateSignaturesWithDetails()) {
+        return;
+    }
+    
+    const checklistData = {
+        roomNumber: getRoomNumber(),
+        companyName: document.getElementById('companyName').value,
+        date: document.getElementById('checklistDate').value,
+        items: [],
+        meterReadings: {
+            waterMeter: document.querySelector('input[placeholder="12345678"]').value,
+            waterMeterSign: document.querySelector('input[placeholder="Signature"]').value,
+            waterMeterDateTime: document.querySelector('td:nth-child(4) input[type="datetime-local"]').value,
+            electricity: document.querySelector('input[placeholder="87654321"]').value,
+            electricitySign: document.querySelectorAll('input[placeholder="Signature"]')[1].value,
+            electricityDateTime: document.querySelectorAll('td:nth-child(4) input[type="datetime-local"]')[1].value
+        }
+    };
+    
+    const rows = document.querySelectorAll('#checklistBody tr[data-row]');
+    rows.forEach(row => {
+        if (!row.classList.contains('section-header')) {
+            const inputs = row.querySelectorAll('input, select');
+            const item = {
+                sno: row.querySelector('td:first-child').textContent,
+                section: row.getAttribute('data-section'),
+                description: inputs[0].value,
+                quantity: inputs[1].value,
+                condition: inputs[2].value,
+                defects: inputs[3].value,
+                rectified: inputs[4].value,
+                remarks: inputs[5].value
+            };
+            checklistData.items.push(item);
+        }
+    });
+    
+    // Add signature data to checklist
+    checklistData.signatures = {
+        handover: {
+            name: document.getElementById('handoverName').value,
+            designation: document.getElementById('handoverDesignation').value,
+            finNumber: document.getElementById('handoverFIN').value,
+            dateTime: document.getElementById('handoverDateTime').value,
+            signature: document.getElementById('handoverSignatureData').value
+        },
+        takeover: {
+            name: document.getElementById('takeoverName').value,
+            designation: document.getElementById('takeoverDesignation').value,
+            finNumber: document.getElementById('takeoverFIN').value,
+            dateTime: document.getElementById('takeoverDateTime').value,
+            signature: document.getElementById('takeoverSignatureData').value
+        }
+    };
+    
+    console.log('Checklist Data:', checklistData);
+    
+    // Send data to backend
+    fetch('/save_room_checklist', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(checklistData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            // Redirect to room handovers page
+            window.location.href = '/room-handovers';
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving checklist. Please try again.');
+    });
+}
+
+// Signature canvas functionality
+let signatures = {};
+
+function initializeSignatureCanvas(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    
+    signatures[canvasId] = { canvas, ctx, isDrawing: false };
+    
+    // Set up canvas drawing properties
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    // Mouse events
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    
+    // Touch events for mobile
+    canvas.addEventListener('touchstart', handleTouch);
+    canvas.addEventListener('touchmove', handleTouch);
+    canvas.addEventListener('touchend', stopDrawing);
+    
+    function startDrawing(e) {
+        isDrawing = true;
+        [lastX, lastY] = getMousePos(canvas, e);
+        canvas.classList.add('signing');
+    }
+    
+    function draw(e) {
+        if (!isDrawing) return;
+        
+        const [currentX, currentY] = getMousePos(canvas, e);
+        
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(currentX, currentY);
+        ctx.stroke();
+        
+        [lastX, lastY] = [currentX, currentY];
+    }
+    
+    function stopDrawing() {
+        if (isDrawing) {
+            isDrawing = false;
+            canvas.classList.remove('signing');
+        }
+    }
+    
+    function handleTouch(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                        e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+    }
+    
+    function getMousePos(canvas, e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        return [
+            (e.clientX - rect.left) * scaleX,
+            (e.clientY - rect.top) * scaleY
+        ];
+    }
+}
+
+function clearSignature(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Reset canvas styling
+    canvas.style.borderColor = '#007bff';
+    canvas.style.backgroundColor = '#f8f9fa';
+    
+    // Clear the hidden input
+    const dataInputId = canvasId === 'handoverSignatureCanvas' ? 'handoverSignatureData' : 'takeoverSignatureData';
+    document.getElementById(dataInputId).value = '';
+    
+    // Reset signature status
+    const statusId = canvasId === 'handoverSignatureCanvas' ? 'handoverSignatureStatus' : 'takeoverSignatureStatus';
+    const statusDiv = document.getElementById(statusId);
+    statusDiv.innerHTML = '<small class="text-muted"><i class="fas fa-info-circle"></i> Please sign and save to proceed</small>';
+}
+
+function saveSignature(canvasId, dataInputId) {
+    const canvas = document.getElementById(canvasId);
+    const dataInput = document.getElementById(dataInputId);
+    
+    // Check if canvas has content
+    if (isCanvasEmpty(canvas)) {
+        alert('Please provide a signature before saving.');
+        return;
+    }
+    
+    // Convert canvas to base64 data URL
+    const signatureData = canvas.toDataURL('image/png');
+    dataInput.value = signatureData;
+    
+    // Update signature status
+    const statusId = canvasId === 'handoverSignatureCanvas' ? 'handoverSignatureStatus' : 'takeoverSignatureStatus';
+    const statusDiv = document.getElementById(statusId);
+    statusDiv.innerHTML = '<small class="text-success"><i class="fas fa-check-circle"></i> Signature saved successfully!</small>';
+    
+    // Add visual feedback to canvas
+    canvas.style.borderColor = '#28a745';
+    canvas.style.backgroundColor = '#f8fff8';
+    
+    alert('E-signature saved successfully!');
+}
+
+function isCanvasEmpty(canvas) {
+    const ctx = canvas.getContext('2d');
+    const pixelBuffer = new Uint32Array(
+        ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer
+    );
+    
+    return !pixelBuffer.some(color => color !== 0);
+}
+
+function validateSignatures() {
+    const handoverSignature = document.getElementById('handoverSignatureData').value;
+    const takeoverSignature = document.getElementById('takeoverSignatureData').value;
+    
+    if (!handoverSignature || !takeoverSignature) {
+        alert('Both Handover and Takeover e-signatures are required before exporting. Please complete both signatures.');
+        return false;
+    }
+    return true;
+}
+
+function validateSignaturesWithDetails() {
+    const handoverSignature = document.getElementById('handoverSignatureData').value;
+    const takeoverSignature = document.getElementById('takeoverSignatureData').value;
+    
+    const missing = [];
+    if (!handoverSignature) missing.push('Handover');
+    if (!takeoverSignature) missing.push('Takeover');
+    
+    if (missing.length > 0) {
+        alert(`Missing required e-signatures: ${missing.join(' and ')}. Please complete all signatures before exporting.`);
+        return false;
+    }
+    return true;
+}
+
+// Room selection handling
+function handleRoomSelection() {
+    const roomSelect = document.getElementById('roomNumber');
+    const customInput = document.getElementById('customRoomNumber');
+    const backButton = document.getElementById('backToDropdown');
+    
+    if (roomSelect.value === 'custom') {
+        roomSelect.style.display = 'none';
+        customInput.style.display = 'block';
+        backButton.style.display = 'block';
+        customInput.focus();
+        customInput.setAttribute('required', 'true');
+        roomSelect.removeAttribute('required');
+    } else {
+        roomSelect.style.display = 'block';
+        customInput.style.display = 'none';
+        backButton.style.display = 'none';
+        customInput.removeAttribute('required');
+        roomSelect.setAttribute('required', 'true');
+        customInput.value = '';
+    }
+}
+
+function switchBackToDropdown() {
+    const roomSelect = document.getElementById('roomNumber');
+    const customInput = document.getElementById('customRoomNumber');
+    const backButton = document.getElementById('backToDropdown');
+    
+    roomSelect.style.display = 'block';
+    customInput.style.display = 'none';
+    backButton.style.display = 'none';
+    roomSelect.value = '';
+    customInput.value = '';
+    customInput.removeAttribute('required');
+    roomSelect.setAttribute('required', 'true');
+}
+
+function getRoomNumber() {
+    const roomSelect = document.getElementById('roomNumber');
+    const customInput = document.getElementById('customRoomNumber');
+    
+    if (roomSelect.style.display === 'none' && customInput.value) {
+        return customInput.value;
+    }
+    return roomSelect.value;
+}
+
+// FIN Number validation
+function validateFINNumber(input) {
+    // Singapore FIN format: S/T/F/G + 7 digits + letter
+    const finPattern = /^[STFG]\d{7}[A-Z]$/i;
+    const value = input.value.toUpperCase();
+    
+    if (value && !finPattern.test(value)) {
+        input.setCustomValidity('Please enter a valid FIN number (e.g., S1234567A)');
+    } else {
+        input.setCustomValidity('');
+    }
+}
+
+// Initialize condition colors on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const conditionSelects = document.querySelectorAll('.condition-select');
+    conditionSelects.forEach(select => {
+        updateConditionColor(select);
+    });
+    
+    // Set today's date
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('checklistDate').value = today;
+    
+    // Initialize signature canvases
+    initializeSignatureCanvas('handoverSignatureCanvas');
+    initializeSignatureCanvas('takeoverSignatureCanvas');
+    
+    // Add FIN number validation
+    const finInputs = document.querySelectorAll('#handoverFIN, #takeoverFIN');
+    finInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+            validateFINNumber(this);
+        });
+        
+        input.addEventListener('blur', function() {
+            validateFINNumber(this);
+        });
+    });
+    
+    // Add numeric input validation for meter readings
+    const meterInputs = document.querySelectorAll('input[pattern="[0-9]{8}"]');
+    meterInputs.forEach(input => {
+        input.addEventListener('input', function(e) {
+            // Only allow digits
+            this.value = this.value.replace(/[^0-9]/g, '');
+            // Limit to 8 digits
+            if (this.value.length > 8) {
+                this.value = this.value.slice(0, 8);
+            }
+        });
+        
+        input.addEventListener('keypress', function(e) {
+            // Only allow digits
+            if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+
+// Export to PDF function
+function exportToPDF() {
+    if (!validateChecklist()) {
+        alert('Please fill in all required fields before exporting to PDF.');
+        return;
+    }
+    
+    const checklistData = collectChecklistData();
+    
+    // Send data to backend for PDF generation
+    fetch('/export_checklist_pdf_live', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(checklistData)
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        }
+        throw new Error('Failed to generate PDF');
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const roomNumber = getRoomNumber() || 'UnknownRoom';
+        const date = document.getElementById('checklistDate').value || new Date().toISOString().split('T')[0];
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `Room_Inventory_Checklist_${roomNumber}_${date}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error generating PDF. Please try again.');
+    });
+}
+
+// Print function
+function printChecklist() {
+    if (!validateChecklist()) {
+        alert('Please fill in all required fields before printing.');
+        return;
+    }
+    
+    const checklistData = collectChecklistData();
+    
+    // Send data to backend for print HTML generation
+    fetch('/print_checklist_live', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(checklistData)
+    })
+    .then(response => response.text())
+    .then(html => {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error preparing print view. Please try again.');
+    });
+}
+
+// Export to Excel function
+function exportToExcel() {
+    if (!validateChecklist()) {
+        alert('Please fill in all required fields before exporting to Excel.');
+        return;
+    }
+    
+    const checklistData = collectChecklistData();
+    
+    // Send data to backend for Excel generation
+    fetch('/export_checklist_excel_live', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(checklistData)
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        }
+        throw new Error('Failed to generate Excel file');
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const roomNumber = getRoomNumber() || 'UnknownRoom';
+        const date = document.getElementById('checklistDate').value || new Date().toISOString().split('T')[0];
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `Room_Inventory_Checklist_${roomNumber}_${date}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error generating Excel file. Please try again.');
+    });
+}
+
+// Collect all checklist data
+function collectChecklistData() {
+    const checklistData = {
+        roomNumber: getRoomNumber(),
+        companyName: document.getElementById('companyName').value,
+        date: document.getElementById('checklistDate').value,
+        items: [],
+        meterReadings: {
+            waterMeter: document.querySelector('input[placeholder="12345678"]').value,
+            waterMeterSign: document.querySelector('input[placeholder="Signature"]').value,
+            waterMeterDateTime: document.querySelector('td:nth-child(4) input[type="datetime-local"]').value,
+            electricity: document.querySelector('input[placeholder="87654321"]').value,
+            electricitySign: document.querySelectorAll('input[placeholder="Signature"]')[1].value,
+            electricityDateTime: document.querySelectorAll('td:nth-child(4) input[type="datetime-local"]')[1].value
+        },
+        signatures: {
+            handover: {
+                name: document.getElementById('handoverName').value,
+                designation: document.getElementById('handoverDesignation').value,
+                finNumber: document.getElementById('handoverFIN').value,
+                dateTime: document.getElementById('handoverDateTime').value,
+                signature: document.getElementById('handoverSignatureData').value
+            },
+            takeover: {
+                name: document.getElementById('takeoverName').value,
+                designation: document.getElementById('takeoverDesignation').value,
+                finNumber: document.getElementById('takeoverFIN').value,
+                dateTime: document.getElementById('takeoverDateTime').value,
+                signature: document.getElementById('takeoverSignatureData').value
+            }
+        }
+    };
+    
+    // Collect all checklist items
+    const rows = document.querySelectorAll('#checklistBody tr[data-row]');
+    rows.forEach(row => {
+        if (!row.classList.contains('section-header')) {
+            const inputs = row.querySelectorAll('input, select');
+            const item = {
+                sno: row.querySelector('td:first-child').textContent,
+                section: row.getAttribute('data-section'),
+                description: inputs[0].value,
+                quantity: inputs[1].value,
+                condition: inputs[2].value,
+                defects: inputs[3].value,
+                rectified: inputs[4].value,
+                remarks: inputs[5].value
+            };
+            checklistData.items.push(item);
+        }
+    });
+    
+    return checklistData;
+}
+
+// Validate checklist before export
+function validateChecklist() {
+    const roomNumber = getRoomNumber();
+    const companyName = document.getElementById('companyName').value;
+    const checklistDate = document.getElementById('checklistDate').value;
+    
+    if (!roomNumber || !companyName || !checklistDate) {
+        return false;
+    }
+    
+    return true;
+}
+</script>
+
+{% endblock %}

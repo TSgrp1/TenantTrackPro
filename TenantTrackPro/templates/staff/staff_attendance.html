@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Attendance - TS Management Services Pte Ltd{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-clock me-2"></i>
+                        Staff Attendance
+                    </h1>
+                    {% if current_user.organization %}
+                    <p class="text-muted mb-0">{{ current_user.organization.name }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    {% if is_admin_user(current_user) %}
+                    <a href="{{ url_for('generate_staff_attendance_qr_codes') }}" class="btn btn-primary">
+                        <i class="fas fa-qrcode me-1"></i>
+                        Generate QR Codes
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="fw-bold mb-0">{{ today_start_count }}</h4>
+                            <p class="mb-0">Start Records Today</p>
+                        </div>
+                        <i class="fas fa-sign-in-alt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="fw-bold mb-0">{{ today_end_count }}</h4>
+                            <p class="mb-0">End Records Today</p>
+                        </div>
+                        <i class="fas fa-sign-out-alt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="fw-bold mb-0">{{ total_records }}</h4>
+                            <p class="mb-0">Total Records</p>
+                        </div>
+                        <i class="fas fa-list fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-secondary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="fw-bold mb-0">{{ (today_start_count - today_end_count) if (today_start_count - today_end_count) > 0 else 0 }}</h4>
+                            <p class="mb-0">Active Now</p>
+                        </div>
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-qrcode me-2"></i>
+                        QR Code Scanning
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="text-center p-3 border rounded">
+                                <i class="fas fa-sign-in-alt fa-3x text-success mb-3"></i>
+                                <h5>Start Work Time</h5>
+                                <p class="text-muted">Scan QR code to mark start of work</p>
+                                <a href="{{ url_for('staff_attendance_scan', attendance_type='start') }}" class="btn btn-success">
+                                    <i class="fas fa-qrcode me-1"></i>
+                                    Scan Start QR
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-center p-3 border rounded">
+                                <i class="fas fa-sign-out-alt fa-3x text-warning mb-3"></i>
+                                <h5>End Work Time</h5>
+                                <p class="text-muted">Scan QR code to mark end of work</p>
+                                <a href="{{ url_for('staff_attendance_scan', attendance_type='end') }}" class="btn btn-warning">
+                                    <i class="fas fa-qrcode me-1"></i>
+                                    Scan End QR
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2"></i>
+                        Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="{{ url_for('staff_attendance_records') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-list me-1"></i>
+                                View Records
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('manage_workers') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-users me-1"></i>
+                                Add Worker Names
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('export_staff_attendance_excel') }}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-file-excel me-1"></i>
+                                Export Excel
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('export_staff_attendance_pdf') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-file-pdf me-1"></i>
+                                Export PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Attendance Records -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-clock me-2"></i>
+                            Recent Attendance Records
+                        </h5>
+                        <a href="{{ url_for('staff_attendance_records') }}" class="btn btn-sm btn-outline-primary">
+                            View All
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if recent_attendance %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>Staff Name</th>
+                                    <th>Company</th>
+                                    <th>Type</th>
+                                    <th>Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in recent_attendance %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-bold">{{ record.timestamp.strftime('%Y-%m-%d') }}</span>
+                                            <small class="text-muted">{{ record.timestamp.strftime('%H:%M:%S') }}</small>
+                                        </div>
+                                    </td>
+                                    <td>{{ record.staff_name }}</td>
+                                    <td>{{ record.company_name }}</td>
+                                    <td>
+                                        {% if record.attendance_type == 'start' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-sign-in-alt me-1"></i>Start
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-sign-out-alt me-1"></i>End
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ record.location or '-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No attendance records yet</h5>
+                        <p class="text-muted">Staff attendance records will appear here once they start scanning QR codes.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

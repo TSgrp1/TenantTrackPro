@@ -1,0 +1,93 @@
+
+STEP 7: DYNAMIC DATABASE-DRIVEN RBAC IMPLEMENTATION - COMPREHENSIVE DOCUMENTATION
+=================================================================================
+
+DATE: June 24, 2025
+TASK: Upgrade RBAC system to use dynamic user roles stored in the database
+
+USER REQUIREMENT:
+- Replace hardcoded admin email checks with database-driven role field
+- Use user.role from database to assign session['role']
+- Ensure all RBAC logic reads directly from user model
+- Maintain compatibility and stability with previous RBAC architecture
+
+CURRENT STATUS:
+- User model already contains role column with default='user'
+- Role types supported: 'admin', 'user', 'manager'
+- Current login logic still uses hardcoded email to assign role in session
+- app_factory.py creates all tables including role field via db.create_all()
+
+KEY FILES INVOLVED:
+1. models.py → Defines the User model with role support
+2. routes/other_routes.py → Manages login route and session role assignment
+3. app_factory.py → Ensures database schema creation
+
+ACTIONS TAKEN:
+
+1. VERIFIED User Model (models.py)
+✓ Line 24: role = db.Column(db.String(20), default='user')
+✓ Line 26: is_admin = db.Column(db.Boolean, default=False)
+✓ User model is ready for dynamic role-based system
+✓ No migration needed – already exists
+
+2. UPDATED Login Session Logic (other_routes.py)
+OLD CODE (line 46-47):
+session['role'] = 'admin' if (user.email == "pioneerlodge@tsgrp.sg" or 
+                             (hasattr(user, 'role') and user.role == 'admin')) else 'user'
+
+NEW CODE:
+session['role'] = user.role or 'user'
+
+BENEFITS:
+- Directly trusts user.role field from database
+- Enables scalable, dynamic roles: manager, staff, etc.
+- No more hardcoded special cases
+- Prevents bypassing permission via email spoofing
+
+3. VERIFIED Database Setup (app_factory.py)
+✓ db.create_all() confirms table creation including role column
+✓ No additional migrations required
+✓ Compatible with current SQLAlchemy ORM
+
+4. PRESERVED RBAC LAYERS:
+- Template rendering (e.g., {% if session.get('role') == 'admin' %})
+- Route decorators (e.g., @admin_required)
+- Session checks (fast), fallback to DB if missing
+- Logout clears session['role'] securely
+
+EXAMPLES OF USAGE:
+
+**Template Access:**
+{% if session.get('role') == 'admin' %}
+  <a href="/admin-function">Admin Panel</a>
+{% endif %}
+
+**Admin Route Decorator:**
+from rbac_utils import admin_required
+
+@admin_bp.route('/admin-function')
+@admin_required
+def admin_dashboard():
+    return render_template("admin/dashboard.html")
+
+SECURITY PRACTICES:
+- Never trust frontend: all critical access must be enforced on backend
+- All admin routes protected via decorator and role check
+- Session value checked on every request
+- Roles stored in DB prevent accidental privilege escalation
+- Use HTTPS to secure session cookies
+
+FUTURE RECOMMENDATIONS:
+1. Add a role management UI for admins
+2. Extend RBAC to fine-grained permissions (e.g., per-page or per-module access)
+3. Add support for multi-role assignment (via separate role table)
+4. Use Flask-Login + Flask-Principal for even more advanced auth
+
+STATUS:
+✓ Dynamic role-driven RBAC fully implemented
+✓ Login uses user.role
+✓ All templates and routes compatible
+✓ Session management secure
+✓ No breaking changes
+
+STEP 7: DYNAMIC ROLE RBAC IMPLEMENTATION – SUCCESSFULLY COMPLETED

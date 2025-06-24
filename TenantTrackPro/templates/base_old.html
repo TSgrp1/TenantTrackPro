@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TS Management Services Pte Ltd{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #1e40af;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #0dcaf0;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --white: #ffffff;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-300: #dee2e6;
+            --gray-400: #ced4da;
+            --gray-500: #adb5bd;
+            --gray-600: #6c757d;
+            --gray-700: #495057;
+            --gray-800: #343a40;
+            --gray-900: #212529;
+        }
+        
+        body {
+            background-color: var(--gray-100) !important;
+            color: var(--dark-color) !important;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0.5rem 0 !important;
+        }
+        
+        .form-control, .form-select {
+            background-color: var(--white) !important;
+            border: 2px solid var(--gray-300) !important;
+            color: var(--dark-color) !important;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background-color: var(--white) !important;
+            border-color: var(--primary-color) !important;
+            color: var(--dark-color) !important;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+        }
+        
+        .card {
+            background-color: var(--white) !important;
+            border: 1px solid var(--gray-200) !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .table {
+            background-color: var(--white) !important;
+            color: var(--dark-color) !important;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: var(--gray-100) !important;
+        }
+        
+        .btn {
+            border-radius: 8px !important;
+            font-weight: 500;
+        }
+        
+        .main-content {
+            min-height: calc(100vh - 60px);
+            padding: 1.5rem 0;
+        }
+        
+        .content-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        /* Prevent horizontal scroll */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        @media (max-width: 768px) {
+            .content-wrapper {
+                padding: 0 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center text-white" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='ts_group_logo.png') }}" alt="TS Group" height="35" class="me-2">
+                TS Management Services Pte Ltd
+            </a>
+            
+            {% if current_user.is_authenticated %}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mx-auto">
+                    {% if current_user.is_authenticated %}
+                        {% set user_permissions = get_user_dashboard_permissions(current_user) %}
+                        
+                        {% if is_admin_user(current_user) %}
+                        <!-- Show all menu items for admin users -->
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                            </a>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" id="houseAcknowledgeDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-home me-1"></i> House Acknowledge
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="houseAcknowledgeDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('house_acknowledge_create') }}">
+                                    <i class="fas fa-plus me-2"></i>Create Acknowledge
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('house_acknowledge_storage') }}">
+                                    <i class="fas fa-database me-2"></i>Acknowledge Storage
+                                </a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('qr_codes') }}">
+                                <i class="fas fa-qrcode me-1"></i> QR Codes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('asset_management') }}">
+                                <i class="fas fa-boxes me-1"></i> Asset Management
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('room_handovers') }}">
+                                <i class="fas fa-handshake me-1"></i> Room Handover
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('room_checklist') }}">
+                                <i class="fas fa-clipboard-check me-1"></i> Room Checklist
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('offense_records') }}">
+                                <i class="fas fa-exclamation-triangle me-1"></i> Offense Records
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('msrf_management') }}">
+                                <i class="fas fa-shield-alt me-1"></i> MSRF
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('meter_readings') }}">
+                                <i class="fas fa-tachometer-alt me-1"></i> Pioneer Utility
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('stock_report') }}">
+                                <i class="fas fa-warehouse me-1"></i> Stock Report
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('purchase_request_form') }}">
+                                <i class="fas fa-shopping-cart me-1"></i> Purchase Request Form
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('fin_search') }}">
+                                <i class="fas fa-search me-1"></i> FIN Search
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('food_locker_management') }}">
+                                <i class="fas fa-utensils me-1"></i> Food Locker Management
+                            </a>
+                        </li>
+
+                </ul>
+                
+                <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('settings') }}">
+                                <i class="fas fa-cog me-1"></i> Settings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{{ url_for('admin') }}">
+                                <i class="fas fa-user-shield me-1"></i> Admin
+                            </a>
+                        </li>
+                        {% else %}
+                        <!-- Limited user - only show Room Checklist if they have handover permission -->
+                        {% if 'handover' in user_permissions.allowed_form_types %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('room_checklist') }}">
+                                <i class="fas fa-clipboard-check me-1"></i> Room Checklist
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('room_inventory_records') }}">
+                                <i class="fas fa-clipboard-list me-1"></i> Room Inventory Records
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% endif %}
+                    {% else %}
+                        <!-- Show basic items for non-authenticated users -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('form_management') }}">
+                                <i class="fas fa-clipboard-list me-1"></i> House Rules and Regulations
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <!-- Back Button -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:history.back()">
+                            <i class="fas fa-arrow-left me-1"></i> Back
+                        </a>
+                    </li>
+                    
+                    <!-- Logout Button -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                        </a>
+                    </li>
+                    
+                    <!-- User Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            {% if current_user.profile_image_url %}
+                                <img src="{{ current_user.profile_image_url }}" alt="Profile" class="rounded-circle me-1" width="24" height="24">
+                            {% else %}
+                                <i class="fas fa-user-circle me-1"></i>
+                            {% endif %}
+                            {{ current_user.first_name or current_user.email }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% if current_user.organization %}
+                            <li><span class="dropdown-item-text text-muted">{{ current_user.organization.name }}</span></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-1"></i> Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-wrapper">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gradient mt-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem 0;">
+        <div class="container text-center">
+            <div class="footer-content">
+                <div class="contact-info mb-3">
+                    <i class="fas fa-envelope me-2 text-warning"></i>
+                    <span class="fw-bold fs-4 text-white letter-spacing">tsgrp.sg</span>
+                </div>
+                <div class="badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill">
+                    <i class="fas fa-map-marker-alt me-1"></i>
+                    SP2Q
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+        .letter-spacing {
+            letter-spacing: 1px;
+        }
+        .footer-content {
+            animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .contact-info:hover {
+            transform: scale(1.05);
+            transition: transform 0.3s ease;
+        }
+        .bg-gradient {
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+        }
+    </style>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

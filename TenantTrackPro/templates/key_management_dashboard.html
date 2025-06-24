@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Key Management{% endblock %}
+
+{% block content %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 60px 0;
+        margin-bottom: 40px;
+        border-radius: 15px;
+    }
+    .company-logo {
+        max-height: 80px;
+        margin-bottom: 20px;
+    }
+    .dashboard-card {
+        border: none;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border-radius: 20px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+    }
+    .option-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        color: #2c3e50;
+    }
+    .btn-dashboard {
+        background: linear-gradient(135deg, #2c3e50, #34495e);
+        border: none;
+        border-radius: 15px;
+        padding: 15px 25px;
+        color: white;
+        text-decoration: none;
+        display: block;
+        transition: all 0.3s ease;
+    }
+    .btn-dashboard:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(44, 62, 80, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+    .btn-secondary-dashboard {
+        background: linear-gradient(135deg, #7f8c8d, #95a5a6);
+        border: none;
+        border-radius: 15px;
+        padding: 15px 25px;
+        color: white;
+        text-decoration: none;
+        display: block;
+        transition: all 0.3s ease;
+    }
+    .btn-secondary-dashboard:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(127, 140, 141, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+</style>
+
+<body>
+    <div class="hero-section">
+        <div class="container text-center">
+            <h1><i class="fas fa-key me-3"></i>Key Management System</h1>
+            <p class="lead">Comprehensive key tracking with QR code scanning and management</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row g-4 mb-5">
+            <!-- QR Code Generation -->
+            <div class="col-lg-6 col-md-6">
+                <div class="dashboard-card card h-100">
+                    <div class="card-body text-center d-flex flex-column">
+                        <i class="fas fa-qrcode option-icon"></i>
+                        <h5 class="card-title mb-3">QR Code</h5>
+                        <p class="card-text flex-grow-1">Generate QR codes for Key Out and Key In scanning</p>
+                        <a href="/key-management/qr-codes" class="btn-dashboard">
+                            <i class="fas fa-qrcode me-2"></i>Generate QR Codes
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Management Section -->
+            <div class="col-lg-6 col-md-6">
+                <div class="dashboard-card card h-100">
+                    <div class="card-body text-center d-flex flex-column">
+                        <i class="fas fa-clipboard-list option-icon"></i>
+                        <h5 class="card-title mb-3">Keys Management Section</h5>
+                        <p class="card-text flex-grow-1">View, filter, edit and export key scan records</p>
+                        <a href="/key-management/records" class="btn-secondary-dashboard">
+                            <i class="fas fa-clipboard-list me-2"></i>Manage Records
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h4 class="fw-bold mb-0">{{ total_keys_out }}</h4>
+                        <p class="mb-0">Keys Currently Out</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body text-center">
+                        <h4 class="fw-bold mb-0">{{ overdue_keys }}</h4>
+                        <p class="mb-0">Overdue Keys (30+ min)</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h4 class="fw-bold mb-0">{{ total_returned_today }}</h4>
+                        <p class="mb-0">Returned Today</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h4 class="fw-bold mb-0">{{ total_scans_today }}</h4>
+                        <p class="mb-0">Total Scans Today</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-clock me-2"></i>Recent Key Activity
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_activity %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Room</th>
+                                        <th>Resident</th>
+                                        <th>Company</th>
+                                        <th>Action</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in recent_activity %}
+                                    <tr>
+                                        <td>{{ record.scan_time.strftime('%H:%M:%S') }}</td>
+                                        <td>{{ record.room_number }}</td>
+                                        <td>{{ record.resident_name }}</td>
+                                        <td>{{ record.company_name }}</td>
+                                        <td>
+                                            <span class="badge {% if record.scan_type == 'out' %}bg-danger{% else %}bg-success{% endif %}">
+                                                Key {{ record.scan_type.title() }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if record.status == 'Not Returned' %}bg-warning{% elif record.status == 'Returned' %}bg-success{% else %}bg-primary{% endif %}">
+                                                {{ record.status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>No recent key activity found.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back to Dashboard -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-lg">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+</body>
+{% endblock %}

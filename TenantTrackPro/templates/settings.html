@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - TS Management Services Pte Ltd{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">
+                    <i class="fas fa-cog me-2"></i>
+                    Settings
+                </h1>
+            </div>
+
+            <!-- System Configuration -->
+            <form method="POST">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-server me-2"></i>
+                            System Configuration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>General Settings</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">System Name</label>
+                                    <input type="text" class="form-control" name="system_name" value="TS Management Services Pte Ltd" readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Time Zone</label>
+                                    <select class="form-select" name="timezone">
+                                        <option value="Asia/Singapore" selected>Asia/Singapore</option>
+                                        <option value="UTC">UTC</option>
+                                        <option value="Asia/Kuala_Lumpur">Asia/Kuala_Lumpur</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Date Format</label>
+                                    <select class="form-select" name="date_format">
+                                        <option value="DD/MM/YYYY" selected>DD/MM/YYYY</option>
+                                        <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Notification Settings</h6>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="email_notifications" id="emailNotifications" checked>
+                                    <label class="form-check-label" for="emailNotifications">
+                                        Email Notifications
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="system_alerts" id="systemAlerts" checked>
+                                    <label class="form-check-label" for="systemAlerts">
+                                        System Alerts
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="maintenance_mode" id="maintenanceMode">
+                                    <label class="form-check-label" for="maintenanceMode">
+                                        Maintenance Mode
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Management -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-database me-2"></i>
+                            Data Management
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Database Status</label>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-success me-2">Connected</span>
+                                        <small class="text-muted">PostgreSQL</small>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Auto Backup</label>
+                                    <select class="form-select" name="auto_backup">
+                                        <option value="daily" selected>Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="disabled">Disabled</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Backup Retention</label>
+                                    <select class="form-select" name="backup_retention">
+                                        <option value="7">7 days</option>
+                                        <option value="30" selected>30 days</option>
+                                        <option value="90">90 days</option>
+                                        <option value="365">1 year</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-outline-primary">
+                                        <i class="fas fa-download me-2"></i>
+                                        Create Backup Now
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Settings Button -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Settings are automatically saved when you click "Save Settings"
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>
+                        Save Settings
+                    </button>
+                </div>
+            </form>
+
+            <!-- Security Settings -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Security Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Authentication</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Session Timeout</label>
+                                <select class="form-select">
+                                    <option>30 minutes</option>
+                                    <option selected>1 hour</option>
+                                    <option>4 hours</option>
+                                    <option>24 hours</option>
+                                </select>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="forcePasswordReset" checked>
+                                <label class="form-check-label" for="forcePasswordReset">
+                                    Force Password Reset on First Login
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="smsNotifications">
+                                <label class="form-check-label" for="smsNotifications">
+                                    SMS Notifications
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="systemAlerts" checked>
+                                <label class="form-check-label" for="systemAlerts">
+                                    System Alerts
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Database Settings -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-database me-2"></i>
+                        Database Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Database Status</label>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-success me-2">Connected</span>
+                                    <small class="text-muted">PostgreSQL</small>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Auto Backup</label>
+                                <select class="form-select">
+                                    <option selected>Daily</option>
+                                    <option>Weekly</option>
+                                    <option>Monthly</option>
+                                    <option>Disabled</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Backup Retention</label>
+                                <select class="form-select">
+                                    <option>7 days</option>
+                                    <option selected>30 days</option>
+                                    <option>90 days</option>
+                                    <option>1 year</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <button class="btn btn-outline-primary">
+                                    <i class="fas fa-download me-2"></i>
+                                    Create Backup Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Security Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Authentication</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Session Timeout</label>
+                                <select class="form-select">
+                                    <option>15 minutes</option>
+                                    <option>30 minutes</option>
+                                    <option selected>1 hour</option>
+                                    <option>2 hours</option>
+                                    <option>4 hours</option>
+                                </select>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="requireStrongPassword" checked>
+                                <label class="form-check-label" for="requireStrongPassword">
+                                    Require Strong Passwords
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Access Control</h6>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="logFailedAttempts" checked>
+                                <label class="form-check-label" for="logFailedAttempts">
+                                    Log Failed Login Attempts
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="ipWhitelist">
+                                <label class="form-check-label" for="ipWhitelist">
+                                    Enable IP Whitelist
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PDF Report Settings -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-pdf me-2"></i>
+                        PDF Report Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Default Page Size</label>
+                                <select class="form-select">
+                                    <option selected>A4</option>
+                                    <option>Letter</option>
+                                    <option>Legal</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Company Logo</label>
+                                <input type="file" class="form-control" accept="image/*">
+                                <small class="form-text text-muted">Upload company logo for PDF headers</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Footer Text</label>
+                                <textarea class="form-control" rows="3" placeholder="Enter footer text for PDF reports">© TS Management Services Pte Ltd - Comprehensive dormitory management system</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-secondary">
+                    <i class="fas fa-undo me-2"></i>
+                    Reset to Defaults
+                </button>
+                <button type="button" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>
+                    Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

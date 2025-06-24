@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}FIN Search - TS Management Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem 1.5rem;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="fas fa-search me-3"></i>
+                                FIN Number Search
+                            </h2>
+                            <p class="mb-0 opacity-75">
+                                Search across offence records and house acknowledgment records by FIN number
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('fin_search') }}" class="row g-3">
+                        <div class="col-md-8">
+                            <label for="fin_number" class="form-label">FIN Number</label>
+                            <input type="text" class="form-control" id="fin_number" name="fin_number" 
+                                   value="{{ request.args.get('fin_number', '') }}" 
+                                   placeholder="Enter FIN number to search...">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i>Search
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if search_performed %}
+    <!-- Search Results -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Search Results for "{{ fin_number }}"
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if person_info %}
+                    <!-- Person Summary from Both Sources -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-user me-2"></i>Person Information Summary
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary">From Offence Records:</h6>
+                                        {% if offense_records %}
+                                        {% set latest_offense = offense_records[0] %}
+                                        <p class="mb-1"><strong>Name:</strong> {{ latest_offense.offender_name or 'N/A' }}</p>
+                                        <p class="mb-1"><strong>FIN:</strong> {{ latest_offense.fin_number or 'N/A' }}</p>
+                                        <p class="mb-1"><strong>Phone:</strong> {{ latest_offense.contact_number or 'N/A' }}</p>
+                                        <p class="mb-1"><strong>Company:</strong> {{ latest_offense.offender_company or 'N/A' }}</p>
+                                        <p class="mb-1"><strong>Room:</strong> {{ latest_offense.offender_room or 'N/A' }}</p>
+                                        <p class="mb-1"><strong>Nationality:</strong> {{ latest_offense.nationality or 'N/A' }}</p>
+                                        <p class="mb-0"><strong>Sector:</strong> {{ latest_offense.sector or 'N/A' }}</p>
+                                        {% else %}
+                                        <p class="text-muted">No offence records found</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-success">From House Acknowledgment:</h6>
+                                        {% if acknowledgment_records %}
+                                        {% set latest_ack = acknowledgment_records[0] %}
+                                        <p class="mb-1"><strong>Name:</strong> {{ latest_ack.name or 'N/A' }}</p>
+                                        <p class="mb-1"><strong>FIN:</strong> {{ latest_ack.fin or 'N/A' }}</p>
+                                        <p class="mb-1"><strong>Phone:</strong> {{ latest_ack.phone_number or 'N/A' }}</p>
+                                        <p class="mb-1"><strong>Company:</strong> {{ latest_ack.company_name or 'N/A' }}</p>
+                                        <p class="mb-1"><strong>Room:</strong> {{ latest_ack.room_number or 'N/A' }}</p>
+                                        <p class="mb-1"><strong>Language:</strong> {{ latest_ack.language_selected or 'N/A' }}</p>
+                                        <p class="mb-0"><strong>Last Acknowledged:</strong> {{ latest_ack.acknowledged_at.strftime('%Y-%m-%d %H:%M') if latest_ack.acknowledged_at else 'N/A' }}</p>
+                                        {% else %}
+                                        <p class="text-muted">No house acknowledgment records found</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Records Summary -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-warning text-dark">
+                                <div class="card-body text-center">
+                                    <h4 class="fw-bold mb-0">{{ offense_records|length }}</h4>
+                                    <p class="mb-0">Offense Records</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h4 class="fw-bold mb-0">{{ acknowledgment_records|length }}</h4>
+                                    <p class="mb-0">House Acknowledgments</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Offense Records Section -->
+                    {% if offense_records %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Offense Records
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Case No.</th>
+                                            <th>Offense Type</th>
+                                            <th>Severity</th>
+                                            <th>Location</th>
+                                            <th>Description</th>
+                                            <th>Fine Amount</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in offense_records %}
+                                        <tr>
+                                            <td>{{ record.incident_date.strftime('%Y-%m-%d') if record.incident_date else 'N/A' }}</td>
+                                            <td>{{ record.case_number or 'N/A' }}</td>
+                                            <td>{{ record.offense_type or 'N/A' }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'danger' if record.severity == 'Critical' else ('warning' if record.severity == 'Major' else 'info') }}">
+                                                    {{ record.severity or 'Minor' }}
+                                                </span>
+                                            </td>
+                                            <td>{{ record.location or 'N/A' }}</td>
+                                            <td>{{ record.description[:80] + '...' if record.description and record.description|length > 80 else (record.description or 'N/A') }}</td>
+                                            <td>${{ "%.2f"|format(record.penalty_amount) if record.penalty_amount else '0.00' }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if record.status == 'Resolved' or record.status == 'Closed' else 'warning' }}">
+                                                    {{ record.status or 'Open' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" onclick="viewOffenseDetails({{ record.id }})">
+                                                    <i class="fas fa-eye"></i> Details
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- House Acknowledgment Records Section -->
+                    {% if acknowledgment_records %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-success">
+                                <i class="fas fa-check-circle me-2"></i>House Acknowledgment Records
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Date & Time</th>
+                                            <th>Name</th>
+                                            <th>FIN</th>
+                                            <th>Room Number</th>
+                                            <th>Company</th>
+                                            <th>Phone</th>
+                                            <th>Language</th>
+                                            <th>IP Address</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in acknowledgment_records %}
+                                        <tr>
+                                            <td>{{ record.acknowledged_at.strftime('%Y-%m-%d %H:%M') if record.acknowledged_at else 'N/A' }}</td>
+                                            <td>{{ record.name or 'N/A' }}</td>
+                                            <td>{{ record.fin or 'N/A' }}</td>
+                                            <td>{{ record.room_number or 'N/A' }}</td>
+                                            <td>{{ record.company_name or 'N/A' }}</td>
+                                            <td>{{ record.phone_number or 'N/A' }}</td>
+                                            <td>
+                                                <span class="badge bg-info">{{ record.language_selected or 'N/A' }}</span>
+                                            </td>
+                                            <td>{{ record.ip_address or 'N/A' }}</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-success" onclick="viewAcknowledgmentDetails({{ record.id }})">
+                                                    <i class="fas fa-eye"></i> Details
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if not offense_records and not acknowledgment_records %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5>No Records Found</h5>
+                        <p class="text-muted">No offense records or house acknowledgments found for FIN number "{{ fin_number }}".</p>
+                    </div>
+                    {% endif %}
+
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                        <h5>No Person Found</h5>
+                        <p class="text-muted">No records found for FIN number "{{ fin_number }}".</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Offense Details Modal -->
+<div class="modal fade" id="offenseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Offense Record Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="offenseModalBody">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acknowledgment Details Modal -->
+<div class="modal fade" id="acknowledgmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">House Acknowledgment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="acknowledgmentModalBody">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewOffenseDetails(offenseId) {
+    const modal = new bootstrap.Modal(document.getElementById('offenseModal'));
+    const modalBody = document.getElementById('offenseModalBody');
+    
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+    
+    fetch(`/offense-record/${offenseId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const record = data.record;
+                modalBody.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Personal Information</h6>
+                            <p><strong>Full Name:</strong> ${record.full_name || 'N/A'}</p>
+                            <p><strong>FIN Number:</strong> ${record.fin_number || 'N/A'}</p>
+                            <p><strong>Phone:</strong> ${record.phone_number || 'N/A'}</p>
+                            <p><strong>Company:</strong> ${record.company_name || 'N/A'}</p>
+                            <p><strong>Room Number:</strong> ${record.room_number || 'N/A'}</p>
+                            <p><strong>Nationality:</strong> ${record.nationality || 'N/A'}</p>
+                            <p><strong>Sector:</strong> ${record.sector || 'N/A'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning">Offence Details</h6>
+                            <p><strong>Case Number:</strong> ${record.case_number || 'N/A'}</p>
+                            <p><strong>Date:</strong> ${record.offense_date || 'N/A'}</p>
+                            <p><strong>Time:</strong> ${record.incident_time || 'N/A'}</p>
+                            <p><strong>Type:</strong> ${record.offense_type || 'N/A'}</p>
+                            <p><strong>Severity:</strong> <span class="badge bg-${record.severity === 'Critical' ? 'danger' : (record.severity === 'Major' ? 'warning' : 'info')}">${record.severity || 'Minor'}</span></p>
+                            <p><strong>Location:</strong> ${record.location || 'N/A'}</p>
+                            <p><strong>Status:</strong> <span class="badge bg-${record.status === 'Resolved' || record.status === 'Closed' ? 'success' : 'warning'}">${record.status || 'Open'}</span></p>
+                            <p><strong>Fine Amount:</strong> $${record.fine_amount || '0.00'}</p>
+                            <p><strong>Payment Status:</strong> ${record.penalty_status || 'Pending'}</p>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6>Incident Description</h6>
+                            <p>${record.description || 'No description provided'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Additional Information</h6>
+                            <p><strong>Documentary Proof:</strong> ${record.documentary_proof ? 'Yes' : 'No'}</p>
+                            <p><strong>Witness Names:</strong> ${record.witness_names || 'None'}</p>
+                            <p><strong>Action Taken:</strong> ${record.action_taken || 'None'}</p>
+                            <p><strong>Reported By:</strong> ${record.duty_manager_name || 'N/A'}</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                modalBody.innerHTML = '<p class="text-danger">Error loading offense details.</p>';
+            }
+        })
+        .catch(error => {
+            modalBody.innerHTML = '<p class="text-danger">Error loading offense details.</p>';
+        });
+}
+
+function viewAcknowledgmentDetails(ackId) {
+    const modal = new bootstrap.Modal(document.getElementById('acknowledgmentModal'));
+    const modalBody = document.getElementById('acknowledgmentModalBody');
+    
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+    
+    fetch(`/house-acknowledgment/${ackId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const record = data.record;
+                modalBody.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">Personal Information</h6>
+                            <p><strong>Full Name:</strong> ${record.full_name || 'N/A'}</p>
+                            <p><strong>FIN Number:</strong> ${record.fin_number || 'N/A'}</p>
+                            <p><strong>Phone:</strong> ${record.phone_number || 'N/A'}</p>
+                            <p><strong>Company:</strong> ${record.company_name || 'N/A'}</p>
+                            <p><strong>Room Number:</strong> ${record.room_number || 'N/A'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-info">Acknowledgment Details</h6>
+                            <p><strong>Date & Time:</strong> ${record.acknowledgment_date || 'N/A'}</p>
+                            <p><strong>Type:</strong> ${record.acknowledgment_type || 'House Rules'}</p>
+                            <p><strong>Language Selected:</strong> <span class="badge bg-info">${record.language || 'English'}</span></p>
+                            <p><strong>IP Address:</strong> ${record.ip_address || 'N/A'}</p>
+                            <p><strong>User Agent:</strong> ${record.user_agent ? record.user_agent.substring(0, 50) + '...' : 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6>E-Signature Status</h6>
+                            <p><strong>Signature Provided:</strong> ${record.e_signature ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-warning">No</span>'}</p>
+                            ${record.e_signature ? '<p><small class="text-muted">Digital signature captured during acknowledgment</small></p>' : ''}
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Selfie Verification</h6>
+                            <p><strong>Selfie Provided:</strong> ${record.selfie_path ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-warning">No</span>'}</p>
+                            ${record.selfie_path ? '<p><small class="text-muted">Photo verification completed</small></p>' : ''}
+                        </div>
+                    </div>
+                    ${record.selfie_path ? `
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6>Verification Photo</h6>
+                            <div class="text-center">
+                                <img src="data:image/jpeg;base64,${record.selfie_path}" class="img-fluid rounded" style="max-height: 250px; border: 2px solid #ddd;" alt="Acknowledgment Selfie">
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                `;
+            } else {
+                modalBody.innerHTML = '<p class="text-danger">Error loading acknowledgment details.</p>';
+            }
+        })
+        .catch(error => {
+            modalBody.innerHTML = '<p class="text-danger">Error loading acknowledgment details.</p>';
+        });
+}
+</script>
+{% endblock %}

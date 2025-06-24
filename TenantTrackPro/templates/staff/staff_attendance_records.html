@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Attendance Records - TS Management Services Pte Ltd{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-list me-2"></i>
+                        Recent Attendance Records
+                    </h1>
+                    {% if current_user.organization %}
+                    <p class="text-muted mb-0">{{ current_user.organization.name }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <a href="{{ url_for('staff_attendance') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-filter me-2"></i>
+                Filters & Actions
+            </h5>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-success" onclick="exportFiltered('excel')" id="exportFilteredExcelBtn">
+                    <i class="fas fa-file-excel me-1"></i>Export Filtered to Excel
+                </button>
+                <button type="button" class="btn btn-danger" onclick="exportFiltered('pdf')" id="exportFilteredPdfBtn">
+                    <i class="fas fa-file-pdf me-1"></i>Export Filtered to PDF
+                </button>
+                <button type="button" class="btn btn-outline-success" onclick="exportSelected('excel')" id="exportExcelBtn" disabled>
+                    <i class="fas fa-file-excel me-1"></i>Export Selected
+                </button>
+                <button type="button" class="btn btn-outline-danger" onclick="deleteSelected()" id="deleteBtn" disabled>
+                    <i class="fas fa-trash me-1"></i>Delete Selected
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('staff_attendance_records') }}" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label for="from_date" class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="from_date" name="from_date" 
+                               value="{{ from_date or '' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="to_date" class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="to_date" name="to_date" 
+                               value="{{ to_date or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="staff_name_filter" class="form-label">Staff Name</label>
+                        <select class="form-select" id="staff_name_filter" name="staff_name_filter">
+                            <option value="">All Staff</option>
+                            {% for staff_name in staff_names %}
+                            <option value="{{ staff_name }}" {{ 'selected' if staff_name_filter == staff_name }}>
+                                {{ staff_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="company_filter" class="form-label">Company</label>
+                        <select class="form-select" id="company_filter" name="company_filter">
+                            <option value="">All Companies</option>
+                            {% for company in companies %}
+                            <option value="{{ company }}" {{ 'selected' if company_filter == company }}>
+                                {{ company }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="btn-group w-100" role="group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i>Filter
+                            </button>
+                            <a href="{{ url_for('staff_attendance_records') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h5 class="text-primary mb-1">{{ total_records }}</h5>
+                        <small class="text-muted">Total Records</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h5 class="text-success mb-1">{{ normal_sessions }}</h5>
+                        <small class="text-muted">Normal Sessions</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h5 class="text-warning mb-1">{{ off_status_count }}</h5>
+                        <small class="text-muted">Off Status</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h5 class="text-danger mb-1">{{ warning_count }}</h5>
+                        <small class="text-muted">Warnings</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Records Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-table me-2"></i>
+                Attendance Records
+            </h5>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                <label class="form-check-label" for="selectAll">
+                    Select All
+                </label>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if paired_records %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                    <thead class="table-dark">
+                        <tr>
+                            <th width="50">
+                                <i class="fas fa-check-square"></i>
+                            </th>
+                            <th width="60">S/NO</th>
+                            <th width="80">Start Photo</th>
+                            <th width="80">End Photo</th>
+                            <th width="140">Date & Time</th>
+                            <th width="160">Staff Name</th>
+                            <th width="180">Company</th>
+                            <th width="120">Type</th>
+                            <th width="120">Location</th>
+                            <th width="140">Start Date & Time</th>
+                            <th width="140">End Date & Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in paired_records %}
+                        <tr class="{{ record.row_class }}">
+                            <td>
+                                <input type="checkbox" class="form-check-input record-select" 
+                                       value="{{ record.id }}" onchange="updateButtonStates()">
+                            </td>
+                            <td>
+                                <strong>{{ loop.index }}</strong>
+                            </td>
+                            <td class="text-center">
+                                {% if record.start_photo %}
+                                <img src="{{ record.start_photo }}" alt="Start Photo" 
+                                     class="rounded-circle" style="width: 35px; height: 35px; object-fit: cover; cursor: pointer;"
+                                     data-bs-toggle="modal" data-bs-target="#startPhotoModal{{ record.id }}">
+                                {% else %}
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto" 
+                                     style="width: 35px; height: 35px;">
+                                    <i class="fas fa-user text-muted small"></i>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if record.end_photo %}
+                                <img src="{{ record.end_photo }}" alt="End Photo" 
+                                     class="rounded-circle" style="width: 35px; height: 35px; object-fit: cover; cursor: pointer;"
+                                     data-bs-toggle="modal" data-bs-target="#endPhotoModal{{ record.id }}">
+                                {% else %}
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto" 
+                                     style="width: 35px; height: 35px;">
+                                    <i class="fas fa-minus text-muted small"></i>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold text-dark">{{ record.date }}</span>
+                                    <small class="text-muted">{{ record.primary_time }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="fw-medium">{{ record.staff_name }}</span>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ record.company }}</small>
+                            </td>
+                            <td>
+                                {% if record.status == 'Normal' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Normal
+                                </span>
+                                {% elif record.status == 'Off' %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-moon me-1"></i>Off
+                                </span>
+                                {% elif record.status == 'Warning' %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>Warning
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ record.location or '-' }}</small>
+                            </td>
+                            <td>
+                                {% if record.start_time %}
+                                <div class="d-flex flex-column">
+                                    <span class="text-success fw-bold small">{{ record.start_date }}</span>
+                                    <span class="text-success small">{{ record.start_time }}</span>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if record.end_time %}
+                                <div class="d-flex flex-column">
+                                    <span class="text-warning fw-bold small">{{ record.end_date }}</span>
+                                    <span class="text-warning small">{{ record.end_time }}</span>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <!-- Start Photo Modal -->
+                        {% if record.start_photo %}
+                        <div class="modal fade" id="startPhotoModal{{ record.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">{{ record.staff_name }} - Start Photo - {{ record.date }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <img src="{{ record.start_photo }}" alt="Start Attendance Photo" class="img-fluid rounded">
+                                        <div class="mt-3">
+                                            <p><strong>Company:</strong> {{ record.company }}</p>
+                                            <p><strong>Start Time:</strong> {{ record.start_time }}</p>
+                                            {% if record.location %}
+                                            <p><strong>Location:</strong> {{ record.location }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- End Photo Modal -->
+                        {% if record.end_photo %}
+                        <div class="modal fade" id="endPhotoModal{{ record.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">{{ record.staff_name }} - End Photo - {{ record.date }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <img src="{{ record.end_photo }}" alt="End Attendance Photo" class="img-fluid rounded">
+                                        <div class="mt-3">
+                                            <p><strong>Company:</strong> {{ record.company }}</p>
+                                            <p><strong>End Time:</strong> {{ record.end_time }}</p>
+                                            {% if record.duration %}
+                                            <p><strong>Duration:</strong> {{ record.duration }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No attendance records found</h5>
+                <p class="text-muted">Try adjusting your filters or check back later when staff start marking attendance.</p>
+                <a href="{{ url_for('staff_attendance') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Enhanced Functionality -->
+<script>
+    function toggleSelectAll() {
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('.record-select');
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAll.checked;
+        });
+        
+        updateButtonStates();
+    }
+
+    function updateButtonStates() {
+        const selectedCheckboxes = document.querySelectorAll('.record-select:checked');
+        const hasSelected = selectedCheckboxes.length > 0;
+        
+        document.getElementById('exportExcelBtn').disabled = !hasSelected;
+        document.getElementById('exportPdfBtn').disabled = !hasSelected;
+        document.getElementById('deleteBtn').disabled = !hasSelected;
+        
+        // Update select all checkbox state
+        const allCheckboxes = document.querySelectorAll('.record-select');
+        const selectAllCheckbox = document.getElementById('selectAll');
+        
+        if (selectedCheckboxes.length === 0) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = false;
+        } else if (selectedCheckboxes.length === allCheckboxes.length) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = true;
+        } else {
+            selectAllCheckbox.indeterminate = true;
+        }
+    }
+
+    function exportFiltered(format) {
+        // Export all records matching current filters (no selection required)
+        const params = new URLSearchParams(window.location.search);
+        
+        if (format === 'excel') {
+            window.location.href = '/staff-attendance/export/excel?' + params.toString();
+        } else if (format === 'pdf') {
+            window.location.href = '/staff-attendance/export/pdf?' + params.toString();
+        }
+    }
+
+    function exportSelected(format) {
+        const selectedIds = Array.from(document.querySelectorAll('.record-select:checked'))
+            .map(checkbox => checkbox.value);
+        
+        if (selectedIds.length === 0) {
+            alert('Please select records to export');
+            return;
+        }
+        
+        const params = new URLSearchParams(window.location.search);
+        params.append('selected_ids', selectedIds.join(','));
+        
+        if (format === 'excel') {
+            window.location.href = '/staff-attendance/export/excel?' + params.toString();
+        } else if (format === 'pdf') {
+            window.location.href = '/staff-attendance/export/pdf?' + params.toString();
+        }
+    }
+
+    function deleteSelected() {
+        const selectedIds = Array.from(document.querySelectorAll('.record-select:checked'))
+            .map(checkbox => checkbox.value);
+        
+        if (selectedIds.length === 0) {
+            alert('Please select records to delete');
+            return;
+        }
+        
+        if (!confirm(`Are you sure you want to delete ${selectedIds.length} selected record(s)? This action cannot be undone.`)) {
+            return;
+        }
+        
+        fetch('/staff-attendance/delete-records', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                record_ids: selectedIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deleting records: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Network error occurred');
+        });
+    }
+
+    // Initialize button states on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateButtonStates();
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,306 @@
+/* TS Management Services - Main Stylesheet */
+/* Static file organization - June 24, 2025 */
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Top Brand Bar */
+.brand-bar {
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    color: #e5e7eb;
+    padding: 8px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Main Navigation */
+.main-navbar {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    min-height: 70px;
+    padding: 5px 0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Navigation Items */
+.nav-item-custom {
+    color: white !important;
+    text-decoration: none;
+    padding: 8px 6px;
+    margin: 2px 1px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    min-width: 65px;
+    max-width: 85px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.nav-item-custom:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.nav-item-custom.active {
+    background-color: rgba(255, 255, 255, 0.3);
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.nav-icon-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.nav-icon-container i {
+    font-size: 20px;
+    margin-bottom: 4px;
+}
+
+.nav-text {
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 75px;
+}
+
+/* Dropdown Styling */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle::after {
+    font-size: 8px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.dropdown-menu {
+    background-color: white;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-top: 2px;
+    min-width: 220px;
+    z-index: 1050;
+    position: absolute;
+    top: 100%;
+    left: 0;
+}
+
+.dropdown-item {
+    padding: 10px 16px;
+    font-size: 14px;
+    color: #374151;
+    text-decoration: none;
+    display: block;
+    clear: both;
+    font-weight: normal;
+    line-height: 1.42857143;
+    white-space: nowrap;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background-color: #f8f9fa;
+    color: #1f2937;
+    text-decoration: none;
+}
+
+.dropdown-item i {
+    width: 16px;
+    color: #6b7280;
+    margin-right: 8px;
+}
+
+.nav-item-custom.dropdown-toggle {
+    cursor: pointer;
+    border: none;
+    background: none;
+}
+
+button.nav-item-custom {
+    border: none;
+    background: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Content Area */
+.content-area {
+    padding: 20px 0;
+    min-height: calc(100vh - 140px);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .nav-item-custom {
+        min-width: 70px;
+        max-width: 90px;
+        padding: 6px 8px;
+        margin: 1px 2px;
+    }
+    
+    .nav-icon-container i {
+        font-size: 16px;
+    }
+    
+    .nav-text {
+        font-size: 10px;
+    }
+    
+    .main-navbar {
+        min-height: 60px;
+    }
+}
+
+@media (max-width: 576px) {
+    .nav-item-custom {
+        min-width: 60px;
+        max-width: 75px;
+        padding: 4px 6px;
+    }
+    
+    .nav-text {
+        font-size: 9px;
+    }
+}
+
+/* Navbar toggle button */
+.navbar-toggler {
+    border: none;
+    padding: 4px 8px;
+}
+
+.navbar-toggler:focus {
+    box-shadow: none;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Dashboard Cards */
+.dashboard-card {
+    border: none;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+}
+
+/* Form Styling */
+.form-control:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+}
+
+/* Table Styling */
+.table {
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+}
+
+/* QR Code Styling */
+.qr-container {
+    text-align: center;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Animation Classes */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+.float-animation {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Status Badges */
+.status-active {
+    background-color: #10b981;
+    color: white;
+}
+
+.status-inactive {
+    background-color: #ef4444;
+    color: white;
+}
+
+.status-pending {
+    background-color: #f59e0b;
+    color: white;
+}
+
+/* Footer */
+.footer {
+    background-color: #374151;
+    color: white;
+    padding: 20px 0;
+    margin-top: auto;
+}
+
+/* Loading Spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Custom Alert Styles */
+.alert-custom {
+    border: none;
+    border-radius: 10px;
+    padding: 15px 20px;
+}
+
+/* Print Styles */
+@media print {
+    .navbar, .footer, .btn {
+        display: none !important;
+    }
+    
+    body {
+        background: white !important;
+    }
+}

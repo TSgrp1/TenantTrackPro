@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}Compliance Record Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i class="fas fa-shield-alt me-2"></i>Compliance Record Details</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('compliance_management') }}">Compliance Management</a></li>
+                            <li class="breadcrumb-item active">{{ record.record_number }}</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{{ url_for('compliance_management') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Management
+                    </a>
+                </div>
+            </div>
+
+            <!-- Record Information -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Record Information
+                                <span class="badge 
+                                    {% if record.language_code == 'en' %}bg-primary
+                                    {% elif record.language_code == 'bn' %}bg-success
+                                    {% elif record.language_code == 'my' %}bg-info
+                                    {% elif record.language_code == 'ta' %}bg-warning
+                                    {% elif record.language_code == 'zh' %}bg-danger
+                                    {% else %}bg-secondary
+                                    {% endif %} ms-2">
+                                    {% if record.language_code == 'en' %}English
+                                    {% elif record.language_code == 'bn' %}বাংলা
+                                    {% elif record.language_code == 'my' %}မြန်မာ
+                                    {% elif record.language_code == 'ta' %}தமிழ்
+                                    {% elif record.language_code == 'zh' %}中文
+                                    {% else %}{{ record.language_code.upper() }}
+                                    {% endif %}
+                                </span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Record Number:</strong><br>
+                                    <code>{{ record.record_number }}</code>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Status:</strong><br>
+                                    <span class="badge 
+                                        {% if record.status == 'Active' %}bg-success
+                                        {% elif record.status == 'Under Review' %}bg-warning
+                                        {% elif record.status == 'Archived' %}bg-secondary
+                                        {% else %}bg-dark
+                                        {% endif %}">
+                                        {{ record.status }}
+                                    </span>
+                                </div>
+                                <div class="col-md-6 mt-3">
+                                    <strong>Type:</strong><br>
+                                    <span class="badge bg-info">{{ record.record_type.title() }}</span>
+                                </div>
+                                <div class="col-md-6 mt-3">
+                                    <strong>Category:</strong><br>
+                                    {{ record.compliance_category }}
+                                </div>
+                                <div class="col-md-6 mt-3">
+                                    <strong>Priority Level:</strong><br>
+                                    <span class="badge 
+                                        {% if record.priority_level == 'High' %}bg-danger
+                                        {% elif record.priority_level == 'Medium' %}bg-warning
+                                        {% else %}bg-secondary
+                                        {% endif %}">
+                                        {{ record.priority_level }}
+                                    </span>
+                                </div>
+                                <div class="col-md-6 mt-3">
+                                    <strong>Effective Date:</strong><br>
+                                    {{ record.effective_date.strftime('%Y-%m-%d') if record.effective_date else 'N/A' }}
+                                </div>
+                                {% if record.expiry_date %}
+                                <div class="col-md-6 mt-3">
+                                    <strong>Expiry Date:</strong><br>
+                                    {{ record.expiry_date.strftime('%Y-%m-%d') }}
+                                </div>
+                                {% endif %}
+                                <div class="col-md-6 mt-3">
+                                    <strong>Version:</strong><br>
+                                    {{ record.version_number }}
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <h6><strong>Title:</strong></h6>
+                            <p>{{ record.title }}</p>
+
+                            <h6><strong>Description:</strong></h6>
+                            <p>{{ record.description }}</p>
+
+                            {% if record.detailed_instructions %}
+                            <h6><strong>Detailed Instructions:</strong></h6>
+                            <div class="bg-light p-3 rounded">
+                                {{ record.detailed_instructions|nl2br }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Content Regulations -->
+                    {% if record.content_text or record.pdf_file_data or record.image_1_data or record.image_2_data or record.image_3_data %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-file-alt me-2"></i>Content Regulations
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Text Content -->
+                            {% if record.content_text %}
+                            <div class="mb-4">
+                                <h6><strong>Text Regulations:</strong></h6>
+                                <div class="bg-light p-3 rounded">
+                                    {{ record.content_text|nl2br }}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- PDF Document -->
+                            {% if record.pdf_file_data %}
+                            <div class="mb-4">
+                                <h6><strong>PDF Document:</strong></h6>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-file-pdf me-2"></i>
+                                    <strong>{{ record.pdf_file_name }}</strong>
+                                    <br><small>PDF document available for download</small>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Regulation Images -->
+                            {% if record.image_1_data or record.image_2_data or record.image_3_data %}
+                            <div class="mb-4">
+                                <h6><strong>Regulation Images:</strong></h6>
+                                <div class="row">
+                                    {% for i in range(1, 4) %}
+                                        {% set image_data = record['image_' + i|string + '_data'] %}
+                                        {% set image_name = record['image_' + i|string + '_name'] %}
+                                        {% if image_data %}
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card">
+                                                <img src="data:image/jpeg;base64,{{ image_data }}" class="card-img-top" alt="Regulation Image {{ i }}" style="height: 200px; object-fit: cover;">
+                                                {% if image_name %}
+                                                <div class="card-body">
+                                                    <p class="card-text small">{{ image_name }}</p>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Reference Photos -->
+                    {% if record.ref_photo_1 or record.ref_photo_2 or record.ref_photo_3 %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-images me-2"></i>Reference Photos
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for i in range(1, 4) %}
+                                    {% set photo = record['ref_photo_' + i|string] %}
+                                    {% set caption = record['ref_photo_' + i|string + '_caption'] %}
+                                    {% if photo %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card">
+                                            <img src="data:image/jpeg;base64,{{ photo }}" class="card-img-top" alt="Reference Photo {{ i }}" style="height: 200px; object-fit: cover;">
+                                            {% if caption %}
+                                            <div class="card-body">
+                                                <p class="card-text small">{{ caption }}</p>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Related Records in Other Languages -->
+                    {% if related_records %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-language me-2"></i>Available in Other Languages
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for related_record in related_records %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card border-start border-4 
+                                        {% if related_record.language_code == 'en' %}border-primary
+                                        {% elif related_record.language_code == 'bn' %}border-success
+                                        {% elif related_record.language_code == 'my' %}border-info
+                                        {% elif related_record.language_code == 'ta' %}border-warning
+                                        {% elif related_record.language_code == 'zh' %}border-danger
+                                        {% else %}border-secondary
+                                        {% endif %}">
+                                        <div class="card-body p-3">
+                                            <h6 class="card-title">
+                                                {% if related_record.language_code == 'en' %}English
+                                                {% elif related_record.language_code == 'bn' %}বাংলা (Bengali)
+                                                {% elif related_record.language_code == 'my' %}မြန်မာ (Myanmar)
+                                                {% elif related_record.language_code == 'ta' %}தமிழ் (Tamil)
+                                                {% elif related_record.language_code == 'zh' %}中文 (Chinese)
+                                                {% else %}{{ related_record.language_code.upper() }}
+                                                {% endif %}
+                                            </h6>
+                                            <p class="card-text small">{{ related_record.title }}</p>
+                                            <a href="{{ url_for('view_compliance_record', record_id=related_record.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i>View
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Actions -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-cogs me-2"></i>Actions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if record.requires_acknowledgment %}
+                            <button type="button" class="btn btn-success w-100 mb-2" onclick="acknowledgeRecord({{ record.id }})">
+                                <i class="fas fa-check-circle me-2"></i>Acknowledge Record
+                            </button>
+                            <a href="{{ url_for('view_compliance_acknowledgments', record_id=record.id) }}" class="btn btn-info w-100 mb-2">
+                                <i class="fas fa-users me-2"></i>View Acknowledgments
+                            </a>
+                            {% endif %}
+                            <button type="button" class="btn btn-primary w-100 mb-2">
+                                <i class="fas fa-edit me-2"></i>Edit Record
+                            </button>
+                            <button type="button" class="btn btn-secondary w-100 mb-2">
+                                <i class="fas fa-download me-2"></i>Export PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Metadata -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info me-2"></i>Metadata
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Created By:</strong><br>
+                            {{ record.compliance_created_by.first_name if record.compliance_created_by else 'Unknown' }}</p>
+                            
+                            <p><strong>Created At:</strong><br>
+                            {{ record.created_at.strftime('%Y-%m-%d %H:%M:%S') if record.created_at else 'N/A' }}</p>
+                            
+                            {% if record.compliance_approved_by %}
+                            <p><strong>Approved By:</strong><br>
+                            {{ record.compliance_approved_by.first_name }}</p>
+                            
+                            <p><strong>Approved At:</strong><br>
+                            {{ record.approved_at.strftime('%Y-%m-%d %H:%M:%S') if record.approved_at else 'N/A' }}</p>
+                            {% endif %}
+                            
+                            <p><strong>Last Updated:</strong><br>
+                            {{ record.updated_at.strftime('%Y-%m-%d %H:%M:%S') if record.updated_at else 'N/A' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Acknowledgment Requirements -->
+                    {% if record.requires_acknowledgment %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-clipboard-check me-2"></i>Acknowledgment Requirements
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Acknowledgment Required:</strong> 
+                                <span class="badge bg-warning">Yes</span>
+                            </p>
+                            {% if record.acknowledgment_deadline %}
+                            <p><strong>Deadline:</strong><br>
+                            {{ record.acknowledgment_deadline.strftime('%Y-%m-%d') }}</p>
+                            {% endif %}
+                            <p><strong>Total Acknowledgments:</strong><br>
+                            <span class="badge bg-info">{{ acknowledgments|length }}</span></p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function acknowledgeRecord(recordId) {
+    if (confirm('Are you sure you want to acknowledge this compliance record?')) {
+        fetch(`/acknowledge-compliance/${recordId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                notes: ''
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Record acknowledged successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            alert('Error acknowledging record: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,441 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - TS Management Services Pte Ltd{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">
+                    <i class="fas fa-user-shield me-2"></i>
+                    Admin Dashboard
+                </h1>
+            </div>
+
+            <!-- System Overview -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-users fa-2x text-primary mb-3"></i>
+                            <h5 class="card-title">Total Users</h5>
+                            <h3 class="text-primary">{{ total_users }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-building fa-2x text-success mb-3"></i>
+                            <h5 class="card-title">Organizations</h5>
+                            <h3 class="text-success">{{ total_organizations }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-clipboard-check fa-2x text-warning mb-3"></i>
+                            <h5 class="card-title">Active Forms</h5>
+                            <h3 class="text-warning">{{ total_forms }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-server fa-2x text-info mb-3"></i>
+                            <h5 class="card-title">System Status</h5>
+                            <h3 class="text-success">Online</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Management -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user-cog me-2"></i>
+                            User Management
+                        </h5>
+                        <div class="btn-group">
+                            <button class="btn btn-primary btn-sm" onclick="window.location.href='/admin/users/add'">
+                                <i class="fas fa-plus me-1"></i>
+                                Add User
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="window.location.href='/admin/password_manager'">
+                                <i class="fas fa-key me-1"></i>
+                                Password Manager
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Organization</th>
+                                    <th>Role</th>
+                                    <th>Last Login</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>{{ user.first_name or 'N/A' }} {{ user.last_name or '' }}</td>
+                                    <td>{{ user.email or 'N/A' }}</td>
+                                    <td>{{ user.organization.name if user.organization else 'No Organization' }}</td>
+                                    <td>
+                                        {% if user.email and 'admin' in user.email.lower() %}
+                                            <span class="badge bg-danger">Admin</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">User</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.updated_at.strftime('%Y-%m-%d %H:%M') if user.updated_at else 'Never' }}</td>
+                                    <td><span class="badge bg-success">Active</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editUser('{{ user.id }}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger me-1" onclick="deleteUser('{{ user.id }}', '{{ user.email }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Organization Management -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-building me-2"></i>
+                            Organization Management
+                        </h5>
+                        <button class="btn btn-primary btn-sm" onclick="window.location.href='/admin/organizations/add'">
+                            <i class="fas fa-plus me-1"></i>
+                            Add Organization
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for org in organizations %}
+                        <div class="col-md-4 mb-3">
+                            {% set border_colors = ['primary', 'success', 'info', 'warning'] %}
+                            <div class="card border-{{ border_colors[loop.index0 % 4] }}">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ org.name }}</h6>
+                                    <p class="card-text">{{ org.description or 'Organization for dormitory management services.' }}</p>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">{{ org.users|length }} Users</small>
+                                        <div>
+                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editOrganization('{{ org.id }}')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteOrganization('{{ org.id }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% if organizations|length == 0 %}
+                        <div class="col-12">
+                            <p class="text-muted text-center">No organizations found. Add your first organization to get started.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Logs -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-alt me-2"></i>
+                        System Activity Logs
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Module</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_logs %}
+                                <tr>
+                                    <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else 'N/A' }}</td>
+                                    <td>{{ log.user_email or (log.user.email if log.user else 'System') }}</td>
+                                    <td>{{ log.action }}</td>
+                                    <td>{{ log.module }}</td>
+                                    <td>
+                                        {% if log.status == 'Success' %}
+                                            <span class="badge bg-success">{{ log.status }}</span>
+                                        {% elif log.status == 'Failed' %}
+                                            <span class="badge bg-danger">{{ log.status }}</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">{{ log.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No system logs found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-outline-primary btn-sm" onclick="exportLogs()">
+                            <i class="fas fa-download me-1"></i>
+                            Export Logs
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Maintenance -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tools me-2"></i>
+                        System Maintenance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Database Operations</h6>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary" onclick="backupDatabase()">
+                                    <i class="fas fa-database me-2"></i>
+                                    Backup Database
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="cleanTempFiles()">
+                                    <i class="fas fa-broom me-2"></i>
+                                    Clean Temporary Files
+                                </button>
+                                <button class="btn btn-outline-info" onclick="optimizeDatabase()">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    Optimize Database
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>System Actions</h6>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-success" onclick="refreshCache()">
+                                    <i class="fas fa-sync me-2"></i>
+                                    Refresh Cache
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="exportSystemData()">
+                                    <i class="fas fa-file-export me-2"></i>
+                                    Export System Data
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="restartSystem()">
+                                    <i class="fas fa-power-off me-2"></i>
+                                    Restart System
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Important News Management -->
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card border-0 shadow-sm h-100 hover-card">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-warning bg-gradient text-white rounded-circle mb-3 mx-auto d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                                <i class="fas fa-newspaper fa-2x"></i>
+                            </div>
+                            <h5 class="card-title text-dark mb-3">Important News</h5>
+                            <p class="card-text text-muted mb-4">Manage announcements and important news that appear on user dashboards</p>
+                            <a href="{{ url_for('manage_important_news') }}" class="btn btn-warning btn-lg px-4">
+                                <i class="fas fa-bullhorn me-2"></i>Manage News
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Admin functionality
+function editUser(userId) {
+    // Redirect to user edit page or show modal
+    window.location.href = `/admin/users/${userId}/edit`;
+}
+
+function deleteUser(userId, userEmail) {
+    if (confirm(`Are you sure you want to permanently delete user "${userEmail}"? This action cannot be undone.`)) {
+        fetch(`/admin/users/${userId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('User deleted successfully');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    }
+}
+
+function editOrganization(orgId) {
+    window.location.href = `/admin/organizations/${orgId}/edit`;
+}
+
+function deleteOrganization(orgId) {
+    if (confirm('Are you sure you want to delete this organization? This action cannot be undone.')) {
+        fetch(`/admin/organizations/${orgId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    }
+}
+
+function exportLogs() {
+    window.location.href = '/admin/export-logs';
+}
+
+function backupDatabase() {
+    if (confirm('Start database backup? This may take a few minutes.')) {
+        fetch('/admin/backup-database', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    }
+}
+
+function cleanTempFiles() {
+    if (confirm('Clean temporary files? This will remove cached and temporary data.')) {
+        fetch('/admin/clean-temp-files', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    }
+}
+
+function optimizeDatabase() {
+    if (confirm('Optimize database? This will improve performance but may take time.')) {
+        fetch('/admin/optimize-database', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    }
+}
+
+function refreshCache() {
+    fetch('/admin/refresh-cache', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    });
+}
+
+function exportSystemData() {
+    window.location.href = '/admin/export-system-data';
+}
+
+function restartSystem() {
+    if (confirm('Restart system? This will temporarily make the application unavailable.')) {
+        fetch('/admin/restart-system', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    }
+}
+</script>
+{% endblock %}

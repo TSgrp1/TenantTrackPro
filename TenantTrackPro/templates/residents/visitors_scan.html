@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pioneer Lodge Visitor {% if visit_type == 'start' %}Check-in{% else %}Check-out{% endif %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+        .scan-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .card-header {
+            border-radius: 15px 15px 0 0 !important;
+            {% if visit_type == 'start' %}
+            background: linear-gradient(45deg, #28a745, #20c997);
+            {% else %}
+            background: linear-gradient(45deg, #dc3545, #fd7e14);
+            {% endif %}
+            color: white;
+            text-align: center;
+            padding: 25px;
+        }
+        .card-body {
+            padding: 30px;
+        }
+        #reader {
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+        }
+        .form-control:focus {
+            border-color: {% if visit_type == 'start' %}#28a745{% else %}#dc3545{% endif %};
+            box-shadow: 0 0 0 0.2rem {% if visit_type == 'start' %}rgba(40, 167, 69, 0.25){% else %}rgba(220, 53, 69, 0.25){% endif %};
+        }
+        .btn-custom {
+            {% if visit_type == 'start' %}
+            background: linear-gradient(45deg, #28a745, #20c997);
+            {% else %}
+            background: linear-gradient(45deg, #dc3545, #fd7e14);
+            {% endif %}
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            color: white;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+        .selfie-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        #selfie-preview {
+            max-width: 200px;
+            border-radius: 10px;
+            border: 3px solid {% if visit_type == 'start' %}#28a745{% else %}#dc3545{% endif %};
+        }
+        .status-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .spinner-border {
+            color: {% if visit_type == 'start' %}#28a745{% else %}#dc3545{% endif %};
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-12">
+                <div class="scan-container">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="mb-0">
+                                <i class="fas fa-{% if visit_type == 'start' %}sign-in-alt{% else %}sign-out-alt{% endif %} me-3"></i>
+                                {% if visit_type == 'start' %}Visitor Check-in{% else %}Visitor Check-out{% endif %}
+                            </h2>
+                            <p class="mb-0 mt-2">Pioneer Lodge - TS Management Service</p>
+                        </div>
+                        <div class="card-body">
+                            <!-- QR Code Scanner -->
+                            <div id="qr-section">
+                                <h5 class="text-center mb-3">
+                                    <i class="fas fa-qrcode me-2"></i>Scan QR Code
+                                </h5>
+                                <div id="reader"></div>
+                                <div class="text-center">
+                                    <button id="start-scan" class="btn btn-outline-primary">
+                                        <i class="fas fa-camera me-2"></i>Start QR Scanner
+                                    </button>
+                                    <button id="skip-qr" class="btn btn-outline-secondary ms-2">
+                                        <i class="fas fa-forward me-2"></i>Skip QR Code
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Visitor Information Form -->
+                            <div id="form-section" style="display: none;">
+                                <h5 class="text-center mb-3">
+                                    <i class="fas fa-user-edit me-2"></i>Visitor Information
+                                </h5>
+                                
+                                <form id="visitor-form">
+                                    <div class="mb-3">
+                                        <label for="visitor_name" class="form-label">
+                                            <i class="fas fa-user me-2"></i>Full Name *
+                                        </label>
+                                        <input type="text" class="form-control" id="visitor_name" 
+                                               placeholder="Enter your full name" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="company_name" class="form-label">
+                                            <i class="fas fa-building me-2"></i>Company Name *
+                                        </label>
+                                        <input type="text" class="form-control" id="company_name" 
+                                               placeholder="Enter your company name" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="vehicle_number" class="form-label">
+                                            <i class="fas fa-car me-2"></i>Vehicle Number
+                                        </label>
+                                        <input type="text" class="form-control" id="vehicle_number" 
+                                               placeholder="e.g. SBA1234A (Optional)">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="details" class="form-label">
+                                            <i class="fas fa-info-circle me-2"></i>Visit Details
+                                        </label>
+                                        <textarea class="form-control" id="details" rows="3" 
+                                                  placeholder="Purpose of visit (optional)"></textarea>
+                                    </div>
+
+                                    <!-- Selfie Section -->
+                                    <div class="selfie-container">
+                                        <h6><i class="fas fa-camera me-2"></i>Take Selfie Photo (Optional)</h6>
+                                        <video id="camera" width="250" height="200" autoplay style="border-radius: 10px; display: none;"></video>
+                                        <canvas id="canvas" style="display: none;"></canvas>
+                                        <img id="selfie-preview" style="display: none;" alt="Selfie Preview">
+                                        
+                                        <div class="mt-3">
+                                            <button type="button" id="start-camera" class="btn btn-outline-primary">
+                                                <i class="fas fa-camera me-2"></i>Start Camera
+                                            </button>
+                                            <button type="button" id="take-photo" class="btn btn-outline-success" style="display: none;">
+                                                <i class="fas fa-camera-retro me-2"></i>Take Photo
+                                            </button>
+                                            <button type="button" id="retake-photo" class="btn btn-outline-warning" style="display: none;">
+                                                <i class="fas fa-redo me-2"></i>Retake
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Submit Button -->
+                                    <button type="submit" class="btn btn-custom" id="submit-btn">
+                                        <i class="fas fa-{% if visit_type == 'start' %}sign-in-alt{% else %}sign-out-alt{% endif %} me-2"></i>
+                                        {% if visit_type == 'start' %}Submit Check-in{% else %}Submit Check-out{% endif %}
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Loading -->
+                            <div class="loading" id="loading">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Processing your {% if visit_type == 'start' %}check-in{% else %}check-out{% endif %}...</p>
+                            </div>
+
+                            <!-- Status Messages -->
+                            <div id="status-message"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let html5QrcodeScanner = null;
+        let camera_stream = null;
+        let selfie_data = null;
+        let qr_code_data = '';
+        const visit_type = '{{ visit_type }}';
+
+        // QR Code Scanner Functions
+        function startQRScanner() {
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", 
+                { fps: 10, qrbox: {width: 250, height: 250} }
+            );
+            
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            document.getElementById('start-scan').style.display = 'none';
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            qr_code_data = decodedText;
+            showStatusMessage('QR Code scanned successfully!', 'success');
+            
+            // Stop scanner and show form
+            html5QrcodeScanner.clear();
+            document.getElementById('qr-section').style.display = 'none';
+            document.getElementById('form-section').style.display = 'block';
+        }
+
+        function onScanFailure(error) {
+            // Handle scan failure, usually just ignore
+        }
+
+        function skipQRCode() {
+            document.getElementById('qr-section').style.display = 'none';
+            document.getElementById('form-section').style.display = 'block';
+        }
+
+        // Camera Functions
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    camera_stream = stream;
+                    const video = document.getElementById('camera');
+                    video.srcObject = stream;
+                    video.style.display = 'block';
+                    
+                    document.getElementById('start-camera').style.display = 'none';
+                    document.getElementById('take-photo').style.display = 'inline-block';
+                })
+                .catch(function(err) {
+                    showStatusMessage('Error accessing camera: ' + err.message, 'error');
+                    console.log("Error accessing camera:", err);
+                });
+        }
+
+        function takePhoto() {
+            const video = document.getElementById('camera');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            
+            selfie_data = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Show preview
+            const preview = document.getElementById('selfie-preview');
+            preview.src = selfie_data;
+            preview.style.display = 'block';
+            
+            // Hide video and show retake button
+            video.style.display = 'none';
+            document.getElementById('take-photo').style.display = 'none';
+            document.getElementById('retake-photo').style.display = 'inline-block';
+            
+            // Stop camera stream
+            if (camera_stream) {
+                camera_stream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Enable submit button
+            checkFormValidity();
+        }
+
+        function retakePhoto() {
+            selfie_data = null;
+            document.getElementById('selfie-preview').style.display = 'none';
+            document.getElementById('retake-photo').style.display = 'none';
+            document.getElementById('start-camera').style.display = 'inline-block';
+            checkFormValidity();
+        }
+
+        function checkFormValidity() {
+            const visitor_name = document.getElementById('visitor_name').value.trim();
+            const company_name = document.getElementById('company_name').value.trim();
+            
+            const submit_btn = document.getElementById('submit-btn');
+            submit_btn.disabled = !(visitor_name && company_name);
+        }
+
+        function showStatusMessage(message, type) {
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.innerHTML = `<div class="status-${type}">${message}</div>`;
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        // Form Submission
+        function submitForm(event) {
+            event.preventDefault();
+            
+            const visitor_name = document.getElementById('visitor_name').value.trim();
+            const company_name = document.getElementById('company_name').value.trim();
+            const vehicle_number = document.getElementById('vehicle_number').value.trim();
+            const details = document.getElementById('details').value.trim();
+            
+            if (!visitor_name || !company_name) {
+                showStatusMessage('Please fill in all required fields.', 'error');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('form-section').style.display = 'none';
+            
+            // Prepare data
+            const formData = {
+                visitor_name: visitor_name,
+                company_name: company_name,
+                vehicle_number: vehicle_number,
+                details: details,
+                visit_type: visit_type,
+                selfie_photo: selfie_data,
+                qr_code_scanned: qr_code_data
+            };
+            
+            // Submit to server
+            fetch('/visitors/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                
+                if (data.success) {
+                    // Redirect to success page
+                    window.location.href = `/visitors/success/${data.visitor_id}`;
+                } else {
+                    showStatusMessage(data.error || 'Submission failed. Please try again.', 'error');
+                    document.getElementById('form-section').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                showStatusMessage('Network error. Please check your connection and try again.', 'error');
+                document.getElementById('form-section').style.display = 'block';
+                console.error('Error:', error);
+            });
+        }
+
+        // Event Listeners
+        document.getElementById('start-scan').addEventListener('click', startQRScanner);
+        document.getElementById('skip-qr').addEventListener('click', skipQRCode);
+        document.getElementById('start-camera').addEventListener('click', startCamera);
+        document.getElementById('take-photo').addEventListener('click', takePhoto);
+        document.getElementById('retake-photo').addEventListener('click', retakePhoto);
+        document.getElementById('visitor-form').addEventListener('submit', submitForm);
+        
+        // Check form validity on input
+        document.getElementById('visitor_name').addEventListener('input', checkFormValidity);
+        document.getElementById('company_name').addEventListener('input', checkFormValidity);
+    </script>
+</body>
+</html>

@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+{% block title %}Used Stock Information{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Used Stock Information</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('stock_report') }}">Stock Report</a></li>
+                <li class="breadcrumb-item active">Used Info</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">🔍 Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-6">
+                    <label for="search_item_name" class="form-label">Search Item Name</label>
+                    <input type="text" class="form-control" id="search_item_name" name="search_item_name" 
+                           value="{{ request.args.get('search_item_name', '') }}" placeholder="Search by item name...">
+                </div>
+                <div class="col-md-4">
+                    <label for="category" class="form-label">Category</label>
+                    <select class="form-select" id="category" name="category">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat }}" {% if request.args.get('category') == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">🔍 Filter</button>
+                    </div>
+                </div>
+            </form>
+            <div class="mt-2">
+                <a href="{{ url_for('used_info') }}" class="btn btn-outline-secondary btn-sm">✖ Clear Filters</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">⚡ Quick Actions</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <a href="{{ url_for('purchase_request_form') }}" class="btn btn-primary w-100">
+                        📋 Purchase Request Form (PR)
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{{ url_for('export_used_info_pdf') }}" class="btn btn-danger w-100">
+                        📄 Export PDF
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{{ url_for('export_used_info_excel') }}" class="btn btn-success w-100">
+                        📊 Export Excel
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{{ url_for('stock_info') }}" class="btn btn-info w-100">
+                        📈 Stock Summary
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Used Stock Summary -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">📊 Used Stock Summary</h5>
+            <div>
+                <span class="badge bg-primary">{{ used_items|length }} Items</span>
+                <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="selectAll()">
+                    <i class="fas fa-check-square"></i> Select All
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary ms-1" onclick="clearSelection()">
+                    <i class="fas fa-square"></i> Clear
+                </button>
+                {% if can_user_edit(current_user, 'inventory') %}
+                <button type="button" class="btn btn-sm btn-danger ms-1" onclick="deleteSelected()" id="deleteBtn" style="display: none;">
+                    <i class="fas fa-trash"></i> Delete Selected
+                </button>
+                {% endif %}
+                <button type="button" class="btn btn-sm btn-warning ms-1" onclick="exportSelected()" id="exportBtn" style="display: none;">
+                    <i class="fas fa-file-excel"></i> Export Selected
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if used_items %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th width="50">
+                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                            </th>
+                            <th>S.No</th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Total Quantity</th>
+                            <th>Used Quantity</th>
+                            <th>Available Quantity</th>
+                            <th>Status</th>
+                            <th>Purchase Date</th>
+                            <th>Cost</th>
+                            <th>Serial Number</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in used_items %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="item-checkbox" value="{{ item.id }}">
+                            </td>
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ item.name }}</strong></td>
+                            <td>{{ item.category }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>
+                                <span class="badge bg-warning">{{ item.used_quantity or 0 }}</span>
+                            </td>
+                            <td>
+                                {% set available = item.quantity - (item.used_quantity or 0) %}
+                                <span class="badge {% if available <= 0 %}bg-danger{% elif available <= 5 %}bg-warning{% else %}bg-success{% endif %}">
+                                    {{ available }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if item.status == 'received' %}
+                                    <span class="badge bg-success">✓ Received</span>
+                                {% else %}
+                                    <span class="badge bg-warning">⏳ Unreceived</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.purchase_date.strftime('%Y-%m-%d') if item.purchase_date else 'N/A' }}</td>
+                            <td>${{ "%.2f"|format(item.purchase_cost) if item.purchase_cost else '0.00' }}</td>
+                            <td>{{ item.serial_number or 'N/A' }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="updateUsedQuantity({{ item.id }}, '{{ item.name }}', {{ item.quantity }}, {{ item.used_quantity or 0 }})">
+                                    ✏️ Update Used
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <i class="fas fa-inbox fa-3x text-muted"></i>
+                </div>
+                <h5 class="text-muted">No used stock items found</h5>
+                <p class="text-muted">Try adjusting your filters or add stock items to track usage.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Update Used Quantity Modal -->
+<div class="modal fade" id="updateUsedModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Used Quantity</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('update_used_quantity') }}">
+                <div class="modal-body">
+                    <input type="hidden" id="stock_id" name="stock_id">
+                    <div class="mb-3">
+                        <label class="form-label">Item Name</label>
+                        <input type="text" class="form-control" id="item_name" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Total Quantity</label>
+                        <input type="number" class="form-control" id="total_quantity" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="used_quantity" class="form-label">Used Quantity</label>
+                        <input type="number" class="form-control" id="used_quantity" name="used_quantity" min="0" required>
+                        <div class="form-text">Enter the quantity that has been used</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateUsedQuantity(stockId, itemName, totalQuantity, currentUsed) {
+    document.getElementById('stock_id').value = stockId;
+    document.getElementById('item_name').value = itemName;
+    document.getElementById('total_quantity').value = totalQuantity;
+    document.getElementById('used_quantity').value = currentUsed;
+    document.getElementById('used_quantity').max = totalQuantity;
+    
+    new bootstrap.Modal(document.getElementById('updateUsedModal')).show();
+}
+
+function selectAll() {
+    document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    document.getElementById('selectAllCheckbox').checked = true;
+    updateButtonVisibility();
+}
+
+function clearSelection() {
+    document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    document.getElementById('selectAllCheckbox').checked = false;
+    updateButtonVisibility();
+}
+
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    updateButtonVisibility();
+}
+
+function updateButtonVisibility() {
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    
+    if (checkedBoxes.length > 0) {
+        deleteBtn.style.display = 'inline-block';
+        exportBtn.style.display = 'inline-block';
+    } else {
+        deleteBtn.style.display = 'none';
+        exportBtn.style.display = 'none';
+    }
+}
+
+function deleteSelected() {
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('Please select items to delete');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete ${checkedBoxes.length} selected item(s)?`)) {
+        return;
+    }
+    
+    const itemIds = Array.from(checkedBoxes).map(cb => cb.value);
+    
+    fetch('/api/delete-used-items', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ item_ids: itemIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error deleting items: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error deleting items: ' + error);
+    });
+}
+
+function exportSelected() {
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+    if (checkedBoxes.length === 0) {
+        alert('Please select items to export');
+        return;
+    }
+    
+    const itemIds = Array.from(checkedBoxes).map(cb => cb.value);
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/export-selected-used-items';
+    
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'item_ids';
+    input.value = JSON.stringify(itemIds);
+    
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+// Add event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateButtonVisibility);
+    });
+    
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            toggleSelectAll();
+        });
+    }
+});
+</script>
+{% endblock %}

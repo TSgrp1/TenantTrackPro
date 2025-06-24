@@ -1,0 +1,741 @@
+{% extends "base.html" %}
+
+{% block title %}Create Room Inspection Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-plus me-2"></i>Create Room Inspection Report</h2>
+                <a href="{{ url_for('room_inspection_reports') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Reports
+                </a>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" id="inspectionForm">
+                <div class="row">
+                    <!-- Basic Information -->
+                    <div class="col-lg-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>Basic Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="room_number" class="form-label">Room Number <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="room_number" name="room_number" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="company_name" class="form-label">Company Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="company_name" name="company_name" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="inspection_date" class="form-label">Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="inspection_date" name="inspection_date" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="action_taken" class="form-label">Action Taken</label>
+                                    <textarea class="form-control" id="action_taken" name="action_taken" rows="3" placeholder="Describe actions taken during inspection"></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="confiscated_items" class="form-label">Confiscated Items</label>
+                                    <textarea class="form-control" id="confiscated_items" name="confiscated_items" rows="3" placeholder="List any items confiscated during inspection"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Photo Upload Section -->
+                    <div class="col-lg-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-camera me-2"></i>Confiscated Items Photos (10-15 photos)
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <button type="button" class="btn btn-primary btn-lg w-100" id="openCameraBtn">
+                                                <i class="fas fa-camera me-2"></i>Take Photos (0/15)
+                                            </button>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <button type="button" class="btn btn-outline-primary btn-lg w-100" id="uploadFilesBtn">
+                                                <i class="fas fa-upload me-2"></i>Upload Files (0/15)
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted d-block mt-2 text-center">
+                                        📸 Take photos with camera OR upload existing photos (max 15 photos total)
+                                    </small>
+                                </div>
+
+                                <!-- File Upload Input -->
+                                <input type="file" id="fileUploadInput" class="d-none" accept="image/*" multiple>
+
+                                <!-- Camera Interface -->
+                                <div id="cameraSection" class="d-none">
+                                    <div class="card border-primary">
+                                        <div class="card-header bg-primary text-white text-center">
+                                            <h6 class="mb-0"><i class="fas fa-camera me-2"></i>Camera Active - Take Photos</h6>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <div class="text-center mb-3">
+                                                <video id="video" class="img-fluid border rounded shadow" style="max-width: 100%; height: 300px; background: #000;" autoplay></video>
+                                                <canvas id="photoCanvas" class="d-none"></canvas>
+                                            </div>
+                                            
+                                            <div class="text-center">
+                                                <button type="button" class="btn btn-success btn-lg me-2" id="capturePhotoBtn">
+                                                    <i class="fas fa-camera me-2"></i>Capture Photo
+                                                </button>
+                                                <button type="button" class="btn btn-danger" id="closeCameraBtn">
+                                                    <i class="fas fa-times me-2"></i>Close Camera
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="mt-3 text-center">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Photos captured: <span id="photoCountDisplay">0</span>/15
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Photo Gallery -->
+                                <div id="photoGallery" class="mt-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0"><i class="fas fa-images me-2"></i>Captured Photos</h6>
+                                        <div id="photoCount" class="badge bg-secondary">0 photos captured</div>
+                                    </div>
+                                    <div class="row" id="capturedPhotos">
+                                        <!-- Photos will be displayed here -->
+                                    </div>
+                                    <div id="noPhotosMessage" class="text-center py-4 text-muted">
+                                        <i class="fas fa-camera fa-2x mb-2 d-block"></i>
+                                        <small>No photos captured yet. Click "Take Photos" to start.</small>
+                                    </div>
+                                </div>
+
+                                <!-- Hidden inputs for photo data -->
+                                <div id="photoInputs"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Signatures Section -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-signature me-2"></i>Room In-charge Signature
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="room_incharge_name" class="form-label">Room In-charge Name</label>
+                                    <input type="text" class="form-control" id="room_incharge_name" name="room_incharge_name">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">E-Signature</label>
+                                    <div class="border rounded p-3 text-center" style="height: 200px;">
+                                        <canvas id="roomInchargeCanvas" width="400" height="150" style="border: 1px solid #ddd; cursor: crosshair; max-width: 100%;"></canvas>
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="clearRoomInchargeBtn">
+                                            <i class="fas fa-eraser me-1"></i>Clear
+                                        </button>
+                                        <span id="roomInchargeStatus" class="ms-2 text-muted">Signature required</span>
+                                    </div>
+                                    <input type="hidden" name="room_incharge_signature" id="roomInchargeSignatureData">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-signature me-2"></i>OE/DC Signature
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="oe_dc_name" class="form-label">OE/DC Name</label>
+                                    <input type="text" class="form-control" id="oe_dc_name" name="oe_dc_name">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">E-Signature</label>
+                                    <div class="border rounded p-3 text-center" style="height: 200px;">
+                                        <canvas id="oeDcCanvas" width="400" height="150" style="border: 1px solid #ddd; cursor: crosshair; max-width: 100%;"></canvas>
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="clearOeDcBtn">
+                                            <i class="fas fa-eraser me-1"></i>Clear
+                                        </button>
+                                        <span id="oeDcStatus" class="ms-2 text-muted">Signature required</span>
+                                    </div>
+                                    <input type="hidden" name="oe_dc_signature" id="oeDcSignatureData">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-center mb-4">
+                    {% if can_user_create(current_user, 'room_inspection') %}
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                        <i class="fas fa-save me-2"></i>Create Inspection Report
+                    </button>
+                    {% else %}
+                    <button class="btn btn-secondary btn-lg" disabled title="View-only access - cannot create reports">
+                        <i class="fas fa-eye me-2"></i>View Only
+                    </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set today's date as default
+    document.getElementById('inspection_date').value = new Date().toISOString().split('T')[0];
+    
+    // Camera functionality
+    let videoStream = null;
+    let capturedPhotos = [];
+    const maxPhotos = 15;
+    
+    const video = document.getElementById('video');
+    const photoCanvas = document.getElementById('photoCanvas');
+    const cameraSection = document.getElementById('cameraSection');
+    const openCameraBtn = document.getElementById('openCameraBtn');
+    const capturePhotoBtn = document.getElementById('capturePhotoBtn');
+    const closeCameraBtn = document.getElementById('closeCameraBtn');
+    const photoGallery = document.getElementById('capturedPhotos');
+    const photoCount = document.getElementById('photoCount');
+    const photoInputs = document.getElementById('photoInputs');
+    const uploadFilesBtn = document.getElementById('uploadFilesBtn');
+    const fileUploadInput = document.getElementById('fileUploadInput');
+    
+    openCameraBtn.addEventListener('click', openCamera);
+    capturePhotoBtn.addEventListener('click', capturePhoto);
+    closeCameraBtn.addEventListener('click', closeCamera);
+    uploadFilesBtn.addEventListener('click', () => fileUploadInput.click());
+    fileUploadInput.addEventListener('change', handleFileUpload);
+    
+    async function openCamera() {
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'environment',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                } 
+            });
+            video.srcObject = videoStream;
+            cameraSection.classList.remove('d-none');
+            openCameraBtn.classList.add('d-none');
+        } catch (err) {
+            alert('Camera access denied or not available: ' + err.message);
+        }
+    }
+    
+    function capturePhoto() {
+        if (capturedPhotos.length >= maxPhotos) {
+            showAlert('Maximum 15 photos allowed', 'warning');
+            return;
+        }
+        
+        if (!video.videoWidth || !video.videoHeight) {
+            showAlert('Camera not ready. Please wait for video to load.', 'warning');
+            return;
+        }
+        
+        const canvas = photoCanvas;
+        const ctx = canvas.getContext('2d');
+        
+        // Calculate compressed dimensions (max 600px for smaller file size)
+        const maxDimension = 600;
+        let { videoWidth: width, videoHeight: height } = video;
+        
+        if (width > height) {
+            if (width > maxDimension) {
+                height = (height * maxDimension) / width;
+                width = maxDimension;
+            }
+        } else {
+            if (height > maxDimension) {
+                width = (width * maxDimension) / height;
+                height = maxDimension;
+            }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        ctx.drawImage(video, 0, 0, width, height);
+        
+        // Compress with very low quality to reduce size significantly
+        const photoDataURL = canvas.toDataURL('image/jpeg', 0.4);
+        capturedPhotos.push(photoDataURL);
+        
+        // Visual feedback for successful capture
+        capturePhotoBtn.innerHTML = '<i class="fas fa-check me-2"></i>Photo Captured!';
+        capturePhotoBtn.classList.remove('btn-success');
+        capturePhotoBtn.classList.add('btn-info');
+        
+        setTimeout(() => {
+            capturePhotoBtn.innerHTML = '<i class="fas fa-camera me-2"></i>Capture Photo';
+            capturePhotoBtn.classList.remove('btn-info');
+            capturePhotoBtn.classList.add('btn-success');
+        }, 1000);
+        
+        displayPhotos();
+        updatePhotoInputs();
+        updatePhotoCount();
+        
+        showAlert(`Photo ${capturedPhotos.length} captured and compressed successfully!`, 'success');
+    }
+    
+    function closeCamera() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+        cameraSection.classList.add('d-none');
+        openCameraBtn.classList.remove('d-none');
+    }
+    
+    function displayPhotos() {
+        const capturedPhotosContainer = document.getElementById('capturedPhotos');
+        const noPhotosMessage = document.getElementById('noPhotosMessage');
+        
+        capturedPhotosContainer.innerHTML = '';
+        
+        if (capturedPhotos.length === 0) {
+            noPhotosMessage.style.display = 'block';
+        } else {
+            noPhotosMessage.style.display = 'none';
+            
+            capturedPhotos.forEach((photo, index) => {
+                const col = document.createElement('div');
+                col.className = 'col-md-4 col-sm-6 mb-3';
+                
+                col.innerHTML = `
+                    <div class="card shadow-sm photo-card">
+                        <div class="position-relative">
+                            <img src="${photo}" class="card-img-top" style="height: 150px; object-fit: cover;">
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <span class="badge bg-primary">${index + 1}</span>
+                            </div>
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted"><i class="fas fa-image me-1"></i>Photo ${index + 1}</small>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePhoto(${index})" title="Delete photo">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                capturedPhotosContainer.appendChild(col);
+            });
+        }
+    }
+    
+    function updatePhotoInputs() {
+        photoInputs.innerHTML = '';
+        
+        capturedPhotos.forEach((photo, index) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = `confiscated_photo_${index}`;
+            input.value = photo;
+            photoInputs.appendChild(input);
+        });
+    }
+    
+    function updatePhotoCount() {
+        photoCount.textContent = `${capturedPhotos.length} photos captured`;
+        document.getElementById('photoCountDisplay').textContent = capturedPhotos.length;
+        openCameraBtn.innerHTML = `<i class="fas fa-camera me-2"></i>Take Photos (${capturedPhotos.length}/15)`;
+        uploadFilesBtn.innerHTML = `<i class="fas fa-upload me-2"></i>Upload Files (${capturedPhotos.length}/15)`;
+        
+        if (capturedPhotos.length >= maxPhotos) {
+            openCameraBtn.disabled = true;
+            uploadFilesBtn.disabled = true;
+            openCameraBtn.innerHTML = `<i class="fas fa-camera me-2"></i>Maximum Photos Reached (15/15)`;
+            uploadFilesBtn.innerHTML = `<i class="fas fa-upload me-2"></i>Maximum Photos Reached (15/15)`;
+            capturePhotoBtn.disabled = true;
+        } else {
+            openCameraBtn.disabled = false;
+            uploadFilesBtn.disabled = false;
+            capturePhotoBtn.disabled = false;
+        }
+    }
+    
+    function handleFileUpload(event) {
+        const files = Array.from(event.target.files);
+        const remainingSlots = maxPhotos - capturedPhotos.length;
+        
+        if (files.length > remainingSlots) {
+            showAlert(`Only ${remainingSlots} more photos can be added. Maximum is 15 photos total.`, 'warning');
+            return;
+        }
+        
+        let processedFiles = 0;
+        const totalFiles = files.length;
+        const maxFileSize = 5 * 1024 * 1024; // 5MB limit
+        
+        files.forEach((file, index) => {
+            if (!file.type.startsWith('image/')) {
+                showAlert(`File "${file.name}" is not an image. Only image files are allowed.`, 'warning');
+                processedFiles++;
+                if (processedFiles === totalFiles) {
+                    event.target.value = ''; // Clear the input
+                }
+                return;
+            }
+            
+            if (file.size > maxFileSize) {
+                showAlert(`File "${file.name}" is too large. Maximum file size is 5MB.`, 'warning');
+                processedFiles++;
+                if (processedFiles === totalFiles) {
+                    event.target.value = ''; // Clear the input
+                }
+                return;
+            }
+            
+            // Compress and resize the image
+            compressImage(file, (compressedDataURL) => {
+                capturedPhotos.push(compressedDataURL);
+                processedFiles++;
+                
+                if (processedFiles === totalFiles) {
+                    displayPhotos();
+                    updatePhotoInputs();
+                    updatePhotoCount();
+                    showAlert(`${totalFiles} photo(s) uploaded and compressed successfully!`, 'success');
+                    event.target.value = ''; // Clear the input
+                }
+            });
+        });
+    }
+    
+    function compressImage(file, callback) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        img.onload = function() {
+            // Calculate new dimensions (max 400px width/height for maximum compression)
+            const maxDimension = 400;
+            let { width, height } = img;
+            
+            if (width > height) {
+                if (width > maxDimension) {
+                    height = (height * maxDimension) / width;
+                    width = maxDimension;
+                }
+            } else {
+                if (height > maxDimension) {
+                    width = (width * maxDimension) / height;
+                    height = maxDimension;
+                }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw and compress
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convert to JPEG with 0.3 quality for maximum compression
+            const compressedDataURL = canvas.toDataURL('image/jpeg', 0.3);
+            callback(compressedDataURL);
+        };
+        
+        img.src = URL.createObjectURL(file);
+    }
+    
+    window.removePhoto = function(index) {
+        if (confirm('Are you sure you want to delete this photo?')) {
+            capturedPhotos.splice(index, 1);
+            displayPhotos();
+            updatePhotoInputs();
+            updatePhotoCount();
+            showAlert('Photo deleted successfully', 'info');
+        }
+    };
+    
+    // Helper function to show alerts
+    function showAlert(message, type = 'info') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.parentNode.removeChild(alertDiv);
+            }
+        }, 3000);
+    }
+    
+    // Signature functionality
+    function setupSignaturePad(canvasId, clearBtnId, statusId, hiddenInputId) {
+        const canvas = document.getElementById(canvasId);
+        const clearBtn = document.getElementById(clearBtnId);
+        const status = document.getElementById(statusId);
+        const hiddenInput = document.getElementById(hiddenInputId);
+        const ctx = canvas.getContext('2d');
+        
+        let isDrawing = false;
+        let hasSignature = false;
+        
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#000';
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            
+            hasSignature = true;
+            updateSignatureStatus();
+        }
+        
+        function stopDrawing() {
+            if (isDrawing) {
+                isDrawing = false;
+                ctx.beginPath();
+                
+                // Save signature data
+                const signatureData = canvas.toDataURL();
+                hiddenInput.value = signatureData;
+            }
+        }
+        
+        function updateSignatureStatus() {
+            if (hasSignature) {
+                status.textContent = 'Signature captured';
+                status.style.color = '#28a745';
+            } else {
+                status.textContent = 'Signature required';
+                status.style.color = '#6c757d';
+            }
+        }
+        
+        function clearSignature() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hasSignature = false;
+            hiddenInput.value = '';
+            updateSignatureStatus();
+        }
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        
+        // Touch events
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+        
+        clearBtn.addEventListener('click', clearSignature);
+        
+        updateSignatureStatus();
+    }
+    
+    // Initialize signature pads
+    setupSignaturePad('roomInchargeCanvas', 'clearRoomInchargeBtn', 'roomInchargeStatus', 'roomInchargeSignatureData');
+    setupSignaturePad('oeDcCanvas', 'clearOeDcBtn', 'oeDcStatus', 'oeDcSignatureData');
+    
+    // Form submission
+    document.getElementById('inspectionForm').addEventListener('submit', function(e) {
+        // Basic validation
+        const roomNumber = document.getElementById('room_number').value.trim();
+        const companyName = document.getElementById('company_name').value.trim();
+        const inspectionDate = document.getElementById('inspection_date').value;
+        
+        if (!roomNumber || !companyName || !inspectionDate) {
+            e.preventDefault();
+            alert('Please fill in all required fields: Room Number, Company Name, and Date.');
+            return;
+        }
+        
+        // Close camera if open
+        closeCamera();
+    });
+});
+</script>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+#video {
+    background-color: #000;
+}
+
+.form-label {
+    font-weight: 600;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+canvas {
+    background-color: #fff;
+}
+
+.btn-group .btn {
+    border-radius: 0.25rem;
+    margin-right: 2px;
+}
+
+#photoGallery .card {
+    transition: transform 0.2s;
+}
+
+#photoGallery .card:hover {
+    transform: translateY(-2px);
+}
+
+.photo-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.photo-card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-3px);
+}
+
+.photo-card img {
+    transition: transform 0.3s ease;
+}
+
+.photo-card:hover img {
+    transform: scale(1.05);
+}
+
+#cameraSection .card {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+}
+
+#video {
+    border-radius: 0.5rem;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+.badge {
+    font-size: 0.8rem;
+}
+
+#noPhotosMessage {
+    border: 2px dashed #dee2e6;
+    border-radius: 0.5rem;
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

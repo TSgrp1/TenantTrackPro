@@ -1,0 +1,702 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Form{% endblock %}
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
+<style>
+.btn-lg {
+    margin-bottom: 10px;
+}
+@media (max-width: 768px) {
+    .btn-lg {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        Purchase Form
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form id="purchaseForm" method="POST" action="/submit-purchase-form">
+                        <!-- Header with TS Group Logo -->
+                        <div class="row mb-4" style="border: 2px solid #000; padding: 15px; background: #f8f9fa;">
+                            <div class="col-3 d-flex align-items-center">
+                                <img id="logoImage" src="{{ url_for('static', filename='uploads/logo.png') }}" 
+                                     alt="Organization Logo" 
+                                     style="max-height: 80px; max-width: 180px; object-fit: contain;"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <div style="background: #1e40af; color: white; padding: 12px; font-weight: bold; border-radius: 3px; position: relative; display: none;">
+                                    <div style="font-size: 16px; font-weight: bold;">TS GROUP</div>
+                                    <div style="background: #fbbf24; width: 15px; height: 15px; position: absolute; bottom: 8px; right: 8px;"></div>
+                                </div>
+                            </div>
+                            <div class="col-9 text-center">
+                                <h3 class="fw-bold mb-0" style="font-size: 20px; letter-spacing: 2px; color: #1e40af; background: #e0f2fe; padding: 8px; border-radius: 3px;">PURCHASE REQUISITION FORM</h3>
+                            </div>
+                        </div>
+
+                        <!-- PR Number and Date -->
+                        <div class="row mb-3" style="border: 1px solid #000;">
+                            <div class="col-6" style="border-right: 1px solid #000; padding: 10px;">
+                                <div class="mb-0">
+                                    <label class="form-label fw-bold mb-1">PR N( PL/25/</label>
+                                    <input type="text" class="form-control border-0 border-bottom" id="pr_number" name="pr_number" style="border-radius: 0;" required>
+                                </div>
+                            </div>
+                            <div class="col-6" style="padding: 10px;">
+                                <div class="mb-0">
+                                    <label class="form-label fw-bold mb-1">Date :</label>
+                                    <input type="date" class="form-control border-0 border-bottom" id="request_date" name="request_date" style="border-radius: 0;" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category Checkboxes -->
+                        <div class="row mb-3" style="border: 1px solid #000; border-top: 0;">
+                            <div class="col-12" style="padding: 10px;">
+                                <div class="row">
+                                    <div class="col-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="purchaseStock" name="category[]" value="Purchase Stock" checked>
+                                            <label class="form-check-label fw-bold" for="purchaseStock">Purchase Stock</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="vehicleMaintenance" name="category[]" value="Vehicle maintenance">
+                                            <label class="form-check-label" for="vehicleMaintenance">Vehicle maintenance</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="operationalItems" name="category[]" value="Operational Items (Non-Stock)">
+                                            <label class="form-check-label" for="operationalItems">Operational Items (Non-Stock)</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="stationeryOffice" name="category[]" value="Stationery/Office Supplies">
+                                            <label class="form-check-label" for="stationeryOffice">Stationery/Office Supplies</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="generalRepairs" name="category[]" value="General Repairs & Office maintenance">
+                                            <label class="form-check-label" for="generalRepairs">General Repairs & Office maintenance</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Items Table -->
+                        <div class="row mb-3" style="border: 1px solid #000; border-top: 0;">
+                            <div class="col-12 p-0">
+                                <table class="table table-bordered mb-0" id="itemsTable" style="border: none;">
+                                    <thead style="background: #f8f9fa;">
+                                        <tr>
+                                            <th style="border: 1px solid #000; width: 5%;" class="text-center">No</th>
+                                            <th style="border: 1px solid #000; width: 40%;" class="text-center">Item / Description</th>
+                                            <th style="border: 1px solid #000; width: 10%;" class="text-center">Unit Cost</th>
+                                            <th style="border: 1px solid #000; width: 8%;" class="text-center">Qty</th>
+                                            <th style="border: 1px solid #000; width: 10%;" class="text-center">Total</th>
+                                            <th style="border: 1px solid #000; width: 8%;" class="text-center">Unit Required</th>
+                                            <th style="border: 1px solid #000; width: 9%;" class="text-center">Cost Code</th>
+                                            <th style="border: 1px solid #000; width: 10%;" class="text-center">Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="itemsTableBody">
+                                        <!-- Dynamic rows will be added here by JavaScript -->
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="4" class="text-end fw-bold">Subtotal:</td>
+                                            <td><input type="number" id="subtotal" class="form-control border-0 fw-bold" readonly style="font-size: 12px;"></td>
+                                            <td colspan="3"></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="3" class="text-end">
+                                                <input type="text" id="other_label" class="form-control border-0 text-end" placeholder="Tax/Other" style="font-size: 12px;">
+                                            </td>
+                                            <td class="text-end fw-bold">Amount:</td>
+                                            <td><input type="number" id="other_amount" class="form-control border-0" step="0.01" style="font-size: 12px;"></td>
+                                            <td colspan="3"></td>
+                                        </tr>
+                                        <tr class="table-success">
+                                            <td colspan="4" class="text-end fw-bold fs-6">GRAND TOTAL:</td>
+                                            <td><input type="number" id="grand_total" class="form-control border-0 fw-bold fs-6" readonly style="background: #d1e7dd;"></td>
+                                            <td colspan="3"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                                
+                                <!-- Add/Remove Row Buttons -->
+                                <div class="mt-2 text-center">
+                                    <button type="button" class="btn btn-sm btn-success me-2" onclick="addNewRow()">
+                                        <i class="fas fa-plus"></i> Add Item Row
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeLastRow()">
+                                        <i class="fas fa-minus"></i> Remove Last Row
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer Section -->
+                        <div class="row mb-3" style="border: 1px solid #000; border-top: 0;">
+                            <div class="col-6" style="border-right: 1px solid #000; padding: 15px;">
+                                <div class="text-center fw-bold mb-2" style="background: #e9ecef; padding: 5px;">Requested By</div>
+                                <div class="text-center" style="font-size: 12px;">DC/Site In Charge/Admin</div>
+                            </div>
+                            <div class="col-6" style="padding: 15px;">
+                                <div class="text-center fw-bold mb-2" style="background: #e9ecef; padding: 5px;">Recommended By</div>
+                                <div class="text-center" style="font-size: 12px;">SEM/PM/AM</div>
+                            </div>
+                        </div>
+
+                        <!-- Signature Section -->
+                        <div class="row mb-3" style="border: 1px solid #000; border-top: 0;">
+                            <div class="col-6" style="border-right: 1px solid #000; padding: 8px; text-align: center;">
+                                <div class="fw-bold" style="font-size: 14px;">Requested By :</div>
+                            </div>
+                            <div class="col-6" style="padding: 8px; text-align: center;">
+                                <div class="fw-bold" style="font-size: 14px;">Recommended By :</div>
+                            </div>
+                        </div>
+
+                        <!-- Three Column Signature Layout -->
+                        <div class="row mb-3" style="border: 1px solid #000; border-top: 0;">
+                            <!-- D/C & O/E Column -->
+                            <div class="col-4" style="border-right: 1px solid #000; padding: 12px;">
+                                <div class="text-center fw-bold mb-3" style="font-size: 13px;">D/C & O/E</div>
+                                
+                                <!-- Signature Canvas Area -->
+                                <div style="border: 1px solid #ccc; height: 80px; margin-bottom: 8px; background: #fafafa;">
+                                    <canvas id="dc_oe_signature" width="220" height="75" style="display: block; margin: auto; cursor: crosshair;"></canvas>
+                                    <input type="hidden" name="dc_oe_signature" id="dc_oe_signature_data">
+                                </div>
+                                
+                                <!-- Name Input -->
+                                <div style="border-bottom: 1px solid #000; margin-bottom: 5px;">
+                                    <input type="text" class="form-control border-0 p-1" placeholder="Name" 
+                                           id="dc_oe_name" name="dc_oe_name" style="font-size: 11px; text-align: center;">
+                                </div>
+                                
+                                <!-- Signature Label -->
+                                <div style="border-bottom: 1px solid #000; margin-bottom: 8px; padding: 3px 0;">
+                                    <div style="font-size: 10px; text-align: center; color: #666;">Signature</div>
+                                </div>
+                                
+                                <button type="button" class="btn btn-outline-secondary btn-sm w-100" 
+                                        onclick="clearSignature('dc_oe_signature')" style="font-size: 9px;">Clear</button>
+                            </div>
+
+                            <!-- Operation Manager Column -->
+                            <div class="col-4" style="border-right: 1px solid #000; padding: 12px;">
+                                <div class="text-center fw-bold mb-3" style="font-size: 13px;">Operation Manager</div>
+                                
+                                <!-- Signature Canvas Area -->
+                                <div style="border: 1px solid #ccc; height: 80px; margin-bottom: 8px; background: #fafafa;">
+                                    <canvas id="operation_manager_signature" width="220" height="75" style="display: block; margin: auto; cursor: crosshair;"></canvas>
+                                    <input type="hidden" name="operation_manager_signature" id="operation_manager_signature_data">
+                                </div>
+                                
+                                <!-- Name Input -->
+                                <div style="border-bottom: 1px solid #000; margin-bottom: 5px;">
+                                    <input type="text" class="form-control border-0 p-1" placeholder="Name" 
+                                           id="operation_manager_name" name="operation_manager_name" style="font-size: 11px; text-align: center;">
+                                </div>
+                                
+                                <!-- Signature Label -->
+                                <div style="border-bottom: 1px solid #000; margin-bottom: 8px; padding: 3px 0;">
+                                    <div style="font-size: 10px; text-align: center; color: #666;">Signature</div>
+                                </div>
+                                
+                                <button type="button" class="btn btn-outline-secondary btn-sm w-100" 
+                                        onclick="clearSignature('operation_manager_signature')" style="font-size: 9px;">Clear</button>
+                            </div>
+
+                            <!-- General Manager Column -->
+                            <div class="col-4" style="padding: 12px;">
+                                <div class="text-center fw-bold mb-3" style="font-size: 13px;">General Manager</div>
+                                
+                                <!-- Signature Canvas Area -->
+                                <div style="border: 1px solid #ccc; height: 80px; margin-bottom: 8px; background: #fafafa;">
+                                    <canvas id="general_manager_signature" width="220" height="75" style="display: block; margin: auto; cursor: crosshair;"></canvas>
+                                    <input type="hidden" name="general_manager_signature" id="general_manager_signature_data">
+                                </div>
+                                
+                                <!-- Name Input -->
+                                <div style="border-bottom: 1px solid #000; margin-bottom: 5px;">
+                                    <input type="text" class="form-control border-0 p-1" placeholder="Name" 
+                                           id="general_manager_name" name="general_manager_name" style="font-size: 11px; text-align: center;">
+                                </div>
+                                
+                                <!-- Signature Label -->
+                                <div style="border-bottom: 1px solid #000; margin-bottom: 8px; padding: 3px 0;">
+                                    <div style="font-size: 10px; text-align: center; color: #666;">Signature</div>
+                                </div>
+                                
+                                <button type="button" class="btn btn-outline-secondary btn-sm w-100" 
+                                        onclick="clearSignature('general_manager_signature')" style="font-size: 9px;">Clear</button>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="row">
+                            <div class="col-12 text-center">
+                                <input type="hidden" name="subtotal" id="hidden_subtotal">
+                                <input type="hidden" name="other_label" id="hidden_other_label">
+                                <input type="hidden" name="other_amount" id="hidden_other_amount">
+                                <input type="hidden" name="grand_total" id="hidden_grand_total">
+                                
+                                <button type="submit" class="btn btn-primary btn-lg me-2" onclick="updateHiddenFields()">
+                                    <i class="fas fa-save me-2"></i>Submit Purchase Form
+                                </button>
+                                <a href="/purchase-form-storage" class="btn btn-outline-secondary btn-lg">
+                                    <i class="fas fa-list me-2"></i>View All Forms
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Signature functionality
+let signaturePads = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize signature pads with improved canvas setup
+    const canvases = ['dc_oe_signature', 'operation_manager_signature', 'general_manager_signature'];
+    
+    canvases.forEach(function(canvasId) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Set up canvas for better drawing
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000000';
+        
+        signaturePads[canvasId] = {
+            canvas: canvas,
+            ctx: ctx,
+            isDrawing: false
+        };
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+        
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            handleTouch(e, 'mousedown');
+        });
+        canvas.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            handleTouch(e, 'mousemove');
+        });
+        canvas.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            stopDrawing(e);
+        });
+    });
+    
+    // Initialize with 5 rows when DOM is ready
+    for (let i = 1; i <= 5; i++) {
+        addItemRow();
+    }
+    
+    // Add event listeners for calculations using jQuery
+    $(document).on('input', '.quantity, .unit-cost', function() {
+        const row = $(this).closest('tr');
+        const quantity = parseFloat(row.find('.quantity').val()) || 0;
+        const unitCost = parseFloat(row.find('.unit-cost').val()) || 0;
+        const total = quantity * unitCost;
+        row.find('.total').val(total.toFixed(2));
+    });
+});
+
+let itemRowCounter = 0;
+
+function addItemRow() {
+    itemRowCounter++;
+    const rowNumber = itemRowCounter;
+    
+    const newRow = `
+        <tr>
+            <td style="border: 1px solid #000; text-align: center; padding: 8px;">${rowNumber}</td>
+            <td style="border: 1px solid #000; padding: 5px;">
+                <input type="text" class="form-control item-description border-0 p-1" name="description[]" placeholder="Enter item description" style="font-size: 12px;">
+            </td>
+            <td style="border: 1px solid #000; padding: 5px;">
+                <input type="number" class="form-control unit-cost border-0 p-1" name="unit_cost[]" step="0.01" style="font-size: 12px;">
+            </td>
+            <td style="border: 1px solid #000; padding: 5px;">
+                <input type="number" class="form-control quantity border-0 p-1" name="quantity[]" value="1" min="1" style="font-size: 12px;">
+            </td>
+            <td style="border: 1px solid #000; padding: 5px;">
+                <input type="number" class="form-control total border-0 p-1" name="total[]" step="0.01" readonly style="font-size: 12px; background-color: #f8f9fa;">
+            </td>
+            <td style="border: 1px solid #000; padding: 5px;">
+                <input type="text" class="form-control unit border-0 p-1" name="unit[]" placeholder="e.g., pcs, kg" style="font-size: 12px;">
+            </td>
+            <td style="border: 1px solid #000; padding: 5px;">
+                <input type="text" class="form-control cost-code border-0 p-1" name="cost_code[]" placeholder="Cost code" style="font-size: 12px;">
+            </td>
+            <td style="border: 1px solid #000; padding: 5px;">
+                <input type="text" class="form-control remarks border-0 p-1" name="remarks[]" placeholder="Optional remarks" style="font-size: 12px;">
+            </td>
+        </tr>
+    `;
+    
+    document.getElementById('itemsTableBody').insertAdjacentHTML('beforeend', newRow);
+    calculateTotals(); // Recalculate when new row added
+}
+
+function removeItemRow() {
+    const tbody = document.getElementById('itemsTableBody');
+    const rows = tbody.getElementsByTagName('tr');
+    if (rows.length > 1) {
+        tbody.removeChild(rows[rows.length - 1]);
+        itemRowCounter = Math.max(0, itemRowCounter - 1);
+        calculateTotals(); // Recalculate when row removed
+    }
+}
+
+function startDrawing(e) {
+    const canvasId = e.target.id;
+    const rect = e.target.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    signaturePads[canvasId].isDrawing = true;
+    signaturePads[canvasId].ctx.beginPath();
+    signaturePads[canvasId].ctx.moveTo(x, y);
+}
+
+function draw(e) {
+    const canvasId = e.target.id;
+    if (!signaturePads[canvasId].isDrawing) return;
+    
+    const rect = e.target.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    signaturePads[canvasId].ctx.lineTo(x, y);
+    signaturePads[canvasId].ctx.stroke();
+}
+
+function stopDrawing(e) {
+    const canvasId = e.target.id;
+    if (signaturePads[canvasId].isDrawing) {
+        signaturePads[canvasId].isDrawing = false;
+        
+        // Save signature data
+        const signatureData = signaturePads[canvasId].canvas.toDataURL();
+        document.getElementById(canvasId + '_data').value = signatureData;
+    }
+}
+
+function handleTouch(e, eventType) {
+    const touch = e.touches[0] || e.changedTouches[0];
+    if (!touch) return;
+    
+    const rect = e.target.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    
+    const canvasId = e.target.id;
+    
+    if (eventType === 'mousedown') {
+        signaturePads[canvasId].isDrawing = true;
+        signaturePads[canvasId].ctx.beginPath();
+        signaturePads[canvasId].ctx.moveTo(x, y);
+    } else if (eventType === 'mousemove' && signaturePads[canvasId].isDrawing) {
+        signaturePads[canvasId].ctx.lineTo(x, y);
+        signaturePads[canvasId].ctx.stroke();
+    }
+}
+
+function clearSignature(canvasId) {
+    if (signaturePads[canvasId]) {
+        const ctx = signaturePads[canvasId].ctx;
+        ctx.clearRect(0, 0, signaturePads[canvasId].canvas.width, signaturePads[canvasId].canvas.height);
+        document.getElementById(canvasId + '_data').value = '';
+    }
+}
+
+// Load stock items from Stock Storage
+function loadStockItems() {
+    fetch('/api/stock-items')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const selects = document.querySelectorAll('.item-description');
+                selects.forEach(select => {
+                    // Clear existing options except first
+                    while (select.children.length > 1) {
+                        select.removeChild(select.lastChild);
+                    }
+                    
+                    // Add stock items
+                    data.items.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.name;
+                        option.textContent = item.name;
+                        select.appendChild(option);
+                    });
+                });
+            }
+        })
+        .catch(error => console.error('Error loading stock items:', error));
+}
+
+// Add new row functionality
+function addNewRow() {
+    addItemRow();
+    calculateTotals();
+}
+
+// Remove row functionality  
+function removeLastRow() {
+    removeItemRow();
+    calculateTotals();
+}
+
+// Remove row
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-row')) {
+        const tbody = document.querySelector('#itemsTable tbody');
+        if (tbody.children.length > 1) {
+            e.target.closest('tr').remove();
+            updateCalculations();
+        }
+    }
+});
+
+// Update calculations - initialize once
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('unit-cost') || e.target.classList.contains('quantity')) {
+        const row = e.target.closest('tr');
+        const unitCost = parseFloat(row.querySelector('.unit-cost').value) || 0;
+        const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+        const total = unitCost * quantity;
+        row.querySelector('.total').value = total.toFixed(2);
+        
+        calculateTotals();
+    }
+    
+    if (e.target.id === 'other_amount') {
+        calculateTotals();
+    }
+});
+
+function calculateTotals() {
+    const totals = document.querySelectorAll('.total');
+    let subtotal = 0;
+    
+    totals.forEach(total => {
+        subtotal += parseFloat(total.value) || 0;
+    });
+    
+    // Update subtotal field
+    const subtotalField = document.getElementById('subtotal');
+    if (subtotalField) {
+        subtotalField.value = subtotal.toFixed(2);
+    }
+    
+    // Calculate grand total with other amount
+    const otherAmountField = document.getElementById('other_amount');
+    const otherAmount = otherAmountField ? parseFloat(otherAmountField.value) || 0 : 0;
+    const grandTotal = subtotal + otherAmount;
+    
+    const grandTotalField = document.getElementById('grand_total');
+    if (grandTotalField) {
+        grandTotalField.value = grandTotal.toFixed(2);
+    }
+}
+
+// Form submission
+document.getElementById('purchaseForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Validate signatures
+    const signatures = ['dc_oe_signature_data', 'operation_manager_signature_data', 'general_manager_signature_data'];
+    let hasSignature = false;
+    
+    signatures.forEach(sig => {
+        if (document.getElementById(sig).value) {
+            hasSignature = true;
+        }
+    });
+    
+    if (!hasSignature) {
+        alert('Please provide at least one signature before submitting.');
+        return;
+    }
+    
+    // Submit form
+    const formData = new FormData(this);
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Purchase form submitted successfully!');
+            window.location.href = "/purchase-form-storage";
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting the form.');
+    });
+});
+
+// PDF Download functionality
+function downloadPDF() {
+    // Get form data
+    const formData = new FormData(document.getElementById('purchaseForm'));
+    
+    // Show loading state
+    const downloadBtn = document.querySelector('.btn-success');
+    const originalText = downloadBtn.innerHTML;
+    downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating PDF...';
+    downloadBtn.disabled = true;
+    
+    // Create a form for PDF generation
+    const pdfForm = document.createElement('form');
+    pdfForm.method = 'POST';
+    pdfForm.action = '/download-purchase-form-pdf';
+    pdfForm.style.display = 'none';
+    
+    // Add all form data to the PDF form
+    for (let [key, value] of formData.entries()) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        pdfForm.appendChild(input);
+    }
+    
+    // Add calculated totals
+    const subtotalField = document.getElementById('subtotal');
+    if (subtotalField) {
+        const subtotalInput = document.createElement('input');
+        subtotalInput.type = 'hidden';
+        subtotalInput.name = 'calculated_subtotal';
+        subtotalInput.value = subtotalField.value || '0';
+        pdfForm.appendChild(subtotalInput);
+    }
+    
+    const grandTotalField = document.getElementById('grand_total');
+    if (grandTotalField) {
+        const grandTotalInput = document.createElement('input');
+        grandTotalInput.type = 'hidden';
+        grandTotalInput.name = 'calculated_grand_total';
+        grandTotalInput.value = grandTotalField.value || '0';
+        pdfForm.appendChild(grandTotalInput);
+    }
+    
+    document.body.appendChild(pdfForm);
+    pdfForm.submit();
+    document.body.removeChild(pdfForm);
+    
+    // Reset button state after a delay
+    setTimeout(() => {
+        downloadBtn.innerHTML = originalText;
+        downloadBtn.disabled = false;
+    }, 3000);
+}
+
+// Logo Edit functionality
+function editLogo() {
+    // Create file input for logo upload
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    
+    fileInput.onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Logo file must be less than 2MB');
+                return;
+            }
+            
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('logo', file);
+            
+            // Show loading state
+            const logoBtn = document.querySelector('.btn-info');
+            const originalText = logoBtn.innerHTML;
+            logoBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+            logoBtn.disabled = true;
+            
+            fetch('/upload-logo', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update logo in the form if it exists
+                    const logoImg = document.querySelector('#logoImage');
+                    if (logoImg) {
+                        logoImg.src = data.logo_url + '?t=' + new Date().getTime(); // Add timestamp for cache busting
+                    }
+                    alert('Logo updated successfully!');
+                    // Refresh page to show updated logo
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    alert('Error uploading logo: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error uploading logo');
+            })
+            .finally(() => {
+                logoBtn.innerHTML = originalText;
+                logoBtn.disabled = false;
+            });
+        }
+    };
+    
+    fileInput.click();
+}
+</script>
+{% endblock %}

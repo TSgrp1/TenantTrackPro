@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Asset{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-edit"></i> Edit Asset</h4>
+                    <p class="text-muted mb-0">{{ asset.asset_name_ref.name }} - {{ asset.asset_name_ref.category }}</p>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="serial_number" class="form-label">Serial Number *</label>
+                                    <input type="text" class="form-control" id="serial_number" name="serial_number" 
+                                           value="{{ asset.serial_number }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="room_number" class="form-label">Room Number</label>
+                                    <div class="input-group">
+                                        <select class="form-select" id="roomNumberSelect" onchange="handleRoomSelection()">
+                                            <option value="">Select Room Number</option>
+                                            <option value="custom">+ Enter Custom Room Number</option>
+                                            {% for room in room_numbers %}
+                                                <option value="{{ room.room_number }}" 
+                                                        {% if asset.room_number == room.room_number %}selected{% endif %}>
+                                                    {{ room.room_number }} (Building {{ room.building }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        <input type="text" class="form-control" id="room_number" name="room_number" 
+                                               value="{{ asset.room_number or '' }}" placeholder="Enter room number" 
+                                               {% if asset.room_number and asset.room_number not in room_numbers|map(attribute='room_number')|list %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+                                        <button type="button" class="btn btn-outline-secondary" id="backToDropdown" 
+                                                onclick="switchBackToDropdown()" 
+                                                {% if asset.room_number and asset.room_number not in room_numbers|map(attribute='room_number')|list %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+                                            Back to List
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Status *</label>
+                                    <select class="form-select" id="status" name="status" required>
+                                        <option value="Room" {% if asset.status == 'Room' %}selected{% endif %}>Room</option>
+                                        <option value="Store" {% if asset.status == 'Store' %}selected{% endif %}>Store</option>
+                                        <option value="Damage" {% if asset.status == 'Damage' %}selected{% endif %}>Damage</option>
+                                        <option value="Dispose" {% if asset.status == 'Dispose' %}selected{% endif %}>Dispose</option>
+                                        <option value="Other" {% if asset.status == 'Other' %}selected{% endif %}>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="quantity" class="form-label">Quantity *</label>
+                                    <input type="number" class="form-control" id="quantity" name="quantity" 
+                                           value="{{ asset.quantity }}" min="1" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"
+                                      placeholder="Additional notes or description (optional)">{{ asset.notes or '' }}</textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('asset_name_details', asset_name_id=asset.asset_name_id) }}" 
+                               class="btn btn-secondary me-md-2">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Update Asset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Asset Information -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Asset Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Date Added:</strong> {{ asset.date_added.strftime('%Y-%m-%d %H:%M') if asset.date_added else 'Not recorded' }}</p>
+                            <p><strong>Last Edited:</strong> {{ asset.last_edited.strftime('%Y-%m-%d %H:%M') if asset.last_edited else 'Never' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Asset Type:</strong> {{ asset.asset_name_ref.name }}</p>
+                            <p><strong>Category:</strong> {{ asset.asset_name_ref.category }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function handleRoomSelection() {
+    const dropdown = document.getElementById('roomNumberSelect');
+    const textInput = document.getElementById('room_number');
+    const backButton = document.getElementById('backToDropdown');
+    
+    if (dropdown.value === 'custom') {
+        // Show text input, hide dropdown
+        dropdown.style.display = 'none';
+        textInput.style.display = 'block';
+        textInput.focus();
+        backButton.style.display = 'block';
+        textInput.value = '';
+    } else if (dropdown.value !== '') {
+        // Set the selected room number
+        textInput.value = dropdown.value;
+    } else {
+        // Clear the text input if no selection
+        textInput.value = '';
+    }
+}
+
+function switchBackToDropdown() {
+    const dropdown = document.getElementById('roomNumberSelect');
+    const textInput = document.getElementById('room_number');
+    const backButton = document.getElementById('backToDropdown');
+    
+    // Show dropdown, hide text input
+    dropdown.style.display = 'block';
+    textInput.style.display = 'none';
+    backButton.style.display = 'none';
+    
+    // Reset dropdown to first option
+    dropdown.value = '';
+    textInput.value = '';
+}
+
+// Initialize the form state on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdown = document.getElementById('roomNumberSelect');
+    const textInput = document.getElementById('room_number');
+    const backButton = document.getElementById('backToDropdown');
+    
+    // If there's a room number that's not in the dropdown, show custom input
+    if (textInput.value && dropdown.value === '') {
+        dropdown.style.display = 'none';
+        textInput.style.display = 'block';
+        backButton.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}

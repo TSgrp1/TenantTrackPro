@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}Key Management Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-clipboard-list me-2"></i>Key Management Records</h1>
+                <div>
+                    <a href="/key-management/qr-codes" class="btn btn-primary me-2">
+                        <i class="fas fa-qrcode me-2"></i>QR Codes
+                    </a>
+                    <a href="/key-management" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-filter me-2"></i>Filters
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-2">
+                    <label for="room_number" class="form-label">Room Number</label>
+                    <select class="form-control" id="room_number" name="room_number">
+                        <option value="">All Rooms</option>
+                        {% for room in room_numbers %}
+                            <option value="{{ room.room_number }}" {% if room_filter == room.room_number %}selected{% endif %}>
+                                {{ room.room_number }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="resident_name" class="form-label">Resident Name</label>
+                    <input type="text" class="form-control" id="resident_name" name="resident_name" 
+                           value="{{ name_filter }}" placeholder="Enter name">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-control" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="Active" {% if status_filter == 'Active' %}selected{% endif %}>Active</option>
+                        <option value="Returned" {% if status_filter == 'Returned' %}selected{% endif %}>Returned</option>
+                        <option value="Not Returned" {% if status_filter == 'Not Returned' %}selected{% endif %}>Not Returned</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i>Filter
+                    </button>
+                    <a href="{{ url_for('key_management_records') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Records Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>Key Records ({{ records|length }} records)
+            </h5>
+            <div class="btn-group">
+                <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-download me-1"></i>Export Selected
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="exportSelected('excel')">
+                        <i class="fas fa-file-excel me-2"></i>Export to Excel
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="exportSelected('pdf')">
+                        <i class="fas fa-file-pdf me-2"></i>Export to PDF
+                    </a></li>
+                </ul>
+                
+                <button type="button" class="btn btn-danger btn-sm" onclick="deleteSelected()">
+                    <i class="fas fa-trash me-1"></i>Delete Selected
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if records %}
+            <form id="recordsForm">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th width="50">
+                                    <input type="checkbox" id="selectAll" class="form-check-input">
+                                </th>
+                                <th>Date & Time</th>
+                                <th>Room</th>
+                                <th>Resident Name</th>
+                                <th>Company</th>
+                                <th>Action</th>
+                                <th>Status</th>
+                                <th>Time Held</th>
+                                <th width="100">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in records %}
+                            <tr {% if record.is_overdue %}class="table-warning"{% endif %}>
+                                <td>
+                                    <input type="checkbox" name="record_ids" value="{{ record.id }}" class="form-check-input record-checkbox">
+                                </td>
+                                <td>
+                                    <small>{{ record.scan_time.strftime('%Y-%m-%d') }}</small><br>
+                                    <strong>{{ record.scan_time.strftime('%H:%M:%S') }}</strong>
+                                </td>
+                                <td><strong>{{ record.room_number }}</strong></td>
+                                <td>{{ record.resident_name }}</td>
+                                <td>{{ record.company_name }}</td>
+                                <td>
+                                    <span class="badge {% if record.scan_type == 'out' %}bg-danger{% else %}bg-success{% endif %}">
+                                        <i class="fas fa-{% if record.scan_type == 'out' %}sign-out-alt{% else %}sign-in-alt{% endif %} me-1"></i>
+                                        Key {{ record.scan_type.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if record.status == 'Not Returned' %}bg-warning text-dark
+                                        {% elif record.status == 'Returned' %}bg-success
+                                        {% else %}bg-primary{% endif %}">
+                                        {% if record.status == 'Not Returned' %}
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                        {% elif record.status == 'Returned' %}
+                                            <i class="fas fa-check-circle me-1"></i>
+                                        {% else %}
+                                            <i class="fas fa-clock me-1"></i>
+                                        {% endif %}
+                                        {{ record.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small>{{ record.time_held_minutes }} min</small>
+                                    {% if record.is_overdue and not record.is_returned %}
+                                        <br><small class="text-danger"><i class="fas fa-exclamation-triangle"></i> Overdue</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if can_user_edit(current_user, 'key_management') %}
+                                    <a href="{{ url_for('edit_key_record', record_id=record.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" title="Edit Record">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No key records found</h5>
+                <p class="text-muted">Try adjusting your filter criteria or scan some QR codes to get started.</p>
+                <a href="{{ url_for('key_management_qr_codes') }}" class="btn btn-primary">
+                    <i class="fas fa-qrcode me-2"></i>Generate QR Codes
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Select All functionality
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.record-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+// Update select all when individual checkboxes change
+document.querySelectorAll('.record-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const allCheckboxes = document.querySelectorAll('.record-checkbox');
+        const checkedCheckboxes = document.querySelectorAll('.record-checkbox:checked');
+        document.getElementById('selectAll').checked = allCheckboxes.length === checkedCheckboxes.length;
+    });
+});
+
+function getSelectedIds() {
+    const selected = [];
+    document.querySelectorAll('.record-checkbox:checked').forEach(checkbox => {
+        selected.push(checkbox.value);
+    });
+    return selected;
+}
+
+function exportSelected(type) {
+    const selectedIds = getSelectedIds();
+    if (selectedIds.length === 0) {
+        alert('Please select at least one record to export.');
+        return;
+    }
+    
+    const params = new URLSearchParams();
+    selectedIds.forEach(id => params.append('record_ids', id));
+    
+    window.open(`{{ url_for('export_key_records', export_type='') }}${type}?${params.toString()}`, '_blank');
+}
+
+function deleteSelected() {
+    const selectedIds = getSelectedIds();
+    if (selectedIds.length === 0) {
+        alert('Please select at least one record to delete.');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete ${selectedIds.length} selected record(s)? This action cannot be undone.`)) {
+        return;
+    }
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url_for("delete_key_records") }}';
+    
+    selectedIds.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'record_ids';
+        input.value = id;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// Auto-refresh every 60 seconds to update overdue status
+setInterval(() => {
+    if (!document.querySelector('.record-checkbox:checked')) {
+        location.reload();
+    }
+}, 60000);
+</script>
+{% endblock %}

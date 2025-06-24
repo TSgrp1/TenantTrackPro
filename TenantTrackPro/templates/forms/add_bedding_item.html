@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Add Bedding Item{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus me-2"></i>Add New Bedding Item
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <!-- Basic Information -->
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">Basic Information</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="serial_number" class="form-label">Serial Number <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="serial_number" name="serial_number" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="item_name" class="form-label">Item Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="item_name" name="item_name" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="category_id" class="form-label">Category <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="category_id" name="category_id" required>
+                                        <option value="">Select category...</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.id }}">{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if not categories %}
+                                    <div class="form-text text-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        No categories available. <a href="{{ url_for('bedding_categories') }}">Create categories first</a>.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="In Store" selected>In Store</option>
+                                        <option value="In Room">In Room</option>
+                                        <option value="Damaged">Damaged</option>
+                                        <option value="Others">Others</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="condition" class="form-label">Condition</label>
+                                    <select class="form-select" id="condition" name="condition">
+                                        <option value="Excellent">Excellent</option>
+                                        <option value="Good" selected>Good</option>
+                                        <option value="Fair">Fair</option>
+                                        <option value="Poor">Poor</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="description" name="description" rows="3" placeholder="Additional details..."></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Assignment & Product Details -->
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">Assignment Details</h5>
+                                
+                                <div class="mb-3" id="room_field" style="display: none;">
+                                    <label for="room_number" class="form-label">Room Number</label>
+                                    <input type="text" class="form-control" id="room_number" name="room_number">
+                                </div>
+                                
+                                <div class="mb-3" id="resident_field" style="display: none;">
+                                    <label for="resident_name" class="form-label">Resident Name</label>
+                                    <input type="text" class="form-control" id="resident_name" name="resident_name">
+                                </div>
+                                
+                                <div class="mb-3" id="company_field" style="display: none;">
+                                    <label for="company_name" class="form-label">Company Name</label>
+                                    <input type="text" class="form-control" id="company_name" name="company_name">
+                                </div>
+                                
+                                <h5 class="text-primary mb-3 mt-4">Product Details</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="brand" class="form-label">Brand</label>
+                                    <input type="text" class="form-control" id="brand" name="brand">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="model" class="form-label">Model</label>
+                                    <input type="text" class="form-control" id="model" name="model">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="purchase_date" class="form-label">Purchase Date</label>
+                                    <input type="date" class="form-control" id="purchase_date" name="purchase_date">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="purchase_price" class="form-label">Purchase Price</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="purchase_price" name="purchase_price" step="0.01" min="0">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="warranty_expiry" class="form-label">Warranty Expiry</label>
+                                    <input type="date" class="form-control" id="warranty_expiry" name="warranty_expiry">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Maintenance Details -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">Maintenance Information</h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="last_maintenance_date" class="form-label">Last Maintenance Date</label>
+                                    <input type="date" class="form-control" id="last_maintenance_date" name="last_maintenance_date">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="next_maintenance_date" class="form-label">Next Maintenance Date</label>
+                                    <input type="date" class="form-control" id="next_maintenance_date" name="next_maintenance_date">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Form Actions -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <hr>
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('bedding_items') }}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary" {% if not categories %}disabled{% endif %}>
+                                        <i class="fas fa-save me-1"></i>Add Bedding Item
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle status change to show/hide assignment fields
+document.getElementById('status').addEventListener('change', function() {
+    const status = this.value;
+    const roomField = document.getElementById('room_field');
+    const residentField = document.getElementById('resident_field');
+    const companyField = document.getElementById('company_field');
+    
+    if (status === 'In Room') {
+        roomField.style.display = 'block';
+        residentField.style.display = 'block';
+        companyField.style.display = 'block';
+        document.getElementById('room_number').required = true;
+        document.getElementById('resident_name').required = true;
+    } else {
+        roomField.style.display = 'none';
+        residentField.style.display = 'none';
+        companyField.style.display = 'none';
+        document.getElementById('room_number').required = false;
+        document.getElementById('resident_name').required = false;
+        // Clear values when hiding
+        document.getElementById('room_number').value = '';
+        document.getElementById('resident_name').value = '';
+        document.getElementById('company_name').value = '';
+    }
+});
+
+// Auto-populate next maintenance date when last maintenance is selected
+document.getElementById('last_maintenance_date').addEventListener('change', function() {
+    if (this.value) {
+        const lastDate = new Date(this.value);
+        const nextDate = new Date(lastDate);
+        nextDate.setMonth(nextDate.getMonth() + 6); // Default to 6 months later
+        
+        const nextMaintenanceField = document.getElementById('next_maintenance_date');
+        if (!nextMaintenanceField.value) {
+            nextMaintenanceField.value = nextDate.toISOString().split('T')[0];
+        }
+    }
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const status = document.getElementById('status').value;
+    if (status === 'In Room') {
+        const roomNumber = document.getElementById('room_number').value;
+        const residentName = document.getElementById('resident_name').value;
+        
+        if (!roomNumber || !residentName) {
+            e.preventDefault();
+            alert('Room number and resident name are required for items assigned to rooms.');
+            return false;
+        }
+    }
+});
+</script>
+{% endblock %}

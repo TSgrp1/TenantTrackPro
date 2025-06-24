@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Form Storage{% endblock %}
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-archive me-2"></i>
+                            Purchase Form Storage
+                        </h4>
+                        {% if can_user_create(current_user, 'purchase') %}
+                        <a href="/purchase-form" class="btn btn-dark btn-sm">
+                            <i class="fas fa-plus me-1"></i>
+                            New Purchase Form
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Search and Controls Bar -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <form method="GET" class="d-flex">
+                                <input type="text" class="form-control me-2" name="search" 
+                                       placeholder="Search by PR number, requested by, or category..." 
+                                       value="{{ search_query }}">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div id="bulkActions" style="display: none;" class="me-2 d-inline-block">
+                                <button type="button" class="btn btn-danger btn-sm" onclick="confirmBulkDelete()">
+                                    <i class="fas fa-trash me-1"></i>Delete Selected (<span id="selectedCount">0</span>)
+                                </button>
+                            </div>
+                            {% if search_query %}
+                            <a href="/purchase-form-storage" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-times me-1"></i>Clear Search
+                            </a>
+                            {% endif %}
+                            {% if can_user_create(current_user, 'purchase') %}
+                            <a href="/purchase-form" class="btn btn-success">
+                                <i class="fas fa-plus me-2"></i>New Purchase Request
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Mass Export Controls -->
+                    <div class="row mb-3">
+                        <div class="col-12 text-center">
+                            <div class="btn-group">
+                                <button class="btn btn-outline-primary" onclick="selectAllRequests()">
+                                    <i class="fas fa-check-square"></i> Select All
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="clearAllSelections()">
+                                    <i class="fas fa-square"></i> Clear All
+                                </button>
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-danger" onclick="exportSelectedRequests()">
+                                        <i class="fas fa-file-pdf"></i> Export PDF
+                                    </button>
+                                    <button class="btn btn-outline-success" onclick="exportSelectedExcel()">
+                                        <i class="fas fa-file-excel"></i> Export Excel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Purchase Forms Table -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-success">
+                                <tr>
+                                    <th width="50">
+                                        <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                                    </th>
+                                    <th>PR Number</th>
+                                    <th>Date</th>
+                                    <th>Category</th>
+                                    <th>Requested By</th>
+                                    <th>Status</th>
+                                    <th>Total Items</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in purchase_requests %}
+                                <tr data-request-number="{{ request.request_number }}" data-category="{{ request.category }}">
+                                    <td>
+                                        <input type="checkbox" class="request-checkbox" value="{{ request.id }}" onchange="updateSelectAllState()">
+                                    </td>
+                                    <td>
+                                        <strong>{{ request.request_number }}</strong>
+                                        {% if request.pl_number %}
+                                        <br><small class="text-muted">PL/25/{{ request.pl_number }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ request.request_date.strftime('%Y-%m-%d') if request.request_date }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ request.category or 'Purchase Stock' }}</span>
+                                    </td>
+                                    <td>{{ request.requested_by or '-' }}</td>
+                                    <td>
+                                        {% if request.status == 'Approved' %}
+                                        <span class="badge bg-success">{{ request.status }}</span>
+                                        {% elif request.status == 'Rejected' %}
+                                        <span class="badge bg-danger">{{ request.status }}</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">{{ request.status or 'Pending' }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ request.items|length }} items</td>
+                                    <td>{{ request.created_at.strftime('%Y-%m-%d %H:%M') if request.created_at }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" onclick="viewPurchaseForm({{ request.id }})" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            {% if can_user_edit(current_user, 'purchase') %}
+                                            <a href="{{ url_for('edit_purchase_form', request_id=request.id) }}" class="btn btn-outline-secondary" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+
+                                            <button class="btn btn-outline-danger" onclick="deletePurchaseForm({{ request.id }})" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if not purchase_requests %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-archive fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No purchase forms found</h5>
+                        <p class="text-muted">
+                            {% if search_query %}
+                            No forms match your search criteria.
+                            {% else %}
+                            Start by creating your first purchase form.
+                            {% endif %}
+                        </p>
+                        {% if can_user_create(current_user, 'purchase') %}
+                        <a href="/purchase-form" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create Purchase Form
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Purchase Form Modal -->
+<div class="modal fade" id="viewPurchaseModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Purchase Form Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="purchaseFormContent">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentRequestId = null;
+
+function viewPurchaseForm(requestId) {
+    currentRequestId = requestId;
+    
+    fetch(`/api/purchase-request/${requestId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const request = data.request;
+                const content = `
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6><strong>PR Number:</strong> ${request.request_number}</h6>
+                            <p><strong>PL Number:</strong> PL/25/${request.pl_number || ''}</p>
+                            <p><strong>Date:</strong> ${request.request_date}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Category:</strong> ${request.category}</p>
+                            <p><strong>Requested By:</strong> ${request.requested_by}</p>
+                            <p><strong>Status:</strong> <span class="badge bg-warning">${request.status}</span></p>
+                        </div>
+                    </div>
+                    
+                    <h6>Items:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Unit Cost</th>
+                                    <th>Quantity</th>
+                                    <th>Total</th>
+                                    <th>Unit</th>
+                                    <th>Cost Code</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${request.items.map(item => `
+                                    <tr>
+                                        <td>${item.description}</td>
+                                        <td>$${item.unit_cost}</td>
+                                        <td>${item.quantity}</td>
+                                        <td>$${item.total_cost}</td>
+                                        <td>${item.unit}</td>
+                                        <td>${item.cost_code}</td>
+                                        <td>${item.remarks}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <h6>DC/OE:</h6>
+                            <p>${request.dc_name || 'Not provided'}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Operation Manager:</h6>
+                            <p>${request.operation_manager || 'Not provided'}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>General Manager:</h6>
+                            <p>${request.general_manager || 'Not provided'}</p>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('purchaseFormContent').innerHTML = content;
+                new bootstrap.Modal(document.getElementById('viewPurchaseModal')).show();
+            } else {
+                alert('Error loading purchase form: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while loading the purchase form.');
+        });
+}
+
+function editPurchaseForm(requestId) {
+    // Redirect to edit page
+    window.location.href = `/purchase-form-edit/${requestId}`;
+}
+
+
+
+function deletePurchaseForm(requestId) {
+    if (confirm('Are you sure you want to delete this purchase form? This action cannot be undone.')) {
+        fetch(`/api/purchase-request/${requestId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deleting purchase form: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the purchase form.');
+        });
+    }
+}
+
+// Update bulk actions visibility and count
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.request-checkbox:checked');
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    if (selectedCount) {
+        selectedCount.textContent = checkboxes.length;
+    }
+    
+    if (bulkActions) {
+        if (checkboxes.length > 0) {
+            bulkActions.style.display = 'inline-block';
+        } else {
+            bulkActions.style.display = 'none';
+        }
+    }
+}
+
+// Bulk delete confirmation
+function confirmBulkDelete() {
+    const checkboxes = document.querySelectorAll('.request-checkbox:checked');
+    const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (selectedIds.length === 0) {
+        alert('Please select at least one item to delete.');
+        return;
+    }
+    
+    const message = `Are you sure you want to delete ${selectedIds.length} purchase request(s)? This action cannot be undone.`;
+    
+    if (confirm(message)) {
+        // Show loading state
+        const deleteBtn = document.querySelector('#bulkActions button');
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Deleting...';
+        deleteBtn.disabled = true;
+        
+        fetch('/bulk-delete-purchase-requests', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                request_ids: selectedIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deleting requests: ' + data.error);
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting requests');
+            deleteBtn.innerHTML = originalText;
+            deleteBtn.disabled = false;
+        });
+    }
+}
+
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const requestCheckboxes = document.querySelectorAll('.request-checkbox');
+    
+    requestCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+}
+
+function updateSelectAllState() {
+    const requestCheckboxes = document.querySelectorAll('.request-checkbox');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const checkedBoxes = document.querySelectorAll('.request-checkbox:checked');
+    
+    if (checkedBoxes.length === 0) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = false;
+    } else if (checkedBoxes.length === requestCheckboxes.length) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = true;
+    } else {
+        selectAllCheckbox.indeterminate = true;
+        selectAllCheckbox.checked = false;
+    }
+}
+
+function selectAllRequests() {
+    const requestCheckboxes = document.querySelectorAll('.request-checkbox');
+    requestCheckboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = true;
+    }
+    updateSelectAllState();
+    updateBulkActions();
+}
+
+function clearAllSelections() {
+    const requestCheckboxes = document.querySelectorAll('.request-checkbox');
+    requestCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = false;
+    }
+    updateSelectAllState();
+    updateBulkActions();
+}
+
+function exportSelectedRequests() {
+    const checkedBoxes = document.querySelectorAll('.request-checkbox:checked');
+    
+    if (checkedBoxes.length === 0) {
+        alert('Please select at least one purchase request to export.');
+        return;
+    }
+    
+    const selectedIds = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+    
+    // Create a form to submit the selected IDs for PDF
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/bulk-export-purchase-requests-pdf';
+    form.style.display = 'none';
+    
+    selectedIds.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_ids[]';
+        input.value = id;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+function exportSelectedExcel() {
+    const checkedBoxes = document.querySelectorAll('.request-checkbox:checked');
+    
+    if (checkedBoxes.length === 0) {
+        alert('Please select at least one purchase request to export.');
+        return;
+    }
+    
+    const selectedIds = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+    
+    // Create a form to submit the selected IDs for Excel with CSRF token
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/export-purchase-excel';
+    form.style.display = 'none';
+    
+    // Add CSRF token if available
+    const csrfToken = document.querySelector('meta[name=csrf-token]');
+    if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken.getAttribute('content');
+        form.appendChild(csrfInput);
+    }
+    
+    selectedIds.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_ids[]';
+        input.value = id;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+</script>
+{% endblock %}

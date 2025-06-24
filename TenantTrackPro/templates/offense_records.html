@@ -1,0 +1,1423 @@
+{% extends "base.html" %}
+
+{% block title %}Offence Records - TS Management Services Pte Ltd{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Offence Records
+                    </h1>
+                    <p class="text-muted mb-0">Track and manage disciplinary incidents and violations</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newOffenceModal">
+                        <i class="fas fa-plus me-1"></i> Report Offence
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="search" value="{{ search_query }}" 
+                           placeholder="Search by name, case no, FIN, or company...">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="Open" {% if status_filter == 'Open' %}selected{% endif %}>Open</option>
+                        <option value="Under Investigation" {% if status_filter == 'Under Investigation' %}selected{% endif %}>Under Investigation</option>
+                        <option value="Resolved" {% if status_filter == 'Resolved' %}selected{% endif %}>Resolved</option>
+                        <option value="Closed" {% if status_filter == 'Closed' %}selected{% endif %}>Closed</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="severity">
+                        <option value="">All Severities</option>
+                        <option value="Minor" {% if severity_filter == 'Minor' %}selected{% endif %}>Minor</option>
+                        <option value="Major" {% if severity_filter == 'Major' %}selected{% endif %}>Major</option>
+                        <option value="Critical" {% if severity_filter == 'Critical' %}selected{% endif %}>Critical</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" name="date_from" value="{{ date_from }}" placeholder="From Date">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" name="date_to" value="{{ date_to }}" placeholder="To Date">
+                </div>
+                <div class="col-md-1">
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <a href="{{ url_for('offense_records') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Financial Summary -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <h3 class="card-title mb-1">
+                        <i class="fas fa-dollar-sign me-2"></i>
+                        Total Financial Penalty
+                    </h3>
+                    <h2 class="mb-0 fw-bold">
+                        S${{ "%.2f"|format(total_financial_penalty) }}
+                    </h2>
+                    <small class="text-muted">Across all {{ offenses|length }} records</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title mb-1">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Amount Paid
+                    </h3>
+                    <h2 class="mb-0 fw-bold">
+                        S${{ "%.2f"|format(total_amount_paid) }}
+                    </h2>
+                    <small class="text-white-50">Past 60 days</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title mb-1">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Amount Unpaid
+                    </h3>
+                    <h2 class="mb-0 fw-bold">
+                        S${{ "%.2f"|format(total_amount_unpaid) }}
+                    </h2>
+                    <small class="text-white-50">Outstanding balance</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offence Records Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2"></i>
+                Offence Records ({{ offenses|length }} incidents)
+            </h5>
+        </div>
+        <div class="card-body">
+            <!-- Filter and Bulk Actions Bar -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search by name, case no, FIN, or company...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="offenseTypeFilter">
+                        <option value="">All Offence Types</option>
+                        <option value="No Parking">No Parking</option>
+                        <option value="Non Smoking Area">Non Smoking Area</option>
+                        <option value="Contraband">Contraband</option>
+                        <option value="Fight/Assault">Fight/Assault</option>
+                        <option value="Fire">Fire</option>
+                        <option value="Property Damage">Property Damage</option>
+                        <option value="Medical Assistance">Medical Assistance</option>
+                        <option value="False Fire Alarm">False Fire Alarm</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="Open">Open</option>
+                        <option value="Under Investigation">Under Investigation</option>
+                        <option value="Resolved">Resolved</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="paymentStatusFilter">
+                        <option value="">All Payment Status</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Partially Paid">Partially Paid</option>
+                        <option value="None">No Penalty</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Bulk Actions Bar -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="d-flex align-items-center">
+                        <span class="me-3 text-muted" id="selectedCount">0 selected</span>
+                        <div class="btn-group" id="bulkActions" style="display: none;">
+                            <button class="btn btn-outline-warning btn-sm" onclick="bulkUpdateStatus()">
+                                <i class="fas fa-edit me-1"></i> Update Status
+                            </button>
+                            <button class="btn btn-outline-success btn-sm" onclick="bulkMarkPaid()">
+                                <i class="fas fa-check me-1"></i> Mark Paid
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="bulkDelete()">
+                                <i class="fas fa-trash me-1"></i> Delete Selected
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="bulkExportPDF()">
+                                <i class="fas fa-file-pdf me-1"></i> Export PDF
+                            </button>
+                            <button class="btn btn-outline-success btn-sm" onclick="exportTableToExcel()">
+                                <i class="fas fa-file-excel me-1"></i> Export Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if offenses %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" id="selectAll" class="form-check-input">
+                            </th>
+                            <th>S.NO</th>
+                            <th>CASE NO</th>
+                            <th>NAME</th>
+                            <th>FIN NO</th>
+                            <th>COMPANY NAME</th>
+                            <th>DATE</th>
+                            <th>OFFENSE TYPE</th>
+                            <th>FINANCIAL PENALTY</th>
+                            <th>PAYMENT STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for offense in offenses %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="selected_offenses" value="{{ offense.id }}" class="form-check-input offense-checkbox">
+                            </td>
+                            <td>
+                                <span class="fw-bold text-primary">{{ loop.index }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ offense.case_number or 'PL/OR/' + offense.id|string }}</strong>
+                            </td>
+                            <td>
+                                <strong>{{ offense.offender_name or '-' }}</strong>
+                            </td>
+                            <td>
+                                {{ offense.fin_number or '-' }}
+                            </td>
+                            <td>
+                                {{ offense.offender_company or '-' }}
+                            </td>
+                            <td>
+                                {{ offense.incident_date.strftime('%Y-%m-%d') if offense.incident_date else '-' }}
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if offense.severity == 'Critical' %}bg-danger
+                                    {% elif offense.severity == 'Major' %}bg-warning
+                                    {% elif offense.severity == 'Minor' %}bg-info
+                                    {% else %}bg-secondary
+                                    {% endif %}">
+                                    {{ offense.offense_type or 'N/A' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if offense.financial_penalty_imposed and offense.penalty_amount %}
+                                    <span class="text-success fw-bold">S${{ "%.2f"|format(offense.penalty_amount) }}</span>
+                                {% elif offense.financial_penalty_imposed %}
+                                    <span class="text-warning fw-bold">Imposed</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if offense.financial_penalty_imposed %}
+                                    <div class="d-flex flex-column">
+                                        <span class="badge mb-1
+                                            {% if offense.penalty_status == 'Paid' %}bg-success
+                                            {% elif offense.penalty_status == 'Partially Paid' %}bg-warning
+                                            {% else %}bg-danger
+                                            {% endif %}">
+                                            {{ offense.penalty_status or 'Pending' }}
+                                        </span>
+                                        {% if offense.amount_paid and offense.amount_paid > 0 %}
+                                            <small class="text-muted">
+                                                Paid: S${{ "%.2f"|format(offense.amount_paid) }}<br>
+                                                Remaining: S${{ "%.2f"|format(offense.penalty_amount - offense.amount_paid) }}
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" title="View Details" data-bs-toggle="modal" data-bs-target="#viewOffenceModal{{ offense.id }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary" title="Update Status" data-bs-toggle="modal" data-bs-target="#editOffenceModal{{ offense.id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    {% if offense.financial_penalty_imposed %}
+                                    <button class="btn btn-outline-success" title="Update Payment" data-bs-toggle="modal" data-bs-target="#paymentModal{{ offense.id }}">
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </button>
+                                    {% endif %}
+                                    <a href="{{ url_for('download_offense_pdf', offense_id=offense.id) }}" class="btn btn-outline-danger" title="Download PDF" target="_blank">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No Offence Records Found</h4>
+                <p class="text-muted">Click "Report Offence" to create the first record.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- New Offence Modal -->
+<div class="modal fade" id="newOffenceModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Report New Offence</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('offense_records') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Resident Details -->
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Resident Details</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="offender_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">FIN Number</label>
+                                <input type="text" class="form-control" name="fin_number">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Nationality</label>
+                                <select class="form-select" name="nationality">
+                                    <option value="">Select Nationality</option>
+                                    <option value="MYANMAR">MYANMAR</option>
+                                    <option value="INDIAN">INDIAN</option>
+                                    <option value="CHINESE">CHINESE</option>
+                                    <option value="THAILAND">THAILAND</option>
+                                    <option value="BANGLADESHI">BANGLADESHI</option>
+                                    <option value="VIETNAMESE">VIETNAMESE</option>
+                                    <option value="MALAYSIAN">MALAYSIAN</option>
+                                    <option value="INDONASIAN">INDONASIAN</option>
+                                    <option value="FILIPINO">FILIPINO</option>
+                                    <option value="SRI-LANKAN">SRI-LANKAN</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Room Number</label>
+                                <select class="form-select" name="offender_room">
+                                    <option value="">Select Room</option>
+                                    {% for room in room_numbers %}
+                                    <option value="{{ room.room_number }}">{{ room.room_number }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Sector</label>
+                                <select class="form-select" name="sector">
+                                    <option value="">Select Sector</option>
+                                    <option value="MARINE">MARINE</option>
+                                    <option value="PROCESS">PROCESS</option>
+                                    <option value="MANUF.">MANUF.</option>
+                                    <option value="CONST.">CONST.</option>
+                                    <option value="OTHERS">OTHERS</option>
+                                    <option value="SERVICE">SERVICE</option>
+                                    <option value="CANCEL">CANCEL</option>
+                                    <option value="NO SHOW">NO SHOW</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Contact Number</label>
+                                <input type="text" class="form-control" name="contact_number">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" class="form-control" name="offender_company">
+                            </div>
+                        </div>
+
+                        <!-- Incident Details -->
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Incident Details</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Case Number</label>
+                                <input type="text" class="form-control" name="case_number" placeholder="Auto-generated if empty">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Offense Type <span class="text-danger">*</span></label>
+                                <select class="form-select" name="offense_type" required>
+                                    <option value="">Select Type</option>
+                                    <option value="No Parking">No Parking</option>
+                                    <option value="Non Smoking Area">Non Smoking Area</option>
+                                    <option value="Contraband">Contraband</option>
+                                    <option value="Fight/Assault">Fight/Assault</option>
+                                    <option value="Fire">Fire</option>
+                                    <option value="Property Damage">Property Damage</option>
+                                    <option value="Medical Assistance">Medical Assistance</option>
+                                    <option value="False Fire Alarm">False Fire Alarm</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Incident Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="incident_date" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Incident Time</label>
+                                <input type="time" class="form-control" name="incident_time">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Location</label>
+                                <input type="text" class="form-control" name="location">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label class="form-label">Description of Contravention <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="description" rows="3" required></textarea>
+                    </div>
+
+                    <!-- Documentary Evidence -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="documentaryProof" name="documentary_proof" value="true">
+                            <label class="form-check-label" for="documentaryProof">
+                                Documentary proof available (photographs, CCTV footage, etc.)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="proofDescription" style="display: none;">
+                        <label class="form-label">Proof Description</label>
+                        <textarea class="form-control" name="proof_description" rows="2"></textarea>
+                    </div>
+
+                    <!-- Financial Penalty -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="financialPenalty" name="financial_penalty_imposed" value="true">
+                            <label class="form-check-label" for="financialPenalty">
+                                Financial penalty imposed
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="penaltyAmount" style="display: none;">
+                        <label class="form-label">Penalty Amount (S$)</label>
+                        <input type="number" class="form-control" name="penalty_amount" step="0.01" min="0">
+                    </div>
+
+                    <!-- Additional Information -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Witness Names</label>
+                                <textarea class="form-control" name="witness_names" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Immediate Action Taken</label>
+                                <textarea class="form-control" name="action_taken" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">OE & Duty Manager Name</label>
+                        <input type="text" class="form-control" name="duty_manager_name">
+                    </div>
+
+                    <!-- Photo Upload Section -->
+                    <div class="mb-3">
+                        <label class="form-label">Incident Photos <small class="text-muted">(Up to 10 photos, max 5MB each)</small></label>
+                        <input type="file" class="form-control" id="incidentPhotos" name="incident_photos" multiple accept="image/*" onchange="previewPhotos(this)">
+                        <div id="photoPreview" class="mt-3 d-flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <!-- Signatures Section -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Resident Signature</label>
+                                <div class="border rounded p-2">
+                                    <canvas id="residentSignatureCanvas" width="300" height="150" style="border: 1px solid #ddd; cursor: crosshair; background: white;"></canvas>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSignature('residentSignatureCanvas')">Clear</button>
+                                    </div>
+                                    <input type="hidden" id="residentSignatureData" name="resident_signature">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">OE & Duty Manager Signature</label>
+                                <div class="border rounded p-2">
+                                    <canvas id="dutyManagerSignatureCanvas" width="300" height="150" style="border: 1px solid #ddd; cursor: crosshair; background: white;"></canvas>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSignature('dutyManagerSignatureCanvas')">Clear</button>
+                                    </div>
+                                    <input type="hidden" id="dutyManagerSignatureData" name="duty_manager_signature">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Offence Modals -->
+{% for offense in offenses %}
+<div class="modal fade" id="viewOffenceModal{{ offense.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">View Offence Details - Case #{{ offense.case_number or 'PL/OR/' + offense.id|string }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3">Resident Details</h6>
+                        <p><strong>Name:</strong> {{ offense.offender_name or 'N/A' }}</p>
+                        <p><strong>FIN Number:</strong> {{ offense.fin_number or 'N/A' }}</p>
+                        <p><strong>Nationality:</strong> {{ offense.nationality or 'N/A' }}</p>
+                        <p><strong>Room Number:</strong> {{ offense.offender_room or 'N/A' }}</p>
+                        <p><strong>Sector:</strong> {{ offense.sector or 'N/A' }}</p>
+                        <p><strong>Contact Number:</strong> {{ offense.contact_number or 'N/A' }}</p>
+                        <p><strong>Company:</strong> {{ offense.offender_company or 'N/A' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3">Incident Details</h6>
+                        <p><strong>Offense Type:</strong> {{ offense.offense_type or 'N/A' }}</p>
+                        <p><strong>Severity:</strong> 
+                            <span class="badge 
+                                {% if offense.severity == 'Critical' %}bg-danger
+                                {% elif offense.severity == 'Major' %}bg-warning
+                                {% elif offense.severity == 'Minor' %}bg-info
+                                {% else %}bg-secondary
+                                {% endif %}">
+                                {{ offense.severity or 'N/A' }}
+                            </span>
+                        </p>
+                        <p><strong>Date:</strong> {{ offense.incident_date.strftime('%Y-%m-%d') if offense.incident_date else 'N/A' }}</p>
+                        <p><strong>Time:</strong> {{ offense.incident_time.strftime('%H:%M') if offense.incident_time else 'N/A' }}</p>
+                        <p><strong>Location:</strong> {{ offense.location or 'N/A' }}</p>
+                        <p><strong>Status:</strong> 
+                            <span class="badge 
+                                {% if offense.status == 'Closed' %}bg-success
+                                {% elif offense.status == 'Resolved' %}bg-info
+                                {% elif offense.status == 'Under Investigation' %}bg-warning
+                                {% else %}bg-danger
+                                {% endif %}">
+                                {{ offense.status or 'Open' }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 class="fw-bold mb-3">Description</h6>
+                        <p>{{ offense.description or 'No description provided' }}</p>
+                    </div>
+                </div>
+                {% if offense.financial_penalty_imposed %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 class="fw-bold mb-3">Financial Penalty</h6>
+                        <p><strong>Amount:</strong> S${{ "%.2f"|format(offense.penalty_amount) if offense.penalty_amount else 'Not specified' }}</p>
+                        <p><strong>Payment Status:</strong> {{ offense.penalty_status or 'Pending' }}</p>
+                        {% if offense.amount_paid and offense.amount_paid > 0 %}
+                        <p><strong>Amount Paid:</strong> S${{ "%.2f"|format(offense.amount_paid) }}</p>
+                        <p><strong>Outstanding:</strong> S${{ "%.2f"|format(offense.penalty_amount - offense.amount_paid) }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3">Additional Information</h6>
+                        <p><strong>Documentary Proof:</strong> {{ 'Yes' if offense.documentary_proof else 'No' }}</p>
+                        {% if offense.proof_description %}
+                        <p><strong>Proof Description:</strong> {{ offense.proof_description }}</p>
+                        {% endif %}
+                        <p><strong>Witness Names:</strong> {{ offense.witness_names or 'None' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Action Taken:</strong> {{ offense.action_taken or 'None' }}</p>
+                        <p><strong>OE & Duty Manager:</strong> {{ offense.duty_manager_name or 'N/A' }}</p>
+                        <p><strong>Created:</strong> {{ offense.created_at.strftime('%Y-%m-%d %H:%M') if offense.created_at else 'N/A' }}</p>
+                        <p><strong>Updated:</strong> {{ offense.updated_at.strftime('%Y-%m-%d %H:%M') if offense.updated_at else 'N/A' }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{{ url_for('download_offense_pdf', offense_id=offense.id) }}" class="btn btn-danger" target="_blank">
+                    <i class="fas fa-file-pdf me-1"></i> Download PDF
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Offence Modal -->
+<div class="modal fade" id="editOffenceModal{{ offense.id }}" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Offence Report - Case #{{ offense.case_number or 'PL/OR/' + offense.id|string }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('update_offense_record', offense_id=offense.id) }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Resident Details -->
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Resident Details</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="offender_name" value="{{ offense.offender_name or '' }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">FIN Number</label>
+                                <input type="text" class="form-control" name="fin_number" value="{{ offense.fin_number or '' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Nationality</label>
+                                <select class="form-select" name="nationality">
+                                    <option value="">Select Nationality</option>
+                                    <option value="MYANMAR" {% if offense.nationality == 'MYANMAR' %}selected{% endif %}>MYANMAR</option>
+                                    <option value="INDIAN" {% if offense.nationality == 'INDIAN' %}selected{% endif %}>INDIAN</option>
+                                    <option value="CHINESE" {% if offense.nationality == 'CHINESE' %}selected{% endif %}>CHINESE</option>
+                                    <option value="THAILAND" {% if offense.nationality == 'THAILAND' %}selected{% endif %}>THAILAND</option>
+                                    <option value="BANGLADESHI" {% if offense.nationality == 'BANGLADESHI' %}selected{% endif %}>BANGLADESHI</option>
+                                    <option value="VIETNAMESE" {% if offense.nationality == 'VIETNAMESE' %}selected{% endif %}>VIETNAMESE</option>
+                                    <option value="MALAYSIAN" {% if offense.nationality == 'MALAYSIAN' %}selected{% endif %}>MALAYSIAN</option>
+                                    <option value="INDONASIAN" {% if offense.nationality == 'INDONASIAN' %}selected{% endif %}>INDONASIAN</option>
+                                    <option value="FILIPINO" {% if offense.nationality == 'FILIPINO' %}selected{% endif %}>FILIPINO</option>
+                                    <option value="SRI-LANKAN" {% if offense.nationality == 'SRI-LANKAN' %}selected{% endif %}>SRI-LANKAN</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Room Number</label>
+                                <select class="form-select" name="offender_room">
+                                    <option value="">Select Room</option>
+                                    {% for room in room_numbers %}
+                                    <option value="{{ room.room_number }}" {% if offense.offender_room == room.room_number %}selected{% endif %}>{{ room.room_number }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Sector</label>
+                                <select class="form-select" name="sector">
+                                    <option value="">Select Sector</option>
+                                    <option value="MARINE" {% if offense.sector == 'MARINE' %}selected{% endif %}>MARINE</option>
+                                    <option value="PROCESS" {% if offense.sector == 'PROCESS' %}selected{% endif %}>PROCESS</option>
+                                    <option value="MANUF." {% if offense.sector == 'MANUF.' %}selected{% endif %}>MANUF.</option>
+                                    <option value="CONST." {% if offense.sector == 'CONST.' %}selected{% endif %}>CONST.</option>
+                                    <option value="OTHERS" {% if offense.sector == 'OTHERS' %}selected{% endif %}>OTHERS</option>
+                                    <option value="SERVICE" {% if offense.sector == 'SERVICE' %}selected{% endif %}>SERVICE</option>
+                                    <option value="CANCEL" {% if offense.sector == 'CANCEL' %}selected{% endif %}>CANCEL</option>
+                                    <option value="NO SHOW" {% if offense.sector == 'NO SHOW' %}selected{% endif %}>NO SHOW</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Contact Number</label>
+                                <input type="text" class="form-control" name="contact_number" value="{{ offense.contact_number or '' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" class="form-control" name="offender_company" value="{{ offense.offender_company or '' }}">
+                            </div>
+                        </div>
+
+                        <!-- Incident Details -->
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Incident Details</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Case Number</label>
+                                <input type="text" class="form-control" name="case_number" value="{{ offense.case_number or '' }}" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Offense Type <span class="text-danger">*</span></label>
+                                <select class="form-select" name="offense_type" required>
+                                    <option value="">Select Type</option>
+                                    <option value="No Parking" {% if offense.offense_type == 'No Parking' %}selected{% endif %}>No Parking</option>
+                                    <option value="Non Smoking Area" {% if offense.offense_type == 'Non Smoking Area' %}selected{% endif %}>Non Smoking Area</option>
+                                    <option value="Contraband" {% if offense.offense_type == 'Contraband' %}selected{% endif %}>Contraband</option>
+                                    <option value="Fight/Assault" {% if offense.offense_type == 'Fight/Assault' %}selected{% endif %}>Fight/Assault</option>
+                                    <option value="Fire" {% if offense.offense_type == 'Fire' %}selected{% endif %}>Fire</option>
+                                    <option value="Property Damage" {% if offense.offense_type == 'Property Damage' %}selected{% endif %}>Property Damage</option>
+                                    <option value="Medical Assistance" {% if offense.offense_type == 'Medical Assistance' %}selected{% endif %}>Medical Assistance</option>
+                                    <option value="False Fire Alarm" {% if offense.offense_type == 'False Fire Alarm' %}selected{% endif %}>False Fire Alarm</option>
+                                    <option value="Others" {% if offense.offense_type == 'Others' %}selected{% endif %}>Others</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Incident Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="incident_date" value="{{ offense.incident_date.strftime('%Y-%m-%d') if offense.incident_date else '' }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Incident Time</label>
+                                <input type="time" class="form-control" name="incident_time" value="{{ offense.incident_time.strftime('%H:%M') if offense.incident_time else '' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Location</label>
+                                <input type="text" class="form-control" name="location" value="{{ offense.location or '' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" name="status">
+                                    <option value="Open" {% if offense.status == 'Open' %}selected{% endif %}>Open</option>
+                                    <option value="Under Investigation" {% if offense.status == 'Under Investigation' %}selected{% endif %}>Under Investigation</option>
+                                    <option value="Resolved" {% if offense.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                                    <option value="Closed" {% if offense.status == 'Closed' %}selected{% endif %}>Closed</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label class="form-label">Description of Contravention <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="description" rows="3" required>{{ offense.description or '' }}</textarea>
+                    </div>
+
+                    <!-- Documentary Evidence -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editDocumentaryProof{{ offense.id }}" name="documentary_proof" value="true" {% if offense.documentary_proof %}checked{% endif %}>
+                            <label class="form-check-label" for="editDocumentaryProof{{ offense.id }}">
+                                Documentary proof available (photographs, CCTV footage, etc.)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="editProofDescription{{ offense.id }}" {% if not offense.documentary_proof %}style="display: none;"{% endif %}>
+                        <label class="form-label">Proof Description</label>
+                        <textarea class="form-control" name="proof_description" rows="2">{{ offense.proof_description or '' }}</textarea>
+                    </div>
+
+                    <!-- Financial Penalty -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editFinancialPenalty{{ offense.id }}" name="financial_penalty_imposed" value="true" {% if offense.financial_penalty_imposed %}checked{% endif %}>
+                            <label class="form-check-label" for="editFinancialPenalty{{ offense.id }}">
+                                Financial penalty imposed
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="editPenaltyAmount{{ offense.id }}" {% if not offense.financial_penalty_imposed %}style="display: none;"{% endif %}>
+                        <label class="form-label">Penalty Amount (S$)</label>
+                        <input type="number" class="form-control" name="penalty_amount" step="0.01" min="0" value="{{ offense.penalty_amount if offense.penalty_amount else '' }}">
+                    </div>
+
+                    <!-- Additional Information -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Witness Names</label>
+                                <textarea class="form-control" name="witness_names" rows="2">{{ offense.witness_names or '' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Immediate Action Taken</label>
+                                <textarea class="form-control" name="action_taken" rows="2">{{ offense.action_taken or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">OE & Duty Manager Name</label>
+                        <input type="text" class="form-control" name="duty_manager_name" value="{{ offense.duty_manager_name or '' }}">
+                    </div>
+
+                    <!-- Photo Upload Section -->
+                    <div class="mb-3">
+                        <label class="form-label">Incident Photos <small class="text-muted">(Up to 10 photos, max 5MB each)</small></label>
+                        <input type="file" class="form-control" id="editIncidentPhotos{{ offense.id }}" name="incident_photos" multiple accept="image/*" onchange="previewEditPhotos(this, '{{ offense.id }}')">
+                        
+                        <!-- Existing Photos Display -->
+                        <div class="mt-2">
+                            <label class="form-label fw-bold">Current Photos:</label>
+                            <div id="existingPhotos{{ offense.id }}" class="d-flex flex-wrap gap-2 mt-2">
+                                {% for i in range(1, 11) %}
+                                    {% set photo_field = 'incident_photo_' + i|string %}
+                                    {% if offense[photo_field] %}
+                                        <div class="position-relative">
+                                            <img src="data:image/jpeg;base64,{{ offense[photo_field] }}" class="photo-preview" style="max-width: 200px; max-height: 200px; border-radius: 5px;">
+                                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="removeExistingPhoto('{{ offense.id }}', '{{ i }}')" style="padding: 0; width: 20px; height: 20px; border-radius: 50%;">×</button>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- New Photos Preview -->
+                        <div id="editPhotoPreview{{ offense.id }}" class="mt-3 d-flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <!-- Signatures Section -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Resident Signature</label>
+                                {% if offense.resident_signature %}
+                                    <div class="mb-2">
+                                        <small class="text-muted">Current signature:</small>
+                                        <div class="border rounded p-2">
+                                            <img src="data:image/png;base64,{{ offense.resident_signature }}" style="max-width: 300px; max-height: 150px;" class="img-fluid">
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                <div class="border rounded p-2">
+                                    <canvas id="editResidentSignatureCanvas{{ offense.id }}" width="300" height="150" style="border: 1px solid #ddd; cursor: crosshair;"></canvas>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSignature('editResidentSignatureCanvas{{ offense.id }}')">Clear</button>
+                                    </div>
+                                    <input type="hidden" id="editResidentSignatureData{{ offense.id }}" name="resident_signature" {% if offense.resident_signature %}data-existing-signature="data:image/png;base64,{{ offense.resident_signature }}"{% endif %}>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">OE & Duty Manager Signature</label>
+                                {% if offense.duty_manager_signature %}
+                                    <div class="mb-2">
+                                        <small class="text-muted">Current signature:</small>
+                                        <div class="border rounded p-2">
+                                            <img src="data:image/png;base64,{{ offense.duty_manager_signature }}" style="max-width: 300px; max-height: 150px;" class="img-fluid">
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                <div class="border rounded p-2">
+                                    <canvas id="editDutyManagerSignatureCanvas{{ offense.id }}" width="300" height="150" style="border: 1px solid #ddd; cursor: crosshair;"></canvas>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSignature('editDutyManagerSignatureCanvas{{ offense.id }}')">Clear</button>
+                                    </div>
+                                    <input type="hidden" id="editDutyManagerSignatureData{{ offense.id }}" name="duty_manager_signature" {% if offense.duty_manager_signature %}data-existing-signature="data:image/png;base64,{{ offense.duty_manager_signature }}"{% endif %}>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Offense Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if offense.financial_penalty_imposed %}
+<!-- Payment Update Modal -->
+<div class="modal fade" id="paymentModal{{ offense.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Payment - Case #{{ offense.case_number or 'PL/OR/' + offense.id|string }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('update_offense_payment', offense_id=offense.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Total Penalty Amount</label>
+                        <input type="text" class="form-control" value="S${{ '%.2f'|format(offense.penalty_amount) if offense.penalty_amount else '0.00' }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount Already Paid</label>
+                        <input type="text" class="form-control" value="S${{ '%.2f'|format(offense.amount_paid) if offense.amount_paid else '0.00' }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Outstanding Amount</label>
+                        <input type="text" class="form-control" value="S${{ '%.2f'|format(offense.penalty_amount - (offense.amount_paid or 0)) if offense.penalty_amount else '0.00' }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Additional Payment Amount</label>
+                        <input type="number" class="form-control" name="payment_amount" step="0.01" min="0" max="{{ offense.penalty_amount - (offense.amount_paid or 0) if offense.penalty_amount else 0 }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Status</label>
+                        <select class="form-select" name="payment_status" required>
+                            <option value="Pending" {% if offense.penalty_status == 'Pending' %}selected{% endif %}>Pending</option>
+                            <option value="Partially Paid" {% if offense.penalty_status == 'Partially Paid' %}selected{% endif %}>Partially Paid</option>
+                            <option value="Paid" {% if offense.penalty_status == 'Paid' %}selected{% endif %}>Paid</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Notes</label>
+                        <textarea class="form-control" name="payment_notes" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Update Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<script>
+// Photo preview functionality
+function previewPhotos(input) {
+    const preview = document.getElementById('photoPreview');
+    preview.innerHTML = '';
+    
+    if (input.files) {
+        Array.from(input.files).forEach((file, index) => {
+            if (index < 10) { // Limit to 10 photos
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'position-relative';
+                    div.innerHTML = `<img src="${e.target.result}" class="photo-preview" style="max-width: 200px; max-height: 200px; border-radius: 5px;">`;
+                    preview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+}
+
+// Photo preview for edit forms
+function previewEditPhotos(input, offenseId) {
+    const preview = document.getElementById('editPhotoPreview' + offenseId);
+    preview.innerHTML = '';
+    
+    if (input.files) {
+        Array.from(input.files).forEach((file, index) => {
+            if (index < 10) { // Limit to 10 photos
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'position-relative';
+                    div.innerHTML = `<img src="${e.target.result}" class="photo-preview" style="max-width: 200px; max-height: 200px; border-radius: 5px;">`;
+                    preview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+}
+
+// Remove existing photo
+function removeExistingPhoto(offenseId, photoIndex) {
+    if (confirm('Are you sure you want to remove this photo?')) {
+        // Add hidden input to mark photo for removal
+        const form = document.querySelector(`#editOffenceModal${offenseId} form`);
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = `remove_photo_${photoIndex}`;
+        hiddenInput.value = 'true';
+        form.appendChild(hiddenInput);
+        
+        // Hide the photo
+        event.target.closest('.position-relative').style.display = 'none';
+    }
+}
+
+// Show/hide proof description based on checkbox
+document.getElementById('documentaryProof').addEventListener('change', function() {
+    document.getElementById('proofDescription').style.display = this.checked ? 'block' : 'none';
+});
+
+// Show/hide penalty amount based on checkbox
+document.getElementById('financialPenalty').addEventListener('change', function() {
+    document.getElementById('penaltyAmount').style.display = this.checked ? 'block' : 'none';
+});
+
+// Bulk selection functionality
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.offense-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+    updateBulkActions();
+});
+
+// Update bulk actions visibility
+function updateBulkActions() {
+    const selected = document.querySelectorAll('.offense-checkbox:checked').length;
+    document.getElementById('selectedCount').textContent = selected + ' selected';
+    document.getElementById('bulkActions').style.display = selected > 0 ? 'block' : 'none';
+}
+
+// Bulk update status function
+function bulkUpdateStatus() {
+    const checkboxes = document.querySelectorAll('.offense-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Please select at least one offense record to update.');
+        return;
+    }
+    
+    const newStatus = prompt('Enter new status (Open, Under Investigation, Resolved, Closed):');
+    if (!newStatus) return;
+    
+    const validStatuses = ['Open', 'Under Investigation', 'Resolved', 'Closed'];
+    if (!validStatuses.includes(newStatus)) {
+        alert('Invalid status. Please use: Open, Under Investigation, Resolved, or Closed');
+        return;
+    }
+    
+    const formData = new FormData();
+    checkboxes.forEach(checkbox => {
+        formData.append('offense_ids', checkbox.value);
+    });
+    formData.append('new_status', newStatus);
+    
+    fetch('/bulk-update-offense-status', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating status.');
+    });
+}
+
+// Bulk mark paid function
+function bulkMarkPaid() {
+    const checkboxes = document.querySelectorAll('.offense-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Please select at least one offense record to mark as paid.');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to mark the selected offense records as paid?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    checkboxes.forEach(checkbox => {
+        formData.append('offense_ids', checkbox.value);
+    });
+    
+    fetch('/bulk-mark-paid', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating payment status.');
+    });
+}
+
+// Bulk delete function
+function bulkDelete() {
+    const checkboxes = document.querySelectorAll('.offense-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Please select at least one offense record to delete.');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete ${checkboxes.length} offense record(s)? This action cannot be undone.`)) {
+        return;
+    }
+    
+    const formData = new FormData();
+    checkboxes.forEach(checkbox => {
+        formData.append('offense_ids', checkbox.value);
+    });
+    
+    fetch('/bulk-delete-offenses', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting records.');
+    });
+}
+
+// Bulk export PDF function
+function bulkExportPDF() {
+    const checkboxes = document.querySelectorAll('.offense-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Please select at least one offense record to export.');
+        return;
+    }
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/bulk-export-offense-pdf';
+    form.target = '_blank';
+    
+    checkboxes.forEach(checkbox => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'offense_ids';
+        input.value = checkbox.value;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+// Bulk export Excel function
+function bulkExportExcel() {
+    const checkboxes = document.querySelectorAll('.offense-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Please select at least one offense record to export.');
+        return;
+    }
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/bulk-export-offense-excel';
+    
+    checkboxes.forEach(checkbox => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'offense_ids';
+        input.value = checkbox.value;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+// Add event listeners to checkboxes
+document.querySelectorAll('.offense-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', updateBulkActions);
+});
+
+// Edit form checkbox functionality for each offense
+{% for offense in offenses %}
+// Show/hide proof description based on checkbox for edit form
+document.getElementById('editDocumentaryProof{{ offense.id }}').addEventListener('change', function() {
+    document.getElementById('editProofDescription{{ offense.id }}').style.display = this.checked ? 'block' : 'none';
+});
+
+// Show/hide penalty amount based on checkbox for edit form
+document.getElementById('editFinancialPenalty{{ offense.id }}').addEventListener('change', function() {
+    document.getElementById('editPenaltyAmount{{ offense.id }}').style.display = this.checked ? 'block' : 'none';
+});
+{% endfor %}
+
+// Table filtering functionality
+document.getElementById('searchInput').addEventListener('input', filterTable);
+document.getElementById('offenseTypeFilter').addEventListener('change', filterTable);
+document.getElementById('statusFilter').addEventListener('change', filterTable);
+document.getElementById('paymentStatusFilter').addEventListener('change', filterTable);
+
+function filterTable() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const offenseTypeFilter = document.getElementById('offenseTypeFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const paymentStatusFilter = document.getElementById('paymentStatusFilter').value;
+    
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const name = row.cells[3].textContent.toLowerCase();
+        const caseNo = row.cells[2].textContent.toLowerCase();
+        const fin = row.cells[4].textContent.toLowerCase();
+        const company = row.cells[5].textContent.toLowerCase();
+        const offenseType = row.cells[7].textContent;
+        const status = row.querySelector('.badge') ? row.querySelector('.badge').textContent : '';
+        const paymentStatus = row.cells[9].textContent;
+        
+        const matchesSearch = searchTerm === '' || 
+            name.includes(searchTerm) || 
+            caseNo.includes(searchTerm) || 
+            fin.includes(searchTerm) || 
+            company.includes(searchTerm);
+            
+        const matchesOffenseType = offenseTypeFilter === '' || offenseType.includes(offenseTypeFilter);
+        const matchesStatus = statusFilter === '' || status.includes(statusFilter);
+        const matchesPaymentStatus = paymentStatusFilter === '' || 
+            (paymentStatusFilter === 'None' && paymentStatus.includes('-')) ||
+            paymentStatus.includes(paymentStatusFilter);
+        
+        if (matchesSearch && matchesOffenseType && matchesStatus && matchesPaymentStatus) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Signature Canvas Functionality - Complete Rewrite
+let signatureCanvases = {};
+
+function initCanvas(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error('Canvas not found:', canvasId);
+        return false;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get canvas context:', canvasId);
+        return false;
+    }
+    
+    // Initialize canvas
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    
+    function getMousePos(e) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
+    
+    function startDraw(e) {
+        isDrawing = true;
+        const pos = getMousePos(e);
+        lastX = pos.x;
+        lastY = pos.y;
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+    }
+    
+    function draw(e) {
+        if (!isDrawing) return;
+        const pos = getMousePos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+    }
+    
+    function stopDraw() {
+        if (!isDrawing) return;
+        isDrawing = false;
+        
+        // Save to hidden input
+        const hiddenInput = document.getElementById(canvasId.replace('Canvas', 'Data'));
+        if (hiddenInput) {
+            hiddenInput.value = canvas.toDataURL();
+        }
+    }
+    
+    // Remove existing listeners
+    canvas.onmousedown = null;
+    canvas.onmousemove = null;
+    canvas.onmouseup = null;
+    canvas.onmouseout = null;
+    canvas.ontouchstart = null;
+    canvas.ontouchmove = null;
+    canvas.ontouchend = null;
+    
+    // Mouse events
+    canvas.onmousedown = startDraw;
+    canvas.onmousemove = draw;
+    canvas.onmouseup = stopDraw;
+    canvas.onmouseout = stopDraw;
+    
+    // Touch events
+    canvas.ontouchstart = function(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = { clientX: touch.clientX, clientY: touch.clientY };
+        startDraw(mouseEvent);
+    };
+    
+    canvas.ontouchmove = function(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = { clientX: touch.clientX, clientY: touch.clientY };
+        draw(mouseEvent);
+    };
+    
+    canvas.ontouchend = function(e) {
+        e.preventDefault();
+        stopDraw();
+    };
+    
+    signatureCanvases[canvasId] = { canvas, ctx, isDrawing: false };
+    console.log('Canvas initialized:', canvasId);
+    return true;
+}
+
+function clearSignature(canvasId) {
+    const canvasData = signatureCanvases[canvasId];
+    if (!canvasData) {
+        console.error('Canvas data not found for:', canvasId);
+        return;
+    }
+    
+    const { canvas, ctx } = canvasData;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Clear hidden input
+    const hiddenInput = document.getElementById(canvasId.replace('Canvas', 'Data'));
+    if (hiddenInput) {
+        hiddenInput.value = '';
+    }
+    
+    console.log('Canvas cleared:', canvasId);
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM ready - initializing signatures');
+    
+    // Use more reliable approach - check for modal existence and initialize
+    function setupSignatureCanvases() {
+        const modal = document.querySelector('#newOffenceModal');
+        if (modal) {
+            console.log('Found modal, setting up event listener');
+            modal.addEventListener('shown.bs.modal', function() {
+                console.log('Modal shown event fired');
+                setTimeout(() => {
+                    const resCanvas = document.getElementById('residentSignatureCanvas');
+                    const mgCanvas = document.getElementById('dutyManagerSignatureCanvas');
+                    
+                    if (resCanvas) {
+                        console.log('Initializing resident canvas');
+                        initCanvas('residentSignatureCanvas');
+                    }
+                    if (mgCanvas) {
+                        console.log('Initializing manager canvas');
+                        initCanvas('dutyManagerSignatureCanvas');
+                    }
+                }, 100);
+            });
+        }
+        
+        // Try direct initialization for visible canvases
+        setTimeout(() => {
+            ['residentSignatureCanvas', 'dutyManagerSignatureCanvas'].forEach(id => {
+                const canvas = document.getElementById(id);
+                if (canvas && canvas.offsetParent !== null) {
+                    console.log('Direct init for visible canvas:', id);
+                    initCanvas(id);
+                }
+            });
+        }, 1000);
+    }
+    
+    setupSignatureCanvases();
+    
+    // Global click handler for modal trigger
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('[data-bs-target="#newOffenceModal"]')) {
+            setTimeout(() => {
+                console.log('Modal trigger clicked, initializing canvases');
+                initCanvas('residentSignatureCanvas');
+                initCanvas('dutyManagerSignatureCanvas');
+            }, 300);
+        }
+    });
+    
+    // Handle form submission
+    document.addEventListener('submit', function(e) {
+        Object.keys(signatureCanvases).forEach(canvasId => {
+            const canvasData = signatureCanvases[canvasId];
+            if (canvasData) {
+                const hiddenInput = document.getElementById(canvasId.replace('Canvas', 'Data'));
+                if (hiddenInput) {
+                    hiddenInput.value = canvasData.canvas.toDataURL();
+                    console.log('Signature captured for:', canvasId);
+                }
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

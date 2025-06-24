@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ form.name }} - {{ form.organization.name }}</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .regulations-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--bs-border-color);
+            padding: 1rem;
+            border-radius: 0.375rem;
+            background: var(--bs-body-bg);
+        }
+        .form-section {
+            display: none;
+        }
+        .form-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-dark">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-8">
+                <!-- Header -->
+                <div class="card mt-4">
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0">{{ form.name }}</h4>
+                                <small>{{ form.organization.name }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-light text-dark">
+                                    {% if form.language_code == 'en' %}English
+                                    {% elif form.language_code == 'bn' %}বাংলা
+                                    {% elif form.language_code == 'my' %}မြန်မာ
+                                    {% elif form.language_code == 'ta' %}தமிழ்
+                                    {% elif form.language_code == 'zh' %}中文
+                                    {% else %}{{ form.language_code.upper() }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Regulations Section -->
+                <div class="card mt-3" id="regulationsSection">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-clipboard-list me-2"></i>
+                            {% if form.language_code == 'en' %}Regulations & Instructions
+                            {% elif form.language_code == 'bn' %}নিয়মকানুন ও নির্দেশাবলী
+                            {% elif form.language_code == 'my' %}စည်းမျဉ်းများနှင့် ညွှန်ကြားချက်များ
+                            {% elif form.language_code == 'ta' %}விதிமுறைகள் மற்றும் வழிமுறைகள்
+                            {% elif form.language_code == 'zh' %}规章制度与说明
+                            {% else %}Regulations & Instructions
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="regulations-container">
+                            {% if form.regulations_text.startswith('[PDF_CONTENT]') %}
+                                <!-- PDF Content -->
+                                <div class="text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-file-pdf fa-3x text-danger"></i>
+                                        <h6 class="mt-2">PDF Regulations Document</h6>
+                                        <p class="text-muted small">Click the button below to view the regulations PDF document</p>
+                                    </div>
+                                    <a href="{{ url_for('serve_pdf', form_id=form.id) }}" target="_blank" class="btn btn-outline-primary">
+                                        <i class="fas fa-external-link-alt me-2"></i>
+                                        {% if form.language_code == 'en' %}View PDF Regulations
+                                        {% elif form.language_code == 'bn' %}PDF নিয়মকানুন দেখুন
+                                        {% elif form.language_code == 'my' %}PDF စည်းမျဉ်းများကို ကြည့်ရန်
+                                        {% elif form.language_code == 'ta' %}PDF விதிமுறைகளைப் பார்க்கவும்
+                                        {% elif form.language_code == 'zh' %}查看PDF规定
+                                        {% else %}View PDF Regulations
+                                        {% endif %}
+                                    </a>
+                                </div>
+                                
+                                <!-- Embedded PDF Viewer for larger screens -->
+                                <div class="d-none d-md-block mt-4">
+                                    <iframe src="{{ url_for('serve_pdf', form_id=form.id) }}" 
+                                            width="100%" 
+                                            height="400px" 
+                                            style="border: 1px solid #dee2e6; border-radius: 0.375rem;">
+                                        <p>Your browser does not support PDF viewing. 
+                                           <a href="{{ url_for('serve_pdf', form_id=form.id) }}" target="_blank">Click here to download the PDF</a>
+                                        </p>
+                                    </iframe>
+                                </div>
+                            {% elif form.regulations_text.startswith('[IMAGE_CONTENT]') %}
+                                <!-- Image Content -->
+                                <div class="text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-image fa-3x text-primary"></i>
+                                        <h6 class="mt-2">Regulations Image</h6>
+                                        <p class="text-muted small">View the regulations image below</p>
+                                    </div>
+                                    
+                                    <!-- Image Display -->
+                                    <div class="mt-3">
+                                        <img src="{{ url_for('serve_image', form_id=form.id) }}" 
+                                             alt="Regulations Image" 
+                                             class="img-fluid border rounded" 
+                                             style="max-height: 600px; max-width: 100%;">
+                                    </div>
+                                    
+                                    <!-- Download link for mobile -->
+                                    <div class="mt-3">
+                                        <a href="{{ url_for('serve_image', form_id=form.id) }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-download me-2"></i>
+                                            {% if form.language_code == 'en' %}Download Image
+                                            {% elif form.language_code == 'bn' %}ছবি ডাউনলোড করুন
+                                            {% elif form.language_code == 'my' %}ပုံ ဒေါင်းလုဒ် လုပ်ရန်
+                                            {% elif form.language_code == 'ta' %}படத்தைப் பதிவிறக்கவும்
+                                            {% elif form.language_code == 'zh' %}下载图片
+                                            {% else %}Download Image
+                                            {% endif %}
+                                        </a>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <!-- Text Content -->
+                                {{ form.regulations_text|safe|replace('\n', '<br>')|replace('\r', '') }}
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Reference Photos Section -->
+                        {% if form.ref_photo_1 or form.ref_photo_2 or form.ref_photo_3 %}
+                        <div class="mt-4">
+                            <h6 class="fw-bold mb-3">
+                                <i class="fas fa-images me-2"></i>
+                                {% if form.language_code == 'en' %}Reference Photos
+                                {% elif form.language_code == 'bn' %}রেফারেন্স ছবি
+                                {% elif form.language_code == 'my' %}ရည်ညွှန်းပုံများ
+                                {% elif form.language_code == 'ta' %}குறிப்பு புகைப்படங்கள்
+                                {% elif form.language_code == 'zh' %}参考照片
+                                {% else %}Reference Photos
+                                {% endif %}
+                            </h6>
+                            <div class="row">
+                                {% if form.ref_photo_1 %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <img src="{{ url_for('serve_ref_photo', form_id=form.id, photo_num=1) }}" 
+                                             class="card-img-top" 
+                                             alt="Reference Photo 1" 
+                                             style="height: 200px; object-fit: cover;">
+                                        <div class="card-body text-center p-2">
+                                            <small class="text-muted">Photo 1</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if form.ref_photo_2 %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <img src="{{ url_for('serve_ref_photo', form_id=form.id, photo_num=2) }}" 
+                                             class="card-img-top" 
+                                             alt="Reference Photo 2" 
+                                             style="height: 200px; object-fit: cover;">
+                                        <div class="card-body text-center p-2">
+                                            <small class="text-muted">Photo 2</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if form.ref_photo_3 %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <img src="{{ url_for('serve_ref_photo', form_id=form.id, photo_num=3) }}" 
+                                             class="card-img-top" 
+                                             alt="Reference Photo 3" 
+                                             style="height: 200px; object-fit: cover;">
+                                        <div class="card-body text-center p-2">
+                                            <small class="text-muted">Photo 3</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="agreeRegulations" required>
+                            <label class="form-check-label" for="agreeRegulations">
+                                {% if form.language_code == 'en' %}I have read and agree to the regulations
+                                {% elif form.language_code == 'bn' %}আমি নিয়মকানুন পড়েছি এবং সম্মত আছি
+                                {% elif form.language_code == 'my' %}စည်းမျဉ်းများကို ဖတ်ပြီး သဘောတူပါသည်
+                                {% elif form.language_code == 'ta' %}நான் விதிமுறைகளைப் படித்து ஒப்புக்கொள்கிறேன்
+                                {% elif form.language_code == 'zh' %}我已阅读并同意这些规定
+                                {% else %}I have read and agree to the regulations
+                                {% endif %}
+                            </label>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <button type="button" class="btn btn-primary" id="proceedToForm" disabled>
+                                {% if form.language_code == 'en' %}Continue to Form
+                                {% elif form.language_code == 'bn' %}ফর্মে এগিয়ে যান
+                                {% elif form.language_code == 'my' %}ဖောင်သို့ ဆက်လက်သွားရန်
+                                {% elif form.language_code == 'ta' %}படிவத்திற்குச் செல்லவும்
+                                {% elif form.language_code == 'zh' %}继续填写表格
+                                {% else %}Continue to Form
+                                {% endif %}
+                                <i class="fas fa-arrow-right ms-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Section -->
+                <div class="card mt-3 form-section" id="formSection">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-edit me-2"></i>
+                            {% if form.language_code == 'en' %}Registration Form
+                            {% elif form.language_code == 'bn' %}নিবন্ধন ফর্ম
+                            {% elif form.language_code == 'my' %}မှတ်ပုံတင်ဖောင်
+                            {% elif form.language_code == 'ta' %}பதிவு படிவம்
+                            {% elif form.language_code == 'zh' %}登记表格
+                            {% else %}Registration Form
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('public_form_submit') }}" method="POST" id="registrationForm">
+                            <input type="hidden" name="form_id" value="{{ form.id }}">
+                            
+                            <div class="row g-3">
+                                <!-- FIN -->
+                                <div class="col-md-6">
+                                    <label for="fin" class="form-label">
+                                        {% if form.language_code == 'en' %}FIN *
+                                        {% elif form.language_code == 'bn' %}এফআইএন *
+                                        {% elif form.language_code == 'my' %}FIN *
+                                        {% elif form.language_code == 'ta' %}FIN *
+                                        {% elif form.language_code == 'zh' %}身份证号 *
+                                        {% else %}FIN *
+                                        {% endif %}
+                                    </label>
+                                    <input type="text" class="form-control" id="fin" name="fin" required 
+                                           placeholder="{% if form.language_code == 'bn' %}আপনার FIN নম্বর{% elif form.language_code == 'my' %}သင့် FIN နံပါတ်{% elif form.language_code == 'ta' %}உங்கள் FIN எண்{% elif form.language_code == 'zh' %}您的身份证号码{% else %}Your FIN Number{% endif %}">
+                                </div>
+
+                                <!-- Full Name -->
+                                <div class="col-md-6">
+                                    <label for="full_name" class="form-label">
+                                        {% if form.language_code == 'en' %}Full Name *
+                                        {% elif form.language_code == 'bn' %}পূর্ণ নাম *
+                                        {% elif form.language_code == 'my' %}အမည်အပြည့်အစုံ *
+                                        {% elif form.language_code == 'ta' %}முழு பெயர் *
+                                        {% elif form.language_code == 'zh' %}全名 *
+                                        {% else %}Full Name *
+                                        {% endif %}
+                                    </label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" required 
+                                           placeholder="{% if form.language_code == 'bn' %}আপনার পূর্ণ নাম{% elif form.language_code == 'my' %}သင့်အမည်အပြည့်အစုံ{% elif form.language_code == 'ta' %}உங்கள் முழு பெயர்{% elif form.language_code == 'zh' %}您的全名{% else %}Your Full Name{% endif %}">
+                                </div>
+
+                                <!-- Company Name -->
+                                <div class="col-md-6">
+                                    <label for="company_name" class="form-label">
+                                        {% if form.language_code == 'en' %}Company Name *
+                                        {% elif form.language_code == 'bn' %}কোম্পানির নাম *
+                                        {% elif form.language_code == 'my' %}ကုမ္ပဏီအမည် *
+                                        {% elif form.language_code == 'ta' %}நிறுவன பெயர் *
+                                        {% elif form.language_code == 'zh' %}公司名称 *
+                                        {% else %}Company Name *
+                                        {% endif %}
+                                    </label>
+                                    <input type="text" class="form-control" id="company_name" name="company_name" required 
+                                           placeholder="{% if form.language_code == 'bn' %}আপনার কোম্পানির নাম{% elif form.language_code == 'my' %}သင့်ကုမ္ပဏီအမည်{% elif form.language_code == 'ta' %}உங்கள் நிறுவன பெயர்{% elif form.language_code == 'zh' %}您的公司名称{% else %}Your Company Name{% endif %}">
+                                </div>
+
+                                <!-- Room Number -->
+                                <div class="col-md-6">
+                                    <label for="room_number" class="form-label">
+                                        {% if form.language_code == 'en' %}Room Number *
+                                        {% elif form.language_code == 'bn' %}রুম নম্বর *
+                                        {% elif form.language_code == 'my' %}အခန်းနံပါတ် *
+                                        {% elif form.language_code == 'ta' %}அறை எண் *
+                                        {% elif form.language_code == 'zh' %}房间号 *
+                                        {% else %}Room Number *
+                                        {% endif %}
+                                    </label>
+                                    <input type="text" class="form-control" id="room_number" name="room_number" required 
+                                           placeholder="{% if form.language_code == 'bn' %}যেমন: A1-001{% elif form.language_code == 'my' %}ဥပမာ- A1-001{% elif form.language_code == 'ta' %}உதாரணம்: A1-001{% elif form.language_code == 'zh' %}例如：A1-001{% else %}e.g. A1-001{% endif %}">
+                                </div>
+
+                                <!-- Date -->
+                                <div class="col-md-6">
+                                    <label for="date" class="form-label">
+                                        {% if form.language_code == 'en' %}Date *
+                                        {% elif form.language_code == 'bn' %}তারিখ *
+                                        {% elif form.language_code == 'my' %}ရက်စွဲ *
+                                        {% elif form.language_code == 'ta' %}தேதி *
+                                        {% elif form.language_code == 'zh' %}日期 *
+                                        {% else %}Date *
+                                        {% endif %}
+                                    </label>
+                                    <input type="date" class="form-control" id="date" name="date" required>
+                                </div>
+
+                                <!-- Phone Number -->
+                                <div class="col-md-6">
+                                    <label for="phone_number" class="form-label">
+                                        {% if form.language_code == 'en' %}Phone Number *
+                                        {% elif form.language_code == 'bn' %}ফোন নম্বর *
+                                        {% elif form.language_code == 'my' %}ဖုန်းနံပါတ် *
+                                        {% elif form.language_code == 'ta' %}தொலைபேசி எண் *
+                                        {% elif form.language_code == 'zh' %}电话号码 *
+                                        {% else %}Phone Number *
+                                        {% endif %}
+                                    </label>
+                                    <input type="tel" class="form-control" id="phone_number" name="phone_number" required 
+                                           placeholder="{% if form.language_code == 'bn' %}আপনার ফোন নম্বর{% elif form.language_code == 'my' %}သင့်ဖုန်းနံပါတ်{% elif form.language_code == 'ta' %}உங்கள் தொலைபேசி எண்{% elif form.language_code == 'zh' %}您的电话号码{% else %}Your Phone Number{% endif %}">
+                                </div>
+                            </div>
+
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-paper-plane me-2"></i>
+                                    {% if form.language_code == 'en' %}Submit Registration
+                                    {% elif form.language_code == 'bn' %}নিবন্ধন জমা দিন
+                                    {% elif form.language_code == 'my' %}မှတ်ပုံတင်မှုတင်သွင်းရန်
+                                    {% elif form.language_code == 'ta' %}பதிவை சமர்ப்பிக்கவும்
+                                    {% elif form.language_code == 'zh' %}提交登记
+                                    {% else %}Submit Registration
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const agreeCheckbox = document.getElementById('agreeRegulations');
+            const proceedButton = document.getElementById('proceedToForm');
+            const regulationsSection = document.getElementById('regulationsSection');
+            const formSection = document.getElementById('formSection');
+            const dateInput = document.getElementById('date');
+
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+
+            // Enable proceed button when regulations are agreed
+            agreeCheckbox.addEventListener('change', function() {
+                proceedButton.disabled = !this.checked;
+            });
+
+            // Show form when proceed button is clicked
+            proceedButton.addEventListener('click', function() {
+                regulationsSection.style.display = 'none';
+                formSection.classList.add('active');
+                formSection.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
+</body>
+</html>

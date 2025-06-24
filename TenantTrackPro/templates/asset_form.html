@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}{% if asset %}Edit{% else %}Add{% endif %} Asset - TS Management Services Pte Ltd{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-{% if asset %}edit{% else %}plus{% endif %} me-2"></i>
+                        {% if asset %}Edit Asset{% else %}Add New Asset{% endif %}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        {% if asset %}Update asset information{% else %}Create a new asset in the system{% endif %}
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('asset_management') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Assets
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset Form -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Asset Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" 
+                          action="{% if asset %}{{ url_for('update_asset', asset_id=asset.id) }}{% else %}{{ url_for('create_asset') }}{% endif %}">
+                        
+                        <!-- Basic Information -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Asset Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ asset.name if asset else '' }}" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="category_id" class="form-label">Category <span class="text-danger">*</span></label>
+                                <select class="form-select" id="category_id" name="category_id" required>
+                                    <option value="">Select Category</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}" 
+                                            {% if asset and asset.category_id == category.id %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" 
+                                      placeholder="Enter asset description...">{{ asset.description if asset else '' }}</textarea>
+                        </div>
+
+                        <!-- Status and Location -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
+                                <select class="form-select" id="status" name="status" required>
+                                    {% for status in statuses %}
+                                    <option value="{{ status }}" 
+                                            {% if asset and asset.status == status %}selected{% elif not asset and status == 'Active' %}selected{% endif %}>
+                                        {{ status }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="location" class="form-label">Location</label>
+                                <input type="text" class="form-control" id="location" name="location" 
+                                       value="{{ asset.location if asset else '' }}" placeholder="e.g., Room 101, Storage A">
+                            </div>
+                        </div>
+
+                        <!-- Room Number -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="room_no" class="form-label">Room No</label>
+                                <input type="text" class="form-control" id="room_no" name="room_no" 
+                                       value="{{ asset.room_no if asset else '' }}" placeholder="e.g., 101, A-205">
+                            </div>
+                        </div>
+
+                        <!-- Quantity and Serial Number -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="quantity" class="form-label">Quantity</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity" 
+                                       value="{{ asset.quantity if asset else 1 }}" min="1">
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="serial_number" class="form-label">Serial Number</label>
+                                <input type="text" class="form-control" id="serial_number" name="serial_number" 
+                                       value="{{ asset.serial_number if asset else '' }}" placeholder="Enter serial number">
+                            </div>
+                        </div>
+
+                        <!-- Purchase Information -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-header">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-receipt me-2"></i>
+                                    Purchase Information (Optional)
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="purchase_date" class="form-label">Purchase Date</label>
+                                        <input type="date" class="form-control" id="purchase_date" name="purchase_date" 
+                                               value="{{ asset.purchase_date.strftime('%Y-%m-%d') if asset and asset.purchase_date else '' }}">
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="purchase_cost" class="form-label">Purchase Cost ($)</label>
+                                        <input type="number" class="form-control" id="purchase_cost" name="purchase_cost" 
+                                               value="{{ asset.purchase_cost if asset and asset.purchase_cost else '' }}" 
+                                               step="0.01" min="0" placeholder="0.00">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('asset_management') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                {% if asset %}Update Asset{% else %}Create Asset{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const nameInput = document.getElementById('name');
+    const categorySelect = document.getElementById('category_id');
+    const statusSelect = document.getElementById('status');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Validate required fields
+        if (!nameInput.value.trim()) {
+            isValid = false;
+            nameInput.classList.add('is-invalid');
+        } else {
+            nameInput.classList.remove('is-invalid');
+        }
+        
+        if (!categorySelect.value) {
+            isValid = false;
+            categorySelect.classList.add('is-invalid');
+        } else {
+            categorySelect.classList.remove('is-invalid');
+        }
+        
+        if (!statusSelect.value) {
+            isValid = false;
+            statusSelect.classList.add('is-invalid');
+        } else {
+            statusSelect.classList.remove('is-invalid');
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+        }
+    });
+    
+    // Remove validation styles on input
+    [nameInput, categorySelect, statusSelect].forEach(element => {
+        element.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
+    });
+});
+</script>
+{% endblock %}

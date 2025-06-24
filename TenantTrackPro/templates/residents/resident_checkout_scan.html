@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resident Check-in & Resident Check-Out - TS Management Services Pte Ltd</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            border: none;
+        }
+        .progress-steps {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 20px;
+            position: relative;
+        }
+        .step-number {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: #6c757d;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        .step.active .step-number {
+            background: #3498db;
+            color: white;
+        }
+        .step.completed .step-number {
+            background: #27ae60;
+            color: white;
+        }
+        .step-label {
+            font-size: 14px;
+            color: #6c757d;
+            text-align: center;
+        }
+        .step.active .step-label {
+            color: #3498db;
+            font-weight: bold;
+        }
+        .step.completed .step-label {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+        }
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        #reader {
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px auto;
+        }
+        .selfie-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        #video, #canvas {
+            border-radius: 15px;
+            max-width: 100%;
+            height: auto;
+            border: 3px solid #3498db;
+        }
+        .photo-preview {
+            max-width: 300px;
+            border-radius: 15px;
+            margin: 15px auto;
+            border: 3px solid #27ae60;
+            display: block;
+        }
+        .company-logo {
+            max-height: 60px;
+            margin-bottom: 10px;
+        }
+        .next-btn {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        @media (max-width: 768px) {
+            .progress-steps {
+                flex-direction: column;
+                align-items: center;
+            }
+            .step {
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="container text-center">
+            {% if logo_exists %}
+            <img src="{{ url_for('static', filename='ts_logo.svg') }}" alt="TS Management Services" class="company-logo">
+            {% endif %}
+            <h1><i class="fas fa-user-check me-2"></i>Resident Check-in & Resident Check-Out</h1>
+            <p class="lead">Complete check-in or check-out process</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Progress Steps -->
+        <div class="progress-steps">
+            <div class="step active" id="step-1">
+                <div class="step-number">1</div>
+                <div class="step-label">Take Selfie</div>
+            </div>
+            <div class="step" id="step-2">
+                <div class="step-number">2</div>
+                <div class="step-label">Fill Details</div>
+            </div>
+        </div>
+
+        <!-- Step 1: Selfie Capture -->
+        <div class="card mb-4" id="selfie-section">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-camera me-2"></i>Step 1: Take Selfie Photo</h5>
+            </div>
+            <div class="card-body">
+                <div class="selfie-container">
+                    <video id="video" width="320" height="240" autoplay style="display: none;"></video>
+                    <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+                    <div id="photo-preview"></div>
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-primary" id="start-camera">
+                            <i class="fas fa-video me-2"></i>Start Camera
+                        </button>
+                        <button type="button" class="btn btn-success" id="capture-photo" style="display: none;">
+                            <i class="fas fa-camera me-2"></i>Capture Photo
+                        </button>
+                        <button type="button" class="btn btn-warning" id="retake-photo" style="display: none;">
+                            <i class="fas fa-redo me-2"></i>Retake Photo
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4" id="next-to-form" style="display: none;">
+                        <button type="button" class="btn btn-success next-btn" id="proceed-to-form">
+                            <i class="fas fa-arrow-right me-2"></i>Next: Fill Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Information Form -->
+        <div class="card mb-4" id="form-section" style="display: none;">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Step 2: Enter Information</h5>
+            </div>
+            <div class="card-body">
+                <form id="checkout-form" method="POST" action="{{ url_for('resident_checkout_submit') }}">
+                    <input type="hidden" id="qr-data" name="qr_data" value="">
+                    <input type="hidden" id="selfie-data" name="selfie_photo" value="">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="resident_name" class="form-label">
+                                <i class="fas fa-user me-2"></i>Full Name *
+                            </label>
+                            <input type="text" class="form-control" id="resident_name" name="resident_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="fin" class="form-label">
+                                <i class="fas fa-id-card me-2"></i>FIN Number *
+                            </label>
+                            <input type="text" class="form-control" id="fin" name="fin" required maxlength="20">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="company_name" class="form-label">
+                                <i class="fas fa-building me-2"></i>Company Name *
+                            </label>
+                            <input type="text" class="form-control" id="company_name" name="company_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="reason" class="form-label">
+                                <i class="fas fa-clipboard-list me-2"></i>Reason *
+                            </label>
+                            <select class="form-select" id="reason" name="reason" required>
+                                <option value="">Select reason...</option>
+                                <option value="HOME LEAVE">HOME LEAVE</option>
+                                <option value="CHECK-OUT">CHECK-OUT</option>
+                                <option value="OTHER">OTHER</option>
+                                <option value="New check-in">New check-in</option>
+                                <option value="Home leave return">Home leave return</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="details" class="form-label">
+                            <i class="fas fa-comment me-2"></i>Additional Details (Optional)
+                        </label>
+                        <textarea class="form-control" id="details" name="details" rows="3" placeholder="Any additional information..."></textarea>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-success next-btn">
+                            <i class="fas fa-check me-2"></i>Submit Check-Out
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let capturedPhoto = null;
+
+        // Step management
+        function updateStep(stepNumber) {
+            // Update progress indicators
+            for (let i = 1; i <= 2; i++) {
+                const step = document.getElementById(`step-${i}`);
+                if (i < stepNumber) {
+                    step.className = 'step completed';
+                } else if (i === stepNumber) {
+                    step.className = 'step active';
+                } else {
+                    step.className = 'step';
+                }
+            }
+
+            // Show/hide sections
+            document.getElementById('selfie-section').style.display = stepNumber === 1 ? 'block' : 'none';
+            document.getElementById('form-section').style.display = stepNumber === 2 ? 'block' : 'none';
+        }
+
+        // Selfie capture functionality
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const photoPreview = document.getElementById('photo-preview');
+        const startCameraBtn = document.getElementById('start-camera');
+        const captureBtn = document.getElementById('capture-photo');
+        const retakeBtn = document.getElementById('retake-photo');
+        const nextToFormBtn = document.getElementById('next-to-form');
+
+        startCameraBtn.addEventListener('click', async function() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'user' } 
+                });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                
+                startCameraBtn.style.display = 'none';
+                captureBtn.style.display = 'inline-block';
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert('Unable to access camera. Please check permissions.');
+            }
+        });
+
+        captureBtn.addEventListener('click', function() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            
+            capturedPhoto = canvas.toDataURL('image/jpeg', 0.8);
+            document.getElementById('selfie-data').value = capturedPhoto;
+            
+            // Stop video stream
+            const stream = video.srcObject;
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+            
+            // Show preview
+            video.style.display = 'none';
+            photoPreview.innerHTML = `<img src="${capturedPhoto}" class="photo-preview" alt="Captured Photo">`;
+            
+            // Update buttons
+            captureBtn.style.display = 'none';
+            retakeBtn.style.display = 'inline-block';
+            nextToFormBtn.style.display = 'block';
+        });
+
+        retakeBtn.addEventListener('click', function() {
+            capturedPhoto = null;
+            photoPreview.innerHTML = '';
+            retakeBtn.style.display = 'none';
+            nextToFormBtn.style.display = 'none';
+            startCameraBtn.style.display = 'inline-block';
+        });
+
+        document.getElementById('proceed-to-form').addEventListener('click', function() {
+            updateStep(2);
+        });
+
+        // Form submission
+        document.getElementById('checkout-form').addEventListener('submit', function(e) {
+            if (!capturedPhoto) {
+                e.preventDefault();
+                alert('Please capture a selfie photo before submitting.');
+                return false;
+            }
+        });
+
+        // Initialize - start with selfie step
+        updateStep(1);
+        
+        // Auto-start camera when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('start-camera').click();
+        });
+    </script>
+</body>
+</html>

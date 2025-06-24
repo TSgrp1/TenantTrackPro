@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Key Management QR Codes{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-qrcode me-2"></i>Key Management QR Codes</h1>
+                <a href="{{ url_for('key_management_dashboard') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Key Management
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Key Out QR Code -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-sign-out-alt me-2"></i>Key Out QR Code
+                    </h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <img src="data:image/png;base64,{{ qr_out_data }}" alt="Key Out QR Code" class="img-fluid" style="max-width: 300px;">
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Instructions:</strong> Residents scan this QR code when taking keys out
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">QR Code URL:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ key_out_url }}" id="keyOutUrl" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('keyOutUrl')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="downloadQR('qr-out', '{{ qr_out_data }}')">
+                            <i class="fas fa-download me-2"></i>Download QR Code
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="printQR('Key Out', '{{ qr_out_data }}')">
+                            <i class="fas fa-print me-2"></i>Print QR Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key In QR Code -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-sign-in-alt me-2"></i>Key In QR Code
+                    </h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <img src="data:image/png;base64,{{ qr_in_data }}" alt="Key In QR Code" class="img-fluid" style="max-width: 300px;">
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Instructions:</strong> Residents scan this QR code when returning keys
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">QR Code URL:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ key_in_url }}" id="keyInUrl" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('keyInUrl')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success" onclick="downloadQR('qr-in', '{{ qr_in_data }}')">
+                            <i class="fas fa-download me-2"></i>Download QR Code
+                        </button>
+                        <button class="btn btn-outline-success" onclick="printQR('Key In', '{{ qr_in_data }}')">
+                            <i class="fas fa-print me-2"></i>Print QR Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Instructions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>How to Use
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-danger"><i class="fas fa-sign-out-alt me-2"></i>Key Out Process</h6>
+                            <ol>
+                                <li>Print and post the "Key Out" QR code at the key collection point</li>
+                                <li>Residents scan the QR code when taking keys</li>
+                                <li>System captures: Room Number, Name, Company Name, Date & Singapore Time</li>
+                                <li>Record is marked as "Active" in the system</li>
+                            </ol>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success"><i class="fas fa-sign-in-alt me-2"></i>Key In Process</h6>
+                            <ol>
+                                <li>Print and post the "Key In" QR code at the key return point</li>
+                                <li>Residents scan the QR code when returning keys</li>
+                                <li>System captures the same information and links to the out record</li>
+                                <li>Record is marked as "Returned" and tracks return time</li>
+                            </ol>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> Keys not returned within 30 minutes will be automatically marked as "Key Not Returned" in the system.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(element.value);
+    
+    // Show success message
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i>';
+    button.classList.remove('btn-outline-secondary');
+    button.classList.add('btn-success');
+    
+    setTimeout(() => {
+        button.innerHTML = originalContent;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+
+function downloadQR(filename, qrData) {
+    const link = document.createElement('a');
+    link.download = filename + '_qr_code.png';
+    link.href = 'data:image/png;base64,' + qrData;
+    link.click();
+}
+
+function printQR(title, qrData) {
+    const printWindow = window.open('', '_blank');
+    const printContent = `
+        <html>
+            <head>
+                <title>Print ${title} QR Code</title>
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        text-align: center; 
+                        margin: 20px;
+                    }
+                    h1 { 
+                        color: ${title.includes('Out') ? '#dc3545' : '#198754'}; 
+                        margin-bottom: 20px;
+                    }
+                    img { 
+                        max-width: 400px; 
+                        margin: 20px 0;
+                    }
+                    .instructions {
+                        margin-top: 20px;
+                        font-size: 14px;
+                        color: #666;
+                    }
+                    @media print {
+                        body { margin: 0; }
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>${title} QR Code</h1>
+                <img src="data:image/png;base64,${qrData}" alt="${title} QR Code">
+                <div class="instructions">
+                    <p><strong>Scan this QR code to ${title.toLowerCase()}</strong></p>
+                    <p>TS Management Services - Key Management System</p>
+                </div>
+            </body>
+        </html>
+    `;
+    
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+}
+</script>
+{% endblock %}

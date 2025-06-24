@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Submitted Successfully</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card mt-5">
+                    <div class="card-header text-center bg-success">
+                        <h3 class="text-white mb-0">
+                            <i class="fas fa-check-circle me-2"></i>
+                            {% if form.language_code == 'en' %}Submission Successful
+                            {% elif form.language_code == 'bn' %}সফলভাবে জমা হয়েছে
+                            {% elif form.language_code == 'my' %}အောင်မြင်စွာ တင်သွင်းပြီး
+                            {% elif form.language_code == 'ta' %}வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது
+                            {% elif form.language_code == 'zh' %}提交成功
+                            {% else %}Submission Successful
+                            {% endif %}
+                        </h3>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-clipboard-check fa-4x text-success mb-3"></i>
+                            <h4>
+                                {% if form.language_code == 'en' %}Thank you, {{ form_data.full_name }}!
+                                {% elif form.language_code == 'bn' %}ধন্যবাদ, {{ form_data.full_name }}!
+                                {% elif form.language_code == 'my' %}ကျေးဇူးတင်ပါသည်, {{ form_data.full_name }}!
+                                {% elif form.language_code == 'ta' %}நன்றி, {{ form_data.full_name }}!
+                                {% elif form.language_code == 'zh' %}谢谢您, {{ form_data.full_name }}!
+                                {% else %}Thank you, {{ form_data.full_name }}!
+                                {% endif %}
+                            </h4>
+                            <p class="text-muted">
+                                {% if form.language_code == 'en' %}Your form has been submitted successfully and is now being processed by our team.
+                                {% elif form.language_code == 'bn' %}আপনার ফর্ম সফলভাবে জমা হয়েছে এবং আমাদের দল এটি প্রক্রিয়া করছে।
+                                {% elif form.language_code == 'my' %}သင့်ဖောင်ကို အောင်မြင်စွာ တင်သွင်းပြီး ကျွန်ုပ်တို့အဖွဲ့က ဆက်လက်လုပ်ဆောင်နေပါသည်။
+                                {% elif form.language_code == 'ta' %}உங்கள் படிவம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டு எங்கள் குழுவால் செயலாக்கப்படுகிறது।
+                                {% elif form.language_code == 'zh' %}您的表格已成功提交，我们的团队正在处理中。
+                                {% else %}Your form has been submitted successfully and is now being processed by our team.
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        <div class="card bg-light text-dark mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    {% if form.language_code == 'en' %}Submission Details
+                                    {% elif form.language_code == 'bn' %}জমা দেওয়ার বিবরণ
+                                    {% elif form.language_code == 'my' %}တင်သွင်းမှု အသေးစိတ်
+                                    {% elif form.language_code == 'ta' %}சமர்ப்பிப்பு விபரங்கள்
+                                    {% elif form.language_code == 'zh' %}提交详情
+                                    {% else %}Submission Details
+                                    {% endif %}
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-2">
+                                    <div class="col-6"><strong>
+                                        {% if form.language_code == 'en' %}FIN:
+                                        {% elif form.language_code == 'bn' %}এফআইএন:
+                                        {% elif form.language_code == 'my' %}FIN:
+                                        {% elif form.language_code == 'ta' %}FIN:
+                                        {% elif form.language_code == 'zh' %}身份证号:
+                                        {% else %}FIN:
+                                        {% endif %}
+                                    </strong></div>
+                                    <div class="col-6">{{ form_data.fin }}</div>
+                                    
+                                    <div class="col-6"><strong>
+                                        {% if form.language_code == 'en' %}Room:
+                                        {% elif form.language_code == 'bn' %}রুম:
+                                        {% elif form.language_code == 'my' %}အခန်း:
+                                        {% elif form.language_code == 'ta' %}அறை:
+                                        {% elif form.language_code == 'zh' %}房间:
+                                        {% else %}Room:
+                                        {% endif %}
+                                    </strong></div>
+                                    <div class="col-6">{{ form_data.room_number }}</div>
+                                    
+                                    <div class="col-6"><strong>
+                                        {% if form.language_code == 'en' %}Company:
+                                        {% elif form.language_code == 'bn' %}কোম্পানি:
+                                        {% elif form.language_code == 'my' %}ကုမ္ပဏီ:
+                                        {% elif form.language_code == 'ta' %}நிறுவனம்:
+                                        {% elif form.language_code == 'zh' %}公司:
+                                        {% else %}Company:
+                                        {% endif %}
+                                    </strong></div>
+                                    <div class="col-6">{{ form_data.company_name }}</div>
+                                    
+                                    <div class="col-6"><strong>
+                                        {% if form.language_code == 'en' %}Date:
+                                        {% elif form.language_code == 'bn' %}তারিখ:
+                                        {% elif form.language_code == 'my' %}ရက်စွဲ:
+                                        {% elif form.language_code == 'ta' %}தேதி:
+                                        {% elif form.language_code == 'zh' %}日期:
+                                        {% else %}Date:
+                                        {% endif %}
+                                    </strong></div>
+                                    <div class="col-6">{{ form_data.date }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            {% if form.language_code == 'en' %}Please keep this information for your records. You may now close this page.
+                            {% elif form.language_code == 'bn' %}আপনার রেকর্ডের জন্য এই তথ্য রাখুন। আপনি এখন এই পৃষ্ঠাটি বন্ধ করতে পারেন।
+                            {% elif form.language_code == 'my' %}ဤအချက်အလက်ကို သင့်မှတ်တမ်းများအတွက် သိမ်းဆည်းထားပါ။ ယခု ဤစာမျက်နှာကို ပိတ်နိုင်ပါသည်။
+                            {% elif form.language_code == 'ta' %}உங்கள் பதிவுகளுக்காக இந்த தகவலை வைத்துக் கொள்ளுங்கள். இப்போது இந்தப் பக்கத்தை மூடலாம்।
+                            {% elif form.language_code == 'zh' %}请保留此信息作为您的记录。您现在可以关闭此页面。
+                            {% else %}Please keep this information for your records. You may now close this page.
+                            {% endif %}
+                        </div>
+
+                        <small class="text-muted">
+                            <i class="fas fa-building me-1"></i>
+                            {{ form.organization.name }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

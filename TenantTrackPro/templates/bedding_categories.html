@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}Bedding Categories{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-primary">
+                    <i class="fas fa-tags me-2"></i>Bedding Categories
+                </h2>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('bedding_items') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Items
+                    </a>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                        <i class="fas fa-plus me-1"></i>Add Category
+                    </button>
+                </div>
+            </div>
+
+            <div class="row">
+                {% if categories %}
+                {% for category in categories %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card {% if not category.is_active %}bg-light text-muted{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">{{ category.name }}</h5>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <button class="dropdown-item" onclick="editCategory({{ category.id }}, '{{ category.name }}', '{{ category.description or '' }}')">
+                                                <i class="fas fa-edit me-2"></i>Edit
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item" onclick="toggleCategory({{ category.id }}, {{ 'true' if category.is_active else 'false' }})">
+                                                <i class="fas fa-{% if category.is_active %}eye-slash{% else %}eye{% endif %} me-2"></i>
+                                                {% if category.is_active %}Deactivate{% else %}Activate{% endif %}
+                                            </button>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <button class="dropdown-item text-danger" onclick="deleteCategory({{ category.id }}, '{{ category.name }}')">
+                                                <i class="fas fa-trash me-2"></i>Delete
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            {% if category.description %}
+                            <p class="card-text">{{ category.description }}</p>
+                            {% else %}
+                            <p class="card-text text-muted">No description provided</p>
+                            {% endif %}
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    Created: {{ category.created_at.strftime('%Y-%m-%d') }}
+                                </small>
+                                {% if category.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No categories found</h5>
+                        <p class="text-muted">Create your first bedding category to organize your inventory.</p>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                            <i class="fas fa-plus me-1"></i>Add Category
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addCategoryForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="category_name" class="form-label">Category Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="category_name" name="name" required>
+                        <div class="form-text">Enter a descriptive name for the category (e.g., Bed, Pillow, Mattress, Blanket)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="category_description" name="description" rows="3" 
+                                  placeholder="Optional description for this category..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    {% if can_user_create(current_user, 'bedding_management') %}
+                    <button type="submit" class="btn btn-primary">Add Category</button>
+                    {% else %}
+                    <button class="btn btn-secondary" disabled title="View-only access - cannot add categories">
+                        <i class="fas fa-eye me-2"></i>View Only
+                    </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Category Modal -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editCategoryForm">
+                <input type="hidden" id="edit_category_id" name="category_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_category_name" class="form-label">Category Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_category_name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_category_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="edit_category_description" name="description" rows="3" 
+                                  placeholder="Optional description for this category..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    {% if can_user_edit(current_user, 'bedding_management') %}
+                    <button type="submit" class="btn btn-primary">Update Category</button>
+                    {% else %}
+                    <button class="btn btn-secondary" disabled title="View-only access - cannot update categories">
+                        <i class="fas fa-eye me-2"></i>View Only
+                    </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle add category form submission
+document.getElementById('addCategoryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('/bedding-categories/add', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Category added successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error adding category');
+    });
+});
+
+// Handle edit category form submission
+document.getElementById('editCategoryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const categoryId = document.getElementById('edit_category_id').value;
+    
+    fetch(`/bedding-categories/${categoryId}/edit`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Category updated successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating category');
+    });
+});
+
+// Edit category function
+function editCategory(categoryId, name, description) {
+    document.getElementById('edit_category_id').value = categoryId;
+    document.getElementById('edit_category_name').value = name;
+    document.getElementById('edit_category_description').value = description;
+    
+    var editModal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+    editModal.show();
+}
+
+// Toggle category active status
+function toggleCategory(categoryId, isActive) {
+    const action = isActive ? 'deactivate' : 'activate';
+    
+    if (confirm(`Are you sure you want to ${action} this category?`)) {
+        fetch(`/bedding-categories/${categoryId}/toggle`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating category');
+        });
+    }
+}
+
+// Delete category function
+function deleteCategory(categoryId, name) {
+    if (confirm(`Are you sure you want to delete the category "${name}"? This action cannot be undone.`)) {
+        fetch(`/bedding-categories/${categoryId}/delete`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Category deleted successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting category');
+        });
+    }
+}
+</script>
+{% endblock %}

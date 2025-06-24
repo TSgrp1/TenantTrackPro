@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Add Asset - {{ asset_name.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-plus"></i> Add Asset - {{ asset_name.name }}</h4>
+                    <p class="text-muted mb-0">Category: {{ asset_name.category }}</p>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="serial_number" class="form-label">Serial Number *</label>
+                                    <input type="text" class="form-control" id="serial_number" name="serial_number" required
+                                           placeholder="Enter unique serial number">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="room_number" class="form-label">Room Number</label>
+                                    <div class="input-group">
+                                        <select class="form-select" id="roomNumberSelect" onchange="handleRoomSelection()">
+                                            <option value="">Select Room Number</option>
+                                            <option value="custom">+ Enter Custom Room Number</option>
+                                            {% for room in room_numbers %}
+                                                <option value="{{ room.room_number }}">{{ room.room_number }} (Building {{ room.building }})</option>
+                                            {% endfor %}
+                                        </select>
+                                        <input type="text" class="form-control" id="room_number" name="room_number" 
+                                               placeholder="Enter room number" style="display: none;">
+                                        <button type="button" class="btn btn-outline-secondary" id="backToDropdown" 
+                                                onclick="switchBackToDropdown()" style="display: none;">
+                                            Back to List
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Status *</label>
+                                    <select class="form-select" id="status" name="status" required>
+                                        <option value="Room">Room</option>
+                                        <option value="Store">Store</option>
+                                        <option value="Damage">Damage</option>
+                                        <option value="Dispose">Dispose</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="quantity" class="form-label">Quantity *</label>
+                                    <input type="number" class="form-control" id="quantity" name="quantity" 
+                                           value="1" min="1" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"
+                                      placeholder="Additional notes or description (optional)"></textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('asset_name_details', asset_name_id=asset_name.id) }}" 
+                               class="btn btn-secondary me-md-2">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Add Asset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function handleRoomSelection() {
+    const dropdown = document.getElementById('roomNumberSelect');
+    const textInput = document.getElementById('room_number');
+    const backButton = document.getElementById('backToDropdown');
+    
+    if (dropdown.value === 'custom') {
+        // Show text input, hide dropdown
+        dropdown.style.display = 'none';
+        textInput.style.display = 'block';
+        textInput.focus();
+        backButton.style.display = 'block';
+        textInput.value = '';
+    } else if (dropdown.value !== '') {
+        // Set the selected room number
+        textInput.value = dropdown.value;
+    } else {
+        // Clear the text input if no selection
+        textInput.value = '';
+    }
+}
+
+function switchBackToDropdown() {
+    const dropdown = document.getElementById('roomNumberSelect');
+    const textInput = document.getElementById('room_number');
+    const backButton = document.getElementById('backToDropdown');
+    
+    // Show dropdown, hide text input
+    dropdown.style.display = 'block';
+    textInput.style.display = 'none';
+    backButton.style.display = 'none';
+    
+    // Reset dropdown to first option
+    dropdown.value = '';
+    textInput.value = '';
+}
+</script>
+{% endblock %}

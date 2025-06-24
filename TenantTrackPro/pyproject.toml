@@ -1,0 +1,117 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pioneer-management-system"
+version = "2.0.0"
+description = "Comprehensive management system for Pioneer Lodge operations"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Pioneer Management Team"},
+]
+keywords = ["flask", "management", "supabase", "postgresql"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: Flask",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Office/Business",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+]
+
+dependencies = [
+    "Flask>=3.0.0",
+    "Flask-SQLAlchemy>=3.1.1",
+    "SQLAlchemy>=2.0.23",
+    "psycopg2-binary>=2.9.9",
+    "Flask-Login>=0.6.3",
+    "Flask-Dance>=7.0.0",
+    "Werkzeug>=3.0.1",
+    "PyJWT>=2.8.0",
+    "email-validator>=2.1.0",
+    "python-dotenv>=1.0.0",
+    "pytz>=2023.3",
+    "openpyxl>=3.1.2",
+    "pandas>=2.1.4",
+    "Pillow>=10.1.0",
+    "reportlab>=4.0.7",
+    "qrcode>=7.4.2",
+    "numpy>=1.26.2",
+    "oauthlib>=3.2.2",
+    "gunicorn>=21.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-flask>=1.2.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+
+test = [
+    "pytest>=7.0.0",
+    "pytest-flask>=1.2.0",
+    "pytest-cov>=4.0.0",
+]
+
+production = [
+    "gunicorn>=21.2.0",
+    "redis>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/pioneer-management-system"
+Documentation = "https://github.com/your-org/pioneer-management-system/docs"
+Repository = "https://github.com/your-org/pioneer-management-system.git"
+"Bug Tracker" = "https://github.com/your-org/pioneer-management-system/issues"
+
+[project.scripts]
+pioneer-server = "app_factory:main"
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["templates/*", "static/*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true

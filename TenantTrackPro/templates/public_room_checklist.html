@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Inventory Checklist - Pioneer Lodge</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        .logo {
+            max-width: 120px;
+            height: auto;
+        }
+        .section-header {
+            background-color: #6c757d !important;
+            color: white !important;
+            font-weight: bold;
+            margin-bottom: 0;
+            padding: 10px 15px;
+        }
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e9ecef;
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #2a5298;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #2a5298;
+        }
+        .table th {
+            background-color: #e9ecef;
+            font-weight: 600;
+            border: 1px solid #dee2e6;
+        }
+        .table td {
+            border: 1px solid #dee2e6;
+            vertical-align: middle;
+        }
+        .form-control-sm, .form-select-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border: none;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1a3461 0%, #245087 100%);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-2">
+                    <img src="/static/logo.png" alt="TS Group Logo" class="logo">
+                </div>
+                <div class="col-md-10">
+                    <h1 class="mb-1">Pioneer Lodge</h1>
+                    <h2 class="h4 mb-0">Room Inventory Checklist</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="form-section">
+                    <form id="roomChecklistForm" method="POST">
+                        <!-- Basic Information -->
+                        <div class="section-title">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Basic Information
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Room Number *</label>
+                                <select class="form-select" name="room_number" required>
+                                    <option value="">Select Room Number</option>
+                                    {% for room in rooms %}
+                                    <option value="{{ room }}">{{ room }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" class="form-control" name="company_name" placeholder="Enter company name">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Inspection Date</label>
+                                <input type="date" class="form-control" name="inspection_date" value="{{ today }}">
+                            </div>
+                        </div>
+
+                        <!-- Section 1: Electrical Items -->
+                        <h6 class="section-header bg-secondary text-white p-2 mb-0">Section 1: Electrical Items</h6>
+                        <table class="table table-bordered mb-4">
+                            <thead>
+                                <tr>
+                                    <th width="5%">S/NO</th>
+                                    <th width="30%">DESCRIPTION</th>
+                                    <th width="10%">QTY</th>
+                                    <th width="15%">Condition</th>
+                                    <th width="40%">DEFECTS/REMARKS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>EXIT light unit</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="exit_light_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="exit_light_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="exit_light_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Wireless router</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="wireless_router_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="wireless_router_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="wireless_router_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>Ceiling Fan switch (3 G / 1 G)</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="ceiling_fan_switch_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="ceiling_fan_switch_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="ceiling_fan_switch_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>Lighting switch (1 gang)</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="lighting_switch_1gang_qty" value="2"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="lighting_switch_1gang_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="lighting_switch_1gang_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>Lighting switches (2 gang)</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="lighting_switches_2gang_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="lighting_switches_2gang_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="lighting_switches_2gang_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>6</td>
+                                    <td>Ceiling Fan</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="ceiling_fan_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="ceiling_fan_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="ceiling_fan_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>7</td>
+                                    <td>Wall fan</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="wall_fan_qty" value="NA"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="wall_fan_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="wall_fan_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>8</td>
+                                    <td>Stand Fan</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="stand_fan_qty" value="2"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="stand_fan_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="stand_fan_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>9</td>
+                                    <td>13A Single Wall Socket</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="socket_13a_single_qty" value="4"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="socket_13a_single_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="socket_13a_single_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>10</td>
+                                    <td>13A Twin Wall Socket</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="socket_13a_twin_qty" value="17"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="socket_13a_twin_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="socket_13a_twin_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>11</td>
+                                    <td>20W LED Tube Lights</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="led_tube_20w_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="led_tube_20w_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="led_tube_20w_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>12</td>
+                                    <td>2 x 20W LED Tube Lights w Guard</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="led_tube_guard_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="led_tube_guard_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="led_tube_guard_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>13</td>
+                                    <td>Emergency Light Unit</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="emergency_light_unit_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="emergency_light_unit_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="emergency_light_unit_remarks"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Section 2: Bedroom -->
+                        <h6 class="section-header bg-secondary text-white p-2 mb-0">Section 2: Bedroom</h6>
+                        <table class="table table-bordered mb-4">
+                            <thead>
+                                <tr>
+                                    <th width="5%">S/NO</th>
+                                    <th width="30%">DESCRIPTION</th>
+                                    <th width="10%">QTY</th>
+                                    <th width="15%">Condition</th>
+                                    <th width="40%">DEFECTS/REMARKS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Bunk bed w/ladder</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="bunk_bed_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="bunk_bed_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="bunk_bed_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Locker w/ accessories</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="locker_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="locker_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="locker_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>Luggage rack</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="luggage_rack_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="luggage_rack_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="luggage_rack_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>Mattresses</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="mattresses_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="mattresses_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="mattresses_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>Pillows</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="pillows_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="pillows_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="pillows_remarks"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Section 3: Toilet -->
+                        <h6 class="section-header bg-secondary text-white p-2 mb-0">Section 3: Toilet</h6>
+                        <table class="table table-bordered mb-4">
+                            <thead>
+                                <tr>
+                                    <th width="5%">S/NO</th>
+                                    <th width="30%">DESCRIPTION</th>
+                                    <th width="10%">QTY</th>
+                                    <th width="15%">Condition</th>
+                                    <th width="40%">DEFECTS/REMARKS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Mirror</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="mirror_qty" value="2"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="mirror_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="mirror_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Wash Basin tap</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="wash_basin_tap_qty" value="2"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="wash_basin_tap_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="wash_basin_tap_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>Wash Basin + Drainstopper</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="wash_basin_drain_qty" value="2"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="wash_basin_drain_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="wash_basin_drain_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>Wash Basin Bottle Trap (PVC)</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="bottle_trap_qty" value="2"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="bottle_trap_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="bottle_trap_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>Toilet cistern w/ lid + seat (Including flushing system)</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="toilet_cistern_qty" value="2"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="toilet_cistern_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="toilet_cistern_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>6</td>
+                                    <td>Bidet Tap</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="bidet_tap_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="bidet_tap_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="bidet_tap_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>7</td>
+                                    <td>Floor trap (4" / 6")</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="floor_trap_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="floor_trap_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="floor_trap_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>8</td>
+                                    <td>Shower head & tap</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="shower_head_qty" value="2"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="shower_head_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="shower_head_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>9</td>
+                                    <td>Cubicle door w/lock & hanger hook</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="cubicle_door_qty" value="4"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="cubicle_door_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="cubicle_door_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>10</td>
+                                    <td>Partition boards & feet (cubicle/set)</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="partition_boards_qty" value="4"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="partition_boards_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="partition_boards_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>11</td>
+                                    <td>Wall & floor tiles</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="wall_floor_tiles_qty" value="NA"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="wall_floor_tiles_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="wall_floor_tiles_remarks"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Section 4: Kitchen -->
+                        <h6 class="section-header bg-secondary text-white p-2 mb-0">Section 4: Kitchen</h6>
+                        <table class="table table-bordered mb-4">
+                            <thead>
+                                <tr>
+                                    <th width="5%">S/NO</th>
+                                    <th width="30%">DESCRIPTION</th>
+                                    <th width="10%">QTY</th>
+                                    <th width="15%">Condition</th>
+                                    <th width="40%">DEFECTS/REMARKS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Washer</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="washer_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="washer_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="washer_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Tap (washer)</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="tap_washer_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="tap_washer_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="tap_washer_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>Fridge</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="fridge_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="fridge_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="fridge_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>Dining table</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="dining_table_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="dining_table_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="dining_table_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>Chair</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="chair_qty" value="2"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="chair_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="chair_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>6</td>
+                                    <td>Induction stove</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="induction_stove_qty" value="2"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="induction_stove_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="induction_stove_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>7</td>
+                                    <td>Kettle</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="kettle_qty" value="2"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="kettle_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="kettle_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>8</td>
+                                    <td>Wash basin</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="kitchen_wash_basin_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="kitchen_wash_basin_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="kitchen_wash_basin_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>9</td>
+                                    <td>Tap (basin)</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="tap_basin_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="tap_basin_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="tap_basin_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>10</td>
+                                    <td>Prep area (tiles)</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="prep_area_qty" value="NA"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="prep_area_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="prep_area_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>11</td>
+                                    <td>Floor trap 6"</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="kitchen_floor_trap_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="kitchen_floor_trap_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="kitchen_floor_trap_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>12</td>
+                                    <td>Kitchen floor (tiles)</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="kitchen_floor_qty" value="NA"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="kitchen_floor_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="kitchen_floor_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>13</td>
+                                    <td>Clothes hanger (above head/over window*)</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="clothes_hanger_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="clothes_hanger_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="clothes_hanger_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>14</td>
+                                    <td>Clothes hanging poles*</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="clothes_poles_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="clothes_poles_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="clothes_poles_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>15</td>
+                                    <td>Y Stick*</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="y_stick_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="y_stick_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="y_stick_remarks"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Section 5: Fire Protection -->
+                        <h6 class="section-header bg-secondary text-white p-2 mb-0">Section 5: Fire Protection</h6>
+                        <table class="table table-bordered mb-4">
+                            <thead>
+                                <tr>
+                                    <th width="5%">S/NO</th>
+                                    <th width="30%">DESCRIPTION</th>
+                                    <th width="10%">QTY</th>
+                                    <th width="15%">Condition</th>
+                                    <th width="40%">DEFECTS/REMARKS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Strobe light</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="strobe_light_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="strobe_light_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="strobe_light_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Smoke detector</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="smoke_detector_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="smoke_detector_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="smoke_detector_remarks"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Section 6: Others -->
+                        <h6 class="section-header bg-secondary text-white p-2 mb-0">Section 6: OTHERS</h6>
+                        <table class="table table-bordered mb-4">
+                            <thead>
+                                <tr>
+                                    <th width="5%">S/NO</th>
+                                    <th width="30%">DESCRIPTION</th>
+                                    <th width="10%">QTY</th>
+                                    <th width="15%">Condition</th>
+                                    <th width="40%">DEFECTS/REMARKS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Main door + Cyclinder Lock Handle</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="main_door_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="main_door_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="main_door_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Main door magnetic holder + unit number plate</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="magnetic_holder_qty" value="1"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="magnetic_holder_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="magnetic_holder_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>Sliding window w/lock & hook</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="sliding_window_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="sliding_window_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="sliding_window_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>Awning window w/handle & latch (top)</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="awning_window_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="awning_window_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="awning_window_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>Casement window w/handle & latch</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="casement_window_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="casement_window_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="casement_window_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>6</td>
+                                    <td>Curtains with rail</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="curtains_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="curtains_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="curtains_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>7</td>
+                                    <td>Built-In Shoe Rack</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="shoe_rack_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="shoe_rack_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="shoe_rack_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>8</td>
+                                    <td>Bathroom exhaust ducting (top)</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="exhaust_ducting_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="exhaust_ducting_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="exhaust_ducting_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>9</td>
+                                    <td>Sliding doors- GRND floor only*</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="sliding_doors_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="sliding_doors_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="sliding_doors_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>10</td>
+                                    <td>Dormitory Defect report QR Code</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="qr_code_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="qr_code_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="qr_code_remarks"></td>
+                                </tr>
+                                <tr>
+                                    <td>11</td>
+                                    <td>Cleanliness & Wall Paint</td>
+                                    <td><input type="text" class="form-control form-control-sm" name="cleanliness_qty"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="cleanliness_condition">
+                                            <option value="Good">Good</option>
+                                            <option value="Bad">Bad</option>
+                                            <option value="Missing">Missing</option>
+                                            <option value="Others">Others</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm" name="cleanliness_remarks"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Signatures Section -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-signature me-2"></i>
+                                Signatures & Acknowledgment
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Inspector Name *</label>
+                                    <input type="text" class="form-control" name="inspector_name" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Inspector Signature Date</label>
+                                    <input type="date" class="form-control" name="inspector_date">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Occupant Name</label>
+                                    <input type="text" class="form-control" name="occupant_name">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Occupant Signature Date</label>
+                                    <input type="date" class="form-control" name="occupant_date">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Additional Notes</label>
+                                <textarea class="form-control" name="additional_notes" rows="3" placeholder="Any additional observations or notes..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-save me-2"></i>
+                                Submit Room Checklist
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('roomChecklistForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Collect form data
+            const formData = new FormData(this);
+            
+            // Show success message
+            alert('Room checklist submitted successfully!');
+            
+            // Here you can add actual form submission logic
+        });
+    </script>
+</body>
+</html>

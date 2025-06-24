@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Pioneer Lodge Visitors{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-gray-800">
+                    <i class="fas fa-users me-2"></i>Pioneer Lodge Visitors
+                </h1>
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('visitors_qr_codes') }}" class="btn btn-info">
+                        <i class="fas fa-qrcode me-1"></i>Print QR Codes
+                    </a>
+                    <a href="{{ url_for('visitors_scan', type='start') }}" class="btn btn-success">
+                        <i class="fas fa-camera me-1"></i>Start Visit Scanner
+                    </a>
+                    <a href="{{ url_for('visitors_scan', type='end') }}" class="btn btn-danger">
+                        <i class="fas fa-camera me-1"></i>End Visit Scanner
+                    </a>
+                    <a href="{{ url_for('visitors_records') }}" class="btn btn-primary">
+                        <i class="fas fa-list me-1"></i>View Records
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Today's Check-ins
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ today_start_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-sign-in-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Today's Check-outs
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ today_end_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-sign-out-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Records
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_records }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Active Visitors
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ today_start_count - today_end_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Scanning Section -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Start Visit</h6>
+                    <i class="fas fa-sign-in-alt text-success"></i>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-qrcode fa-3x text-success mb-3"></i>
+                        <h5>Scan QR Code to Start Visit</h5>
+                        <p class="text-muted">Visitors can scan this QR code to check in and start their visit.</p>
+                    </div>
+                    <a href="{{ url_for('visitors_scan', type='start') }}" class="btn btn-success btn-lg">
+                        <i class="fas fa-qrcode me-2"></i>Start Visit QR Scanner
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">End Visit</h6>
+                    <i class="fas fa-sign-out-alt text-danger"></i>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-qrcode fa-3x text-danger mb-3"></i>
+                        <h5>Scan QR Code to End Visit</h5>
+                        <p class="text-muted">Visitors can scan this QR code to check out and end their visit.</p>
+                    </div>
+                    <a href="{{ url_for('visitors_scan', type='end') }}" class="btn btn-danger btn-lg">
+                        <i class="fas fa-qrcode me-2"></i>End Visit QR Scanner
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Visitors Records -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Visitor Records</h6>
+                    <a href="{{ url_for('visitors_records') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-list me-1"></i>View All Records
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_visitors %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>Visitor Name</th>
+                                    <th>Company</th>
+                                    <th>Type</th>
+                                    <th>Details</th>
+                                    <th>Photo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for visitor in recent_visitors %}
+                                <tr>
+                                    <td>{{ visitor.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ visitor.visitor_name }}</td>
+                                    <td>{{ visitor.company_name }}</td>
+                                    <td>
+                                        {% if visitor.visit_type == 'start' %}
+                                        <span class="badge badge-success">Start Visit</span>
+                                        {% else %}
+                                        <span class="badge badge-danger">End Visit</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ visitor.details or '-' }}</td>
+                                    <td>
+                                        {% if visitor.selfie_photo %}
+                                        <img src="{{ visitor.selfie_photo }}" alt="Visitor Photo" 
+                                             class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
+                                             data-bs-toggle="modal" data-bs-target="#photoModal{{ visitor.id }}">
+                                        
+                                        <!-- Photo Modal -->
+                                        <div class="modal fade" id="photoModal{{ visitor.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">{{ visitor.visitor_name }} - Photo</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body text-center">
+                                                        <img src="{{ visitor.selfie_photo }}" alt="Visitor Photo" class="img-fluid">
+                                                        <div class="mt-2">
+                                                            <small class="text-muted">
+                                                                Taken: {{ visitor.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">No photo</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-gray-300 mb-3"></i>
+                        <h6 class="text-gray-600">No visitor records found</h6>
+                        <p class="text-muted">Start using the QR code scanners to record visitor visits.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

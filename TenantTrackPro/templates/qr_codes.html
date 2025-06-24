@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}QR Code Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-qrcode me-2"></i>
+                        QR Code Management
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-5">
+                        <i class="fas fa-qrcode fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">QR Code Management System</h5>
+                        <p class="text-muted">Generate and manage QR codes for various purposes.</p>
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="card border-primary">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-plus fa-2x text-primary mb-2"></i>
+                                        <h6>Generate QR Code</h6>
+                                        <p class="small text-muted">Create new QR codes</p>
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#generateQRModal">Generate</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-info">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-list fa-2x text-info mb-2"></i>
+                                        <h6>View QR Codes</h6>
+                                        <p class="small text-muted">Manage existing QR codes</p>
+                                        <button class="btn btn-info" onclick="showQRList()">View All</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-success">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-download fa-2x text-success mb-2"></i>
+                                        <h6>Bulk Download</h6>
+                                        <p class="small text-muted">Download QR codes in bulk</p>
+                                        <button class="btn btn-success" onclick="bulkDownload()">Download</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR List Display -->
+    <div class="row mt-4" id="qrListSection" style="display: none;">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        QR Codes List
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Label</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="qrTableBody">
+                                {% for qr in qr_codes %}
+                                <tr>
+                                    <td>{{ qr.label or qr.code }}</td>
+                                    <td><span class="badge bg-primary">{{ qr.qr_type }}</span></td>
+                                    <td>{{ qr.description or 'No description' }}</td>
+                                    <td>{{ qr.created_at.strftime('%Y-%m-%d') if qr.created_at else 'N/A' }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="downloadQR({{ qr.id }})">
+                                            <i class="fas fa-download"></i> Download
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteQR({{ qr.id }})">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Generate QR Modal -->
+<div class="modal fade" id="generateQRModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generate QR Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="generateQRForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="qrType" class="form-label">QR Code Type</label>
+                        <select class="form-select" id="qrType" name="qr_type" required>
+                            <option value="">Select Type</option>
+                            <option value="url">URL</option>
+                            <option value="offense_report">Offense Report</option>
+                            <option value="house_acknowledge">House Acknowledge</option>
+                            <option value="room_inventory">Room Inventory</option>
+                            <option value="room_checklist">Room Checklist</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="qrLabel" class="form-label">Label</label>
+                        <input type="text" class="form-control" id="qrLabel" name="label" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="qrDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="qrDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3" id="urlField" style="display: none;">
+                        <label for="targetUrl" class="form-label">Target URL</label>
+                        <input type="url" class="form-control" id="targetUrl" name="target_url">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Generate QR Code</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Show QR list
+function showQRList() {
+    const qrListSection = document.getElementById('qrListSection');
+    if (qrListSection.style.display === 'none') {
+        qrListSection.style.display = 'block';
+    } else {
+        qrListSection.style.display = 'none';
+    }
+}
+
+// Show URL field when URL type is selected
+document.getElementById('qrType').addEventListener('change', function() {
+    const urlField = document.getElementById('urlField');
+    if (this.value === 'url') {
+        urlField.style.display = 'block';
+        document.getElementById('targetUrl').required = true;
+    } else {
+        urlField.style.display = 'none';
+        document.getElementById('targetUrl').required = false;
+    }
+});
+
+// Generate QR Code
+document.getElementById('generateQRForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('{{ url_for("generate_qr_code_post") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('QR Code generated successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error generating QR code: ' + error);
+    });
+});
+
+// Download QR Code
+function downloadQR(qrId) {
+    window.open(`{{ url_for("download_qr_code", qr_id=0) }}`.replace('0', qrId), '_blank');
+}
+
+// Delete QR Code
+function deleteQR(qrId) {
+    if (confirm('Are you sure you want to delete this QR code?')) {
+        fetch(`{{ url_for("delete_qr_code", qr_id=0) }}`.replace('0', qrId), {
+            method: 'POST'
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('QR Code deleted successfully!');
+                location.reload();
+            } else {
+                alert('Error deleting QR code');
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error);
+        });
+    }
+}
+
+// Bulk Download
+function bulkDownload() {
+    fetch('{{ url_for("bulk_download_qr_codes") }}')
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        }
+        throw new Error('Error downloading bulk QR codes');
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'qr_codes_bulk.zip';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    });
+}
+</script>
+{% endblock %}

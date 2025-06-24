@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Room Inspection Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-edit me-2"></i>Edit Room Inspection Report</h2>
+                <a href="{{ url_for('room_inspection_reports') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Reports
+                </a>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" id="inspectionForm">
+                <div class="row">
+                    <!-- Basic Information -->
+                    <div class="col-lg-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>Basic Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="room_number" class="form-label">Room Number <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="room_number" name="room_number" 
+                                           value="{{ inspection.room_number }}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="company_name" class="form-label">Company Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="company_name" name="company_name" 
+                                           value="{{ inspection.company_name }}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="inspection_date" class="form-label">Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="inspection_date" name="inspection_date" 
+                                           value="{{ inspection.inspection_date.strftime('%Y-%m-%d') }}" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Details -->
+                    <div class="col-lg-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-clipboard-list me-2"></i>Action Details
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="action_taken" class="form-label">Action Taken</label>
+                                    <textarea class="form-control" id="action_taken" name="action_taken" rows="3" 
+                                              placeholder="Describe the action taken during inspection">{{ inspection.action_taken or '' }}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="confiscated_items" class="form-label">Confiscated Items</label>
+                                    <textarea class="form-control" id="confiscated_items" name="confiscated_items" rows="3" 
+                                              placeholder="List any confiscated items">{{ inspection.confiscated_items or '' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Photos Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-camera me-2"></i>Photographic Evidence
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Current Photos Display -->
+                        {% if inspection.confiscated_photos %}
+                            {% set photos_list = inspection.confiscated_photos | from_json %}
+                            {% if photos_list %}
+                                <div class="mb-3">
+                                    <h6>Current Photos:</h6>
+                                    <div class="row">
+                                        {% for photo in photos_list %}
+                                            <div class="col-md-3 mb-3">
+                                                <div class="card">
+                                                    <img src="{{ photo }}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="Current Photo">
+                                                    <div class="card-body p-2">
+                                                        <small class="text-muted">Photo {{ loop.index }}</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <hr>
+                            {% endif %}
+                        {% endif %}
+
+                        <p class="text-muted mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Upload new photos to replace current ones (optional). Leave empty to keep existing photos.
+                            Photos will be automatically compressed. Maximum 5 photos.
+                        </p>
+                        
+                        <div class="photo-upload-container">
+                            <!-- Photo upload slots -->
+                            {% for i in range(5) %}
+                            <div class="photo-slot mb-3" id="photoSlot{{ i }}">
+                                <div class="d-flex align-items-center">
+                                    <label class="form-label me-3 mb-0" style="min-width: 100px;">Photo {{ i + 1 }}:</label>
+                                    <input type="file" class="form-control photo-input" 
+                                           id="photoInput{{ i }}" 
+                                           accept="image/*" 
+                                           onchange="handlePhotoUpload({{ i }})">
+                                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" 
+                                            onclick="removePhoto({{ i }})" 
+                                            id="removeBtn{{ i }}" 
+                                            style="display: none;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="photo-preview mt-2" id="photoPreview{{ i }}" style="display: none;">
+                                    <img id="previewImg{{ i }}" src="" style="max-width: 200px; max-height: 150px; border-radius: 5px;">
+                                </div>
+                                <input type="hidden" id="confiscated_photo_{{ i }}" name="confiscated_photo_{{ i }}">
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Signatures Section -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-signature me-2"></i>Room In-charge Signature
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="room_incharge_name" class="form-label">Name</label>
+                                    <input type="text" class="form-control" id="room_incharge_name" name="room_incharge_name" 
+                                           value="{{ inspection.room_incharge_name or '' }}" placeholder="Enter name">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Signature</label>
+                                    <div class="signature-container">
+                                        <canvas id="roomInchargeSignature" width="400" height="150" 
+                                                style="border: 1px solid #ddd; border-radius: 5px; cursor: crosshair; background: white;"></canvas>
+                                        <div class="mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSignature('roomInchargeSignature')">
+                                                <i class="fas fa-eraser me-1"></i>Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="room_incharge_signature" name="room_incharge_signature" 
+                                           value="{{ inspection.room_incharge_signature or '' }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-signature me-2"></i>OE/DC Signature
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="oe_dc_name" class="form-label">Name</label>
+                                    <input type="text" class="form-control" id="oe_dc_name" name="oe_dc_name" 
+                                           value="{{ inspection.oe_dc_name or '' }}" placeholder="Enter name">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Signature</label>
+                                    <div class="signature-container">
+                                        <canvas id="oeDcSignature" width="400" height="150" 
+                                                style="border: 1px solid #ddd; border-radius: 5px; cursor: crosshair; background: white;"></canvas>
+                                        <div class="mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSignature('oeDcSignature')">
+                                                <i class="fas fa-eraser me-1"></i>Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="oe_dc_signature" name="oe_dc_signature" 
+                                           value="{{ inspection.oe_dc_signature or '' }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Section -->
+                <div class="card">
+                    <div class="card-body text-center">
+                        <button type="submit" class="btn btn-success btn-lg me-3" id="submitBtn">
+                            <i class="fas fa-save me-2"></i>Update Inspection Report
+                        </button>
+                        <a href="{{ url_for('room_inspection_reports') }}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Photo upload and compression functionality
+let photoFiles = {};
+
+function handlePhotoUpload(index) {
+    const fileInput = document.getElementById(`photoInput${index}`);
+    const file = fileInput.files[0];
+    
+    if (file) {
+        // Show loading state
+        const submitBtn = document.getElementById('submitBtn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Photo...';
+        submitBtn.disabled = true;
+        
+        compressImage(file, (compressedDataUrl) => {
+            photoFiles[index] = compressedDataUrl;
+            document.getElementById(`confiscated_photo_${index}`).value = compressedDataUrl;
+            
+            // Show preview
+            const preview = document.getElementById(`photoPreview${index}`);
+            const img = document.getElementById(`previewImg${index}`);
+            const removeBtn = document.getElementById(`removeBtn${index}`);
+            
+            img.src = compressedDataUrl;
+            preview.style.display = 'block';
+            removeBtn.style.display = 'inline-block';
+            
+            // Restore submit button
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    }
+}
+
+function removePhoto(index) {
+    delete photoFiles[index];
+    document.getElementById(`confiscated_photo_${index}`).value = '';
+    document.getElementById(`photoPreview${index}`).style.display = 'none';
+    document.getElementById(`removeBtn${index}`).style.display = 'none';
+    document.getElementById(`photoInput${index}`).value = '';
+}
+
+function compressImage(file, callback) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = function() {
+        // Calculate new dimensions (max 400px on longest side)
+        const maxSize = 400;
+        let { width, height } = img;
+        
+        if (width > height && width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+        } else if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.3); // 30% quality
+        callback(compressedDataUrl);
+    };
+    
+    img.src = URL.createObjectURL(file);
+}
+
+// Signature functionality
+const signatureCanvases = {};
+
+function initSignaturePad(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    
+    signatureCanvases[canvasId] = { canvas, ctx, isDrawing: false };
+    
+    // Load existing signature if present
+    const existingSignature = document.getElementById(canvasId.replace('Signature', '_signature')).value;
+    if (existingSignature) {
+        const img = new Image();
+        img.onload = function() {
+            ctx.drawImage(img, 0, 0);
+        };
+        img.src = existingSignature;
+    }
+    
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    
+    // Touch events for mobile
+    canvas.addEventListener('touchstart', handleTouch);
+    canvas.addEventListener('touchmove', handleTouch);
+    canvas.addEventListener('touchend', stopDrawing);
+    
+    function startDrawing(e) {
+        isDrawing = true;
+        draw(e);
+    }
+    
+    function draw(e) {
+        if (!isDrawing) return;
+        
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000';
+        
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        
+        // Save signature data
+        const dataUrl = canvas.toDataURL();
+        document.getElementById(canvasId.replace('Signature', '_signature')).value = dataUrl;
+    }
+    
+    function stopDrawing() {
+        if (isDrawing) {
+            isDrawing = false;
+            ctx.beginPath();
+        }
+    }
+    
+    function handleTouch(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                        e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+    }
+}
+
+function clearSignature(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    document.getElementById(canvasId.replace('Signature', '_signature')).value = '';
+}
+
+// Initialize signature pads when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initSignaturePad('roomInchargeSignature');
+    initSignaturePad('oeDcSignature');
+});
+
+// Form validation
+document.getElementById('inspectionForm').addEventListener('submit', function(e) {
+    const roomNumber = document.getElementById('room_number').value.trim();
+    const companyName = document.getElementById('company_name').value.trim();
+    const inspectionDate = document.getElementById('inspection_date').value.trim();
+    
+    if (!roomNumber || !companyName || !inspectionDate) {
+        e.preventDefault();
+        alert('Please fill in all required fields: Room Number, Company Name, and Date.');
+        return false;
+    }
+});
+</script>
+{% endblock %}

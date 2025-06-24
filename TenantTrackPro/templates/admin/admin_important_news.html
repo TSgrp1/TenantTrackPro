@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Important News{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-newspaper me-2"></i>
+                            Manage Important News
+                        </h4>
+                        <a href="{{ url_for('create_important_news') }}" class="btn btn-light btn-sm">
+                            <i class="fas fa-plus me-1"></i>
+                            Create News
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if news_items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Show on Login</th>
+                                    <th>Expires</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for news in news_items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ news.title }}</strong>
+                                        {% if news.pdf_attachment %}
+                                        <i class="fas fa-file-pdf text-danger ms-1" title="Has PDF attachment"></i>
+                                        {% endif %}
+                                        {% if news.image_attachment %}
+                                        <i class="fas fa-image text-info ms-1" title="Has image attachment"></i>
+                                        {% endif %}
+                                        <br>
+                                        <small class="text-muted">{{ news.content[:100] }}{% if news.content|length > 100 %}...{% endif %}</small>
+                                    </td>
+                                    <td>
+                                        {% if news.priority == 'high' %}
+                                            <span class="badge bg-danger">High</span>
+                                        {% elif news.priority == 'low' %}
+                                            <span class="badge bg-secondary">Low</span>
+                                        {% else %}
+                                            <span class="badge bg-info">Normal</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   {% if news.is_active %}checked{% endif %}
+                                                   onchange="toggleNewsStatus({{ news.id }})">
+                                            <label class="form-check-label">
+                                                {% if news.is_active %}Active{% else %}Inactive{% endif %}
+                                            </label>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if news.show_on_login %}
+                                            <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if news.expires_at %}
+                                            {{ news.expires_at.strftime('%Y-%m-%d') }}
+                                            {% if news.expires_at.date() < now.date() %}
+                                                <small class="text-danger">(Expired)</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <small class="text-muted">Never</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ news.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('edit_important_news', news_id=news.id) }}" 
+                                               class="btn btn-outline-primary" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-outline-info" 
+                                                    onclick="previewNews({{ news.id }})" title="Preview">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" 
+                                                    onclick="deleteNews({{ news.id }}, '{{ news.title }}')" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-newspaper fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Important News</h5>
+                        <p class="text-muted">Create your first important news announcement to keep users informed.</p>
+                        <a href="{{ url_for('create_important_news') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Create First News
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">News Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleNewsStatus(newsId) {
+    fetch(`/admin/important-news/${newsId}/toggle-status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the label
+            const checkbox = event.target;
+            const label = checkbox.nextElementSibling;
+            label.textContent = data.is_active ? 'Active' : 'Inactive';
+            
+            // Show feedback
+            showAlert(data.message, 'success');
+        } else {
+            showAlert('Error: ' + data.error, 'error');
+            // Revert checkbox state
+            event.target.checked = !event.target.checked;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('An error occurred', 'error');
+        // Revert checkbox state
+        event.target.checked = !event.target.checked;
+    });
+}
+
+function previewNews(newsId) {
+    // This would fetch and display news content in the modal
+    // For now, show a placeholder
+    document.getElementById('previewContent').innerHTML = `
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+            <p>Loading preview...</p>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+    
+    // Here you would fetch the actual news content and display it
+    setTimeout(() => {
+        document.getElementById('previewContent').innerHTML = `
+            <div class="alert alert-info">
+                <h6>Preview functionality</h6>
+                <p>This would show how the news appears to users on the dashboard.</p>
+            </div>
+        `;
+    }, 1000);
+}
+
+function deleteNews(newsId, title) {
+    if (confirm(`Are you sure you want to delete the news "${title}"? This action cannot be undone.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/important-news/${newsId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function showAlert(message, type) {
+    // Simple alert function - you can enhance this with toast notifications
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Insert at the top of the card body
+    const cardBody = document.querySelector('.card-body');
+    cardBody.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        const alert = cardBody.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 3000);
+}
+</script>
+
+{% endblock %}

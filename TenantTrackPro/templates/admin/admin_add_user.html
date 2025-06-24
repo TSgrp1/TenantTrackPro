@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+
+{% block title %}Add User - Admin{% endblock %}
+
+{% block content %}
+<style>
+/* Fix color contrast issues for form permissions */
+.bg-secondary-subtle {
+    background-color: #ffffff !important;
+    border: 2px solid #dee2e6 !important;
+}
+
+.bg-secondary-subtle .text-dark {
+    color: #212529 !important;
+}
+
+.bg-secondary-subtle .text-muted {
+    color: #6c757d !important;
+}
+
+.bg-danger-subtle {
+    background-color: #ffe6e6 !important;
+    border: 2px solid #dc3545 !important;
+}
+
+.bg-danger-subtle .text-dark {
+    color: #721c24 !important;
+}
+
+.bg-danger-subtle .text-muted {
+    color: #721c24 !important;
+}
+</style>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Add New User
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                                <div class="form-text">This will be the user's login email</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="organization_id" class="form-label">Organization</label>
+                                <select class="form-select" id="organization_id" name="organization_id">
+                                    <option value="">Select Organization</option>
+                                    {% for org in organizations %}
+                                    <option value="{{ org.id }}">{{ org.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Leave blank if user will log in via external authentication</div>
+                        </div>
+                        
+                        <!-- Form Access Permissions Section -->
+                        <div class="card mb-4 border-0">
+                            <div class="card-header bg-primary text-white rounded-top" style="background: linear-gradient(135deg, #6f42c1 0%, #8b5cf6 100%) !important;">
+                                <h5 class="card-title mb-0 text-white">
+                                    <i class="fas fa-shield-alt me-2"></i>Form Access Permissions
+                                </h5>
+                            </div>
+                            <div class="card-body bg-dark text-light">
+                                <p class="text-light mb-4">Select which forms this user can access and manage QR codes for:</p>
+                                
+                                <!-- Main Sections -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="border rounded p-3 bg-dark text-light">
+                                            <h6 class="fw-bold mb-3 text-info">
+                                                <i class="fas fa-clipboard-list me-2"></i>Available Forms
+                                            </h6>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded" style="background-color: #ffffff; border: 2px solid #dee2e6;">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="handover" id="form_handover">
+                                                <label class="form-check-label w-100" style="color: #212529;" for="form_handover">
+                                                    <i class="fas fa-home me-2" style="color: #0d6efd;"></i>
+                                                    <strong>Room Inventory Checklist</strong>
+                                                    <br><small style="color: #6c757d;">Access to room handover forms</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded" style="background-color: #ffffff; border: 2px solid #dee2e6;">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="offense" id="form_offense">
+                                                <label class="form-check-label w-100" style="color: #212529;" for="form_offense">
+                                                    <i class="fas fa-exclamation-triangle me-2" style="color: #dc3545;"></i>
+                                                    <strong>Offense Records</strong>
+                                                    <br><small style="color: #6c757d;">Access to disciplinary forms</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="regulations" id="form_regulations">
+                                                <label class="form-check-label w-100 text-dark" for="form_regulations">
+                                                    <i class="fas fa-book me-2"></i>
+                                                    <strong>Regulations Forms</strong>
+                                                    <br><small class="text-muted">House rules and regulations</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="inspection" id="form_inspection">
+                                                <label class="form-check-label w-100 text-dark" for="form_inspection">
+                                                    <i class="fas fa-search me-2"></i>
+                                                    <strong>Inspection Forms</strong>
+                                                    <br><small class="text-muted">Facility inspection and maintenance</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="msrf" id="form_msrf">
+                                                <label class="form-check-label w-100 text-dark" for="form_msrf">
+                                                    <i class="fas fa-wrench me-2"></i>
+                                                    <strong>MSRF Forms</strong>
+                                                    <br><small class="text-muted">Miscellaneous Service Request Forms</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="purchase_requisition" id="form_purchase_requisition">
+                                                <label class="form-check-label w-100 text-dark" for="form_purchase_requisition">
+                                                    <i class="fas fa-shopping-cart me-2"></i>
+                                                    <strong>Purchase Requisition Form</strong>
+                                                    <br><small class="text-muted">Purchase request and approval</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="meter_reading" id="form_meter_reading">
+                                                <label class="form-check-label w-100 text-dark" for="form_meter_reading">
+                                                    <i class="fas fa-tachometer-alt me-2"></i>
+                                                    <strong>Meter Reading Forms</strong>
+                                                    <br><small class="text-muted">Utility meter management</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="border rounded p-3 bg-dark text-light">
+                                            <h6 class="fw-bold mb-3 text-success">
+                                                <i class="fas fa-user-shield me-2"></i>Administrative Access
+                                            </h6>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-danger-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="admin" id="form_admin">
+                                                <label class="form-check-label w-100 text-dark" for="form_admin">
+                                                    <i class="fas fa-cogs me-2"></i>
+                                                    <strong>Full Admin Access</strong>
+                                                    <br><small class="text-muted">Complete system administration</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="assets" id="form_assets">
+                                                <label class="form-check-label w-100 text-dark" for="form_assets">
+                                                    <i class="fas fa-box me-2"></i>
+                                                    <strong>Asset Management</strong>
+                                                    <br><small class="text-muted">Inventory and asset tracking</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="qr" id="form_qr">
+                                                <label class="form-check-label w-100 text-dark" for="form_qr">
+                                                    <i class="fas fa-qrcode me-2"></i>
+                                                    <strong>QR Code Management</strong>
+                                                    <br><small class="text-muted">Generate and manage QR codes</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="reports" id="form_reports">
+                                                <label class="form-check-label w-100 text-dark" for="form_reports">
+                                                    <i class="fas fa-chart-bar me-2"></i>
+                                                    <strong>Reports & Analytics</strong>
+                                                    <br><small class="text-muted">Data analysis and reporting</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="pioneer_utility" id="form_pioneer_utility">
+                                                <label class="form-check-label w-100 text-dark" for="form_pioneer_utility">
+                                                    <i class="fas fa-bolt me-2"></i>
+                                                    <strong>Pioneer Utility</strong>
+                                                    <br><small class="text-muted">Utility management system</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="house_acknowledge" id="form_house_acknowledge">
+                                                <label class="form-check-label w-100 text-dark" for="form_house_acknowledge">
+                                                    <i class="fas fa-home me-2"></i>
+                                                    <strong>House Acknowledge</strong>
+                                                    <br><small class="text-muted">Resident acknowledgment system</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="storage" id="form_storage">
+                                                <label class="form-check-label w-100 text-dark" for="form_storage">
+                                                    <i class="fas fa-warehouse me-2"></i>
+                                                    <strong>Storage Management</strong>
+                                                    <br><small class="text-muted">Storage and inventory control</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="asset_categories" id="form_asset_categories">
+                                                <label class="form-check-label w-100 text-dark" for="form_asset_categories">
+                                                    <i class="fas fa-tags me-2"></i>
+                                                    <strong>Asset Categories</strong>
+                                                    <br><small class="text-muted">Manage asset categorization</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="stock_inventory" id="form_stock_inventory">
+                                                <label class="form-check-label w-100 text-dark" for="form_stock_inventory">
+                                                    <i class="fas fa-boxes me-2"></i>
+                                                    <strong>Stock Inventory</strong>
+                                                    <br><small class="text-muted">Stock tracking and management</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="room_inspection_reports" id="form_room_inspection_reports">
+                                                <label class="form-check-label w-100 text-dark" for="form_room_inspection_reports">
+                                                    <i class="fas fa-clipboard-list me-2"></i>
+                                                    <strong>Room Inspection Reports</strong>
+                                                    <br><small class="text-muted">Room inspection documentation</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="settings" id="form_settings">
+                                                <label class="form-check-label w-100 text-dark" for="form_settings">
+                                                    <i class="fas fa-cog me-2"></i>
+                                                    <strong>Settings</strong>
+                                                    <br><small class="text-muted">System configuration and settings</small>
+                                                </label>
+                                            </div>
+                                            
+                                            <div class="form-check mb-3 p-3 border rounded bg-secondary-subtle text-dark">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="admin_dashboard" id="form_admin_dashboard">
+                                                <label class="form-check-label w-100 text-dark" for="form_admin_dashboard">
+                                                    <i class="fas fa-tachometer-alt me-2"></i>
+                                                    <strong>Admin Dashboard</strong>
+                                                    <br><small class="text-muted">Administrative dashboard access</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Quick Access Options -->
+                                <div class="border rounded p-3" style="background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);">
+                                    <h6 class="fw-bold mb-3 text-dark">
+                                        <i class="fas fa-bolt me-2 text-warning"></i>Quick Access Options
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-check mb-2 p-3 bg-white rounded border">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="all_forms" id="form_all_forms">
+                                                <label class="form-check-label text-dark w-100" for="form_all_forms">
+                                                    <i class="fas fa-check-double me-2 text-success"></i>
+                                                    <strong class="text-dark">All Forms Access</strong>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-check mb-2 p-3 bg-white rounded border">
+                                                <input class="form-check-input" type="checkbox" name="form_permissions" value="view_only" id="form_view_only">
+                                                <label class="form-check-label text-dark w-100" for="form_view_only">
+                                                    <i class="fas fa-eye me-2 text-info"></i>
+                                                    <strong class="text-dark">View Only Access</strong>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Users with form permissions can create QR codes only for their assigned forms. Form access can be modified later in user management.
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                Create User
+                            </button>
+                            <a href="{{ url_for('admin') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordField = document.getElementById('password');
+    const toggleIcon = document.getElementById('passwordToggleIcon');
+    
+    togglePassword.addEventListener('click', function() {
+        // Toggle the type attribute
+        const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordField.setAttribute('type', type);
+        
+        // Toggle the icon
+        if (type === 'text') {
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    });
+    
+    // Handle "All Forms Access" checkbox
+    const allFormsCheckbox = document.getElementById('form_all_forms');
+    const viewOnlyCheckbox = document.getElementById('form_view_only');
+    const otherCheckboxes = document.querySelectorAll('input[name="form_permissions"]:not(#form_all_forms):not(#form_view_only)');
+    
+    // When "All Forms Access" is checked, uncheck all others
+    allFormsCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            otherCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            viewOnlyCheckbox.checked = false;
+        }
+    });
+    
+    // When "View Only Access" is checked, uncheck all others
+    viewOnlyCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            otherCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            allFormsCheckbox.checked = false;
+        }
+    });
+    
+    // If any other checkbox is checked, uncheck quick access options
+    otherCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                allFormsCheckbox.checked = false;
+                viewOnlyCheckbox.checked = false;
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resident Check-in & Resident Check-Out - TS Management Services Pte Ltd</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 60px 0;
+            margin-bottom: 40px;
+        }
+        .company-logo {
+            max-height: 80px;
+            margin-bottom: 20px;
+        }
+        .dashboard-card {
+            border: none;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        }
+        .option-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #17a2b8;
+        }
+        .btn-dashboard {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            border: none;
+            border-radius: 15px;
+            padding: 15px 25px;
+            color: white;
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s ease;
+        }
+        .btn-dashboard:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(23, 162, 184, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+        .back-btn {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="container text-center">
+            {% if logo_exists %}
+            <img src="{{ url_for('static', filename='ts_logo.svg') }}" alt="TS Management Services" class="company-logo">
+            {% endif %}
+            <h1><i class="fas fa-user-check me-3"></i>Resident Check-in & Resident Check-Out</h1>
+            <p class="lead">Streamlined system for resident check-in and check-out with selfie capture and comprehensive record management.</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row g-4 mb-5">
+            <!-- Generate QR Code -->
+            <div class="col-lg-3 col-md-6">
+                <div class="dashboard-card card h-100">
+                    <div class="card-body text-center d-flex flex-column">
+                        <i class="fas fa-qrcode option-icon"></i>
+                        <h5 class="card-title mb-3">Generate QR Code</h5>
+                        <p class="card-text flex-grow-1">Create QR codes for easy access to the check-in/check-out system</p>
+                        <a href="{{ url_for('resident_checkout_qr') }}" class="btn-dashboard">
+                            <i class="fas fa-qrcode me-2"></i>Generate QR Code
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Records -->
+            <div class="col-lg-3 col-md-6">
+                <div class="dashboard-card card h-100">
+                    <div class="card-body text-center d-flex flex-column">
+                        <i class="fas fa-clipboard-list option-icon"></i>
+                        <h5 class="card-title mb-3">View Records</h5>
+                        <p class="card-text flex-grow-1">Browse and manage all resident check-in and check-out records</p>
+                        <a href="{{ url_for('resident_checkout_records') }}" class="btn-dashboard">
+                            <i class="fas fa-clipboard-list me-2"></i>View Records
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download PDF -->
+            <div class="col-lg-3 col-md-6">
+                <div class="dashboard-card card h-100">
+                    <div class="card-body text-center d-flex flex-column">
+                        <i class="fas fa-file-pdf option-icon"></i>
+                        <h5 class="card-title mb-3">Download PDF</h5>
+                        <p class="card-text flex-grow-1">Export records to PDF format with photos and company branding</p>
+                        <a href="{{ url_for('resident_checkout_export_pdf') }}" class="btn-dashboard" target="_blank">
+                            <i class="fas fa-file-pdf me-2"></i>Download PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export to Excel -->
+            <div class="col-lg-3 col-md-6">
+                <div class="dashboard-card card h-100">
+                    <div class="card-body text-center d-flex flex-column">
+                        <i class="fas fa-file-excel option-icon"></i>
+                        <h5 class="card-title mb-3">Export to Excel</h5>
+                        <p class="card-text flex-grow-1">Export filtered records to Excel spreadsheet format</p>
+                        <a href="{{ url_for('resident_checkout_records') }}#export" class="btn-dashboard">
+                            <i class="fas fa-file-excel me-2"></i>Export to Excel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back to Dashboard -->
+        <div class="text-center mb-4">
+            <a href="{{ url_for('index') }}" class="back-btn">
+                <i class="fas fa-arrow-left me-2"></i>Back to Main Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,1077 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Request Form{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        Purchase Request Form
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form id="purchaseRequestForm" method="POST" action="/submit_purchase_request_form">
+                        <!-- Header Information -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-info-circle"></i>
+                                Request Information
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">PR Number</label>
+                                    <input type="text" class="form-control-modern" id="prNumber" name="pr_number" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Request Date</label>
+                                    <input type="date" class="form-control-modern" id="requestDate" name="request_date" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Department</label>
+                                    <select class="form-control-modern" name="department" required>
+                                        <option value="">Select Department</option>
+                                        <option value="Operations">Operations</option>
+                                        <option value="Maintenance">Maintenance</option>
+                                        <option value="Administration">Administration</option>
+                                        <option value="Finance">Finance</option>
+                                        <option value="HR">HR</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Priority</label>
+                                    <select class="form-control-modern" name="priority" required>
+                                        <option value="">Select Priority</option>
+                                        <option value="Normal">Normal</option>
+                                        <option value="Urgent">Urgent</option>
+                                        <option value="Emergency">Emergency</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Requested By</label>
+                                    <input type="text" class="form-control-modern" name="requested_by" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Supplier/Vendor</label>
+                                    <input type="text" class="form-control-modern" name="supplier" placeholder="Enter supplier name">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Items Section -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-list"></i>
+                                Purchase Items
+                            </div>
+                            <div class="items-table">
+                                <table class="table mb-0" id="itemsTable">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 8%;">S/N</th>
+                                            <th style="width: 25%;">Description</th>
+                                            <th style="width: 12%;">Unit Cost</th>
+                                            <th style="width: 8%;">Qty</th>
+                                            <th style="width: 12%;">Total</th>
+                                            <th style="width: 12%;">Room No</th>
+                                            <th style="width: 8%;">Unit</th>
+                                            <th style="width: 10%;">Cost Code</th>
+                                            <th style="width: 5%;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="itemsTableBody">
+                                        <tr>
+                                            <td>1</td>
+                                            <td><input type="text" name="description[]" placeholder="Enter item description" required></td>
+                                            <td><input type="number" name="unit_cost[]" step="0.01" placeholder="0.00" required oninput="calculateTotal(this)" onchange="calculateTotal(this)"></td>
+                                            <td><input type="number" name="quantity[]" min="1" placeholder="1" required oninput="calculateTotal(this)" onchange="calculateTotal(this)"></td>
+                                            <td><input type="number" name="total[]" step="0.01" placeholder="0.00" readonly></td>
+                                            <td><input type="text" name="room_no[]" placeholder="Room"></td>
+                                            <td><input type="text" name="unit[]" placeholder="Unit"></td>
+                                            <td><input type="text" name="cost_code[]" placeholder="Code"></td>
+                                            <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">×</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="addRow()">
+                                    <i class="fas fa-plus me-1"></i> Add Item
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Financial Summary -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-calculator"></i>
+                                Financial Summary
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-8 col-md-6"></div>
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="summary-box">
+                                        <div class="row mb-2">
+                                            <div class="col-6"><strong>Subtotal:</strong></div>
+                                            <div class="col-6 text-end">
+                                                $<span id="subtotal">0.00</span>
+                                                <input type="hidden" name="subtotal" id="subtotalInput">
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-4"><strong>GST:</strong></div>
+                                            <div class="col-3">
+                                                <input type="number" id="gstRate" step="0.01" min="0" max="100" value="0" class="form-control form-control-sm" oninput="updateGrandTotal()" onchange="updateGrandTotal()" style="font-size: 0.8rem;">
+                                            </div>
+                                            <div class="col-1 text-center">%</div>
+                                            <div class="col-4 text-end">
+                                                $<span id="gst">0.00</span>
+                                                <input type="hidden" name="gst" id="gstInput">
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2">
+                                            <div class="col-12">
+                                                <div class="row">
+                                                    <div class="col-3">
+                                                        <input type="text" id="additionalTaxType" placeholder="e.g., Service Tax" class="form-control form-control-sm" style="font-size: 0.8rem;">
+                                                        <input type="hidden" name="additional_tax_type" id="additionalTaxTypeInput">
+                                                    </div>
+                                                    <div class="col-2">
+                                                        <select id="additionalTaxMode" class="form-control form-control-sm" onchange="updateGrandTotal()" style="font-size: 0.8rem;">
+                                                            <option value="percentage">%</option>
+                                                            <option value="amount">$</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-3">
+                                                        <input type="number" id="additionalTaxValue" step="0.01" min="0" value="0" class="form-control form-control-sm" oninput="updateGrandTotal()" onchange="updateGrandTotal()" style="font-size: 0.8rem;">
+                                                    </div>
+                                                    <div class="col-4 text-end">
+                                                        $<span id="additionalTax">0.00</span>
+                                                        <input type="hidden" name="additional_tax" id="additionalTaxInput">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-2 border-top pt-2">
+                                            <div class="col-6"><strong>Grand Total:</strong></div>
+                                            <div class="col-6 text-end">
+                                                <strong>$<span id="grandTotal">0.00</span></strong>
+                                                <input type="hidden" name="grand_total" id="grandTotalInput">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-clipboard-list"></i>
+                                Additional Information
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Payment Method</label>
+                                    <select class="form-control-modern" name="payment_method">
+                                        <option value="">Select Payment Method</option>
+                                        <option value="Cash">Cash</option>
+                                        <option value="Bank Transfer">Bank Transfer</option>
+                                        <option value="Credit Card">Credit Card</option>
+                                        <option value="Company Account">Company Account</option>
+                                        <option value="Petty Cash">Petty Cash</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Budget Code</label>
+                                    <input type="text" class="form-control-modern" name="budget_code" placeholder="Enter budget code">
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Expected Delivery Date</label>
+                                    <input type="date" class="form-control-modern" name="expected_delivery">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Justification</label>
+                                    <textarea class="form-control-modern" name="justification" rows="2" placeholder="Reason for purchase"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Digital Signatures Section -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                <i class="fas fa-signature"></i>
+                                Digital Signatures
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="signature-section">
+                                        <h6>D/C & O/E Signature</h6>
+                                        <div class="signature-pad-container">
+                                            <canvas id="dcOeSignature" class="signature-pad" width="300" height="150" style="border: 1px solid #ddd; border-radius: 5px; cursor: crosshair; background: white;"></canvas>
+                                            <div class="signature-controls mt-2">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSignature('dcOeSignature')">Clear</button>
+                                                <input type="text" class="form-control mt-2" id="dcSignatureName" placeholder="Full Name">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="signature-section">
+                                        <h6>Operation Manager Signature</h6>
+                                        <div class="signature-pad-container">
+                                            <canvas id="operationManagerSignature" class="signature-pad" width="300" height="150" style="border: 1px solid #ddd; border-radius: 5px; cursor: crosshair; background: white;"></canvas>
+                                            <div class="signature-controls mt-2">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSignature('operationManagerSignature')">Clear</button>
+                                                <input type="text" class="form-control mt-2" id="operationSignatureName" placeholder="Full Name">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="signature-section">
+                                        <h6>General Manager Signature</h6>
+                                        <div class="signature-pad-container">
+                                            <canvas id="generalManagerSignature" class="signature-pad" width="300" height="150" style="border: 1px solid #ddd; border-radius: 5px; cursor: crosshair; background: white;"></canvas>
+                                            <div class="signature-controls mt-2">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSignature('generalManagerSignature')">Clear</button>
+                                                <input type="text" class="form-control mt-2" id="generalSignatureName" placeholder="Full Name">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="action-buttons no-print">
+                            <a href="{{ url_for('stock_report') }}" class="btn btn-secondary-modern">
+                                <i class="fas fa-arrow-left me-1"></i> Back to Stock Report
+                            </a>
+                            <button type="button" class="btn btn-modern btn-secondary-modern" onclick="printPreview()">
+                                <i class="fas fa-eye me-1"></i> Print Preview
+                            </button>
+                            <button type="button" class="btn btn-modern btn-secondary-modern" onclick="printFormWithSignatures()">
+                                <i class="fas fa-print me-1"></i> Print Form
+                            </button>
+                            <button type="button" class="btn btn-modern btn-secondary-modern" onclick="downloadPDFWithSignatures()">
+                                <i class="fas fa-download me-1"></i> Download PDF
+                            </button>
+                            <button type="button" class="btn btn-modern btn-primary-modern" id="submitPurchaseBtn" onclick="submitPurchaseRequest()">
+                                <i class="fas fa-save me-1"></i> Submit Request
+                            </button>
+                        </div>
+                        <!-- Hidden input fields for signature data -->
+                        <input type="hidden" id="dc_oe_signature" name="dc_oe_signature" value="">
+                        <input type="hidden" id="operation_manager_signature" name="operation_manager_signature" value="">
+                        <input type="hidden" id="general_manager_signature" name="general_manager_signature" value="">
+                        
+                        <!-- Signature name hidden fields -->
+                        <input type="hidden" id="dc_oe_name" name="dc_oe_name" value="">
+                        <input type="hidden" id="operation_manager_name" name="operation_manager_name" value="">
+                        <input type="hidden" id="general_manager_name" name="general_manager_name" value="">
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modern form styling */
+.form-section {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-control-modern {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.form-control-modern:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    outline: none;
+}
+
+.items-table {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.items-table table {
+    margin: 0;
+}
+
+.items-table th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+    padding: 12px 8px;
+    text-align: center;
+}
+
+.items-table td {
+    padding: 8px;
+    vertical-align: middle;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.items-table input {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 0.85rem;
+    width: 100%;
+}
+
+.items-table input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.1rem rgba(0,123,255,0.15);
+    outline: none;
+}
+
+.summary-box {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.summary-box input {
+    border: none;
+    background: transparent;
+    text-align: right;
+    font-weight: 500;
+}
+
+.signature-section {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    position: relative;
+}
+
+.signature-pad {
+    background: #f8f9fa;
+    border: 2px dashed #ced4da;
+    border-radius: 6px;
+    position: relative;
+    margin: 10px 0;
+}
+
+.signature-pad canvas {
+    display: block;
+    background: #fff;
+    border-radius: 4px;
+    cursor: crosshair;
+}
+
+.btn-modern {
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-primary-modern {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border: none;
+    color: white;
+}
+
+.btn-primary-modern:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+    transform: translateY(-1px);
+}
+
+.btn-secondary-modern {
+    background: #6c757d;
+    border: none;
+    color: white;
+}
+
+.btn-secondary-modern:hover {
+    background: #545b62;
+    transform: translateY(-1px);
+}
+
+.action-buttons {
+    text-align: center;
+    padding: 20px 0;
+    gap: 10px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .form-section {
+        box-shadow: none;
+        border: 1px solid #000;
+        page-break-inside: avoid;
+    }
+}
+
+.signature-section {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.signature-pad {
+    position: relative;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background: #f8f9fa;
+    margin: 10px 0;
+    overflow: hidden;
+}
+
+.signature-pad canvas {
+    display: block;
+    cursor: crosshair;
+    background: white;
+    width: 100%;
+    max-width: 300px;
+    height: 120px;
+    border-radius: 4px;
+}
+</style>
+
+<script>
+function addRow() {
+    const tbody = document.getElementById('itemsTableBody');
+    const rowCount = tbody.rows.length + 1;
+    const newRow = tbody.insertRow();
+    
+    newRow.innerHTML = `
+        <td>${rowCount}</td>
+        <td><input type="text" name="description[]" placeholder="Enter item description" required></td>
+        <td><input type="number" name="unit_cost[]" step="0.01" placeholder="0.00" required oninput="calculateTotal(this)" onchange="calculateTotal(this)"></td>
+        <td><input type="number" name="quantity[]" min="1" placeholder="1" required oninput="calculateTotal(this)" onchange="calculateTotal(this)"></td>
+        <td><input type="number" name="total[]" step="0.01" placeholder="0.00" readonly></td>
+        <td><input type="text" name="room_no[]" placeholder="Room"></td>
+        <td><input type="text" name="unit[]" placeholder="Unit"></td>
+        <td><input type="text" name="cost_code[]" placeholder="Code"></td>
+        <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">×</button></td>
+    `;
+    
+    // Add event listeners to the new inputs for real-time calculation
+    const unitCostInput = newRow.querySelector('input[name="unit_cost[]"]');
+    const quantityInput = newRow.querySelector('input[name="quantity[]"]');
+    
+    if (unitCostInput && quantityInput) {
+        unitCostInput.addEventListener('input', function() { calculateTotal(this); });
+        unitCostInput.addEventListener('change', function() { calculateTotal(this); });
+        unitCostInput.addEventListener('keyup', function() { calculateTotal(this); });
+        quantityInput.addEventListener('input', function() { calculateTotal(this); });
+        quantityInput.addEventListener('change', function() { calculateTotal(this); });
+        quantityInput.addEventListener('keyup', function() { calculateTotal(this); });
+    }
+    
+    updateGrandTotal();
+}
+
+function removeRow(button) {
+    if (document.getElementById('itemsTableBody').rows.length > 1) {
+        button.closest('tr').remove();
+        updateRowNumbers();
+        updateGrandTotal();
+    }
+}
+
+function updateRowNumbers() {
+    const rows = document.getElementById('itemsTableBody').rows;
+    for (let i = 0; i < rows.length; i++) {
+        rows[i].cells[0].textContent = i + 1;
+    }
+}
+
+function calculateTotal(input) {
+    const row = input.closest('tr');
+    const unitCostInput = row.querySelector('input[name="unit_cost[]"]');
+    const quantityInput = row.querySelector('input[name="quantity[]"]');
+    const totalInput = row.querySelector('input[name="total[]"]');
+    
+    const unitCost = parseFloat(unitCostInput.value) || 0;
+    const quantity = parseFloat(quantityInput.value) || 0;
+    const total = unitCost * quantity;
+    
+    totalInput.value = total.toFixed(2);
+    updateGrandTotal();
+}
+
+function updateGrandTotal() {
+    const totalInputs = document.querySelectorAll('input[name="total[]"]');
+    let subtotal = 0;
+    
+    totalInputs.forEach(input => {
+        subtotal += parseFloat(input.value) || 0;
+    });
+    
+    // Get tax rates from input fields
+    const gstRate = parseFloat(document.getElementById('gstRate').value) || 0;
+    const additionalTaxValue = parseFloat(document.getElementById('additionalTaxValue').value) || 0;
+    const additionalTaxMode = document.getElementById('additionalTaxMode').value;
+    
+    // Calculate taxes
+    const gst = subtotal * (gstRate / 100);
+    let additionalTax = 0;
+    if (additionalTaxMode === 'percentage') {
+        additionalTax = subtotal * (additionalTaxValue / 100);
+    } else {
+        additionalTax = additionalTaxValue;
+    }
+    const grandTotal = subtotal + gst + additionalTax;
+    
+    // Update the display elements
+    document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+    document.getElementById('gst').textContent = gst.toFixed(2);
+    document.getElementById('additionalTax').textContent = additionalTax.toFixed(2);
+    document.getElementById('grandTotal').textContent = grandTotal.toFixed(2);
+    
+    // Update hidden inputs for form submission
+    document.getElementById('subtotalInput').value = subtotal.toFixed(2);
+    document.getElementById('gstInput').value = gst.toFixed(2);
+    document.getElementById('additionalTaxInput').value = additionalTax.toFixed(2);
+    document.getElementById('additionalTaxTypeInput').value = document.getElementById('additionalTaxType').value;
+    document.getElementById('grandTotalInput').value = grandTotal.toFixed(2);
+}
+
+
+
+function loadSignaturePadScript() {
+    if (typeof SignaturePad !== 'undefined') {
+        initializeSignaturePads();
+        return;
+    }
+    
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js';
+    script.onload = function() {
+        initializeSignaturePads();
+    };
+    document.head.appendChild(script);
+}
+
+function initializeSignaturePads() {
+    const dcCanvas = document.getElementById('dcOeSignature');
+    const operationCanvas = document.getElementById('operationManagerSignature');
+    const generalCanvas = document.getElementById('generalManagerSignature');
+    
+    if (dcCanvas && operationCanvas && generalCanvas) {
+        // Set canvas dimensions properly
+        resizeCanvas(dcCanvas);
+        resizeCanvas(operationCanvas); 
+        resizeCanvas(generalCanvas);
+        
+        // Initialize signature pads and store them globally
+        window.dcSignaturePad = new SignaturePad(dcCanvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+        window.operationSignaturePad = new SignaturePad(operationCanvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+        window.generalSignaturePad = new SignaturePad(generalCanvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+        
+        console.log('Signature pads initialized successfully');
+    }
+}
+
+// Initialize when DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadSignaturePadScript();
+    setCurrentDate();
+    updateGrandTotal();
+});
+
+function resizeCanvas(canvas) {
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width = canvas.offsetWidth * ratio;
+    canvas.height = 150 * ratio;
+    canvas.getContext('2d').scale(ratio, ratio);
+    canvas.style.width = canvas.offsetWidth + 'px';
+    canvas.style.height = '150px';
+}
+
+function setCurrentDate() {
+    const today = new Date().toISOString().split('T')[0];
+    const requestDateInput = document.querySelector('input[name="request_date"]');
+    if (requestDateInput && !requestDateInput.value) {
+        requestDateInput.value = today;
+    }
+}
+
+function printPreview() {
+    window.print();
+}
+
+function printFormWithSignatures() {
+    window.print();
+}
+
+function downloadPDFWithSignatures() {
+    try {
+        // Validate form has data
+        const form = document.getElementById('purchaseRequestForm');
+        if (!form) {
+            alert('Form not found. Please refresh the page.');
+            return;
+        }
+        
+        // Capture signature data
+        const signatureData = {};
+        const canvases = document.querySelectorAll('canvas');
+        canvases.forEach((canvas, index) => {
+            if (canvas.id && canvas.id.includes('signature')) {
+                signatureData[canvas.id] = canvas.toDataURL();
+            }
+        });
+        
+        // Create form data with signatures
+        const formData = new FormData(form);
+        formData.append('signatures', JSON.stringify(signatureData));
+        
+        // Submit to server for PDF generation
+        fetch('/generate_purchase_request_pdf', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `purchase_request_${new Date().getTime()}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        })
+        .catch(error => {
+            console.error('Error generating PDF:', error);
+            alert('Error generating PDF. Please try again.');
+        });
+        
+        return;
+    } catch (error) {
+        console.error('Error downloading PDF:', error);
+        alert('Error downloading PDF. Please try again.');
+    }
+}
+
+function generateItemsTableForPDF() {
+    const tbody = document.getElementById('itemsTableBody');
+    let html = '';
+    
+    if (!tbody || tbody.rows.length === 0) {
+        return '<tr><td colspan="8">No items added</td></tr>';
+    }
+    
+    for (let i = 0; i < tbody.rows.length; i++) {
+        const row = tbody.rows[i];
+        const cells = row.cells;
+        html += '<tr>';
+        html += `<td>${cells[0].textContent}</td>`;
+        html += `<td>${cells[1].querySelector('input')?.value || ''}</td>`;
+        html += `<td>$${cells[2].querySelector('input')?.value || '0.00'}</td>`;
+        html += `<td>${cells[3].querySelector('input')?.value || '0'}</td>`;
+        html += `<td>$${cells[4].querySelector('input')?.value || '0.00'}</td>`;
+        html += `<td>${cells[5].querySelector('input')?.value || ''}</td>`;
+        html += `<td>${cells[6].querySelector('input')?.value || ''}</td>`;
+        html += `<td>${cells[7].querySelector('input')?.value || ''}</td>`;
+        html += '</tr>';
+    }
+    
+    return html;
+}
+
+function clearSignature(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Map canvas IDs to correct hidden input field IDs and signature pad objects
+        let hiddenInputId;
+        let signaturePad;
+        switch(canvasId) {
+            case 'dcOeSignature':
+                hiddenInputId = 'dc_oe_signature';
+                signaturePad = window.dcSignaturePad;
+                break;
+            case 'operationManagerSignature':
+                hiddenInputId = 'operation_manager_signature';
+                signaturePad = window.operationSignaturePad;
+                break;
+            case 'generalManagerSignature':
+                hiddenInputId = 'general_manager_signature';
+                signaturePad = window.generalSignaturePad;
+                break;
+            default:
+                return;
+        }
+        
+        // Clear the signature pad if it exists
+        if (signaturePad && typeof signaturePad.clear === 'function') {
+            signaturePad.clear();
+        }
+        
+        // Clear the corresponding hidden input
+        const hiddenInput = document.getElementById(hiddenInputId);
+        if (hiddenInput) {
+            hiddenInput.value = '';
+        }
+        
+        // Clear the name input field too
+        const nameInput = document.querySelector(`#${canvasId.replace('Signature', 'SignatureName')}`);
+        if (nameInput) {
+            nameInput.value = '';
+        }
+    }
+}
+
+function captureSignature(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (canvas) {
+        const dataURL = canvas.toDataURL('image/png');
+        
+        // Map canvas IDs to correct hidden input field IDs
+        let hiddenInputId;
+        switch(canvasId) {
+            case 'dcOeSignature':
+                hiddenInputId = 'dc_oe_signature';
+                break;
+            case 'operationManagerSignature':
+                hiddenInputId = 'operation_manager_signature';
+                break;
+            case 'generalManagerSignature':
+                hiddenInputId = 'general_manager_signature';
+                break;
+            default:
+                return '';
+        }
+        
+        const hiddenInput = document.getElementById(hiddenInputId);
+        if (hiddenInput) {
+            hiddenInput.value = dataURL;
+        }
+        return dataURL;
+    }
+    return '';
+}
+
+function saveSignature(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    // Check if canvas has any drawing
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const hasDrawing = imageData.data.some((channel, index) => {
+        return index % 4 !== 3 ? channel !== 255 : channel !== 0;
+    });
+    
+    if (!hasDrawing) {
+        alert('Please draw your signature first before saving.');
+        return;
+    }
+    
+    // Map canvas IDs to correct hidden input field IDs
+    let hiddenInputId;
+    switch(canvasId) {
+        case 'dcOeSignature':
+            hiddenInputId = 'dc_oe_signature';
+            break;
+        case 'operationManagerSignature':
+            hiddenInputId = 'operation_manager_signature';
+            break;
+        case 'generalManagerSignature':
+            hiddenInputId = 'general_manager_signature';
+            break;
+        default:
+            console.error('Unknown canvas ID:', canvasId);
+            return;
+    }
+    
+    // Save signature to hidden input
+    const dataURL = canvas.toDataURL('image/png');
+    const hiddenInput = document.getElementById(hiddenInputId);
+    if (hiddenInput) {
+        hiddenInput.value = dataURL;
+        
+        // Show success message
+        const statusId = canvasId + 'Status';
+        const statusElement = document.getElementById(statusId);
+        if (statusElement) {
+            statusElement.style.display = 'block';
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 3000);
+        }
+        
+        console.log(`Signature saved for ${canvasId} to ${hiddenInputId}: ${dataURL.substring(0, 50)}...`);
+    } else {
+        console.error('Hidden input field not found:', hiddenInputId);
+    }
+}
+
+function autoSaveSignature(canvasId) {
+    // Auto-save signature after user stops drawing for 2 seconds
+    if (window.signatureTimeouts && window.signatureTimeouts[canvasId]) {
+        clearTimeout(window.signatureTimeouts[canvasId]);
+    }
+    
+    if (!window.signatureTimeouts) {
+        window.signatureTimeouts = {};
+    }
+    
+    window.signatureTimeouts[canvasId] = setTimeout(() => {
+        saveSignature(canvasId);
+    }, 2000);
+}
+
+function captureSignatureDetails() {
+    // Capture signature names only
+    const dcName = document.getElementById('dcSignatureName').value || '';
+    const opName = document.getElementById('operationSignatureName').value || '';
+    const gmName = document.getElementById('generalSignatureName').value || '';
+    
+    console.log('Capturing signature details:');
+    console.log('DC Name:', dcName);
+    console.log('Operation Manager Name:', opName);
+    console.log('General Manager Name:', gmName);
+    
+    document.getElementById('dc_oe_name').value = dcName;
+    document.getElementById('operation_manager_name').value = opName;
+    document.getElementById('general_manager_name').value = gmName;
+    
+    console.log('Hidden field values set:');
+    console.log('dc_oe_name:', document.getElementById('dc_oe_name').value);
+    console.log('operation_manager_name:', document.getElementById('operation_manager_name').value);
+    console.log('general_manager_name:', document.getElementById('general_manager_name').value);
+}
+
+function submitPurchaseRequest() {
+    // Capture signature details before validation and add a small delay
+    captureSignatureDetails();
+    
+    // Add debugging for name capture
+    console.log('Before form submission - checking name values:');
+    console.log('dcSignatureName input:', document.getElementById('dcSignatureName')?.value);
+    console.log('operationSignatureName input:', document.getElementById('operationSignatureName')?.value);
+    console.log('generalSignatureName input:', document.getElementById('generalSignatureName')?.value);
+    console.log('Hidden dc_oe_name:', document.getElementById('dc_oe_name')?.value);
+    console.log('Hidden operation_manager_name:', document.getElementById('operation_manager_name')?.value);
+    console.log('Hidden general_manager_name:', document.getElementById('general_manager_name')?.value);
+    
+    // Add a small delay to ensure hidden fields are populated before form submission
+    setTimeout(() => {
+        // Validate required fields
+        const form = document.getElementById('purchaseRequestForm');
+        const requiredFields = form.querySelectorAll('[required]');
+        let isValid = true;
+    
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.style.borderColor = '#dc3545';
+                isValid = false;
+            } else {
+                field.style.borderColor = '#ced4da';
+            }
+        });
+        
+        // Check if at least one item is added
+        const itemRows = document.getElementById('itemsTableBody').rows;
+        let hasValidItems = false;
+        for (let i = 0; i < itemRows.length; i++) {
+            const descInput = itemRows[i].querySelector('input[name="description[]"]');
+            const qtyInput = itemRows[i].querySelector('input[name="quantity[]"]');
+            if (descInput && descInput.value.trim() && qtyInput && qtyInput.value.trim()) {
+                hasValidItems = true;
+                break;
+            }
+        }
+        
+        if (!hasValidItems) {
+            alert('Please add at least one item with description and quantity.');
+            return;
+        }
+        
+        if (!isValid) {
+            alert('Please fill in all required fields.');
+            return;
+        }
+        
+        // Capture all signatures before submission
+        captureSignature('dcOeSignature');
+        captureSignature('operationManagerSignature');
+        captureSignature('generalManagerSignature');
+        
+        // Show loading state
+        const submitBtn = document.getElementById('submitPurchaseBtn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Submitting...';
+        submitBtn.disabled = true;
+        
+        // Submit the form
+        form.submit();
+    }, 500); // 500ms delay to ensure hidden fields are populated
+}
+
+// Initialize form
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-generate PR number (will be overridden by server on submission)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const prNumber = `PR-${year}${month}${day}-001`;
+    document.getElementById('prNumber').value = prNumber;
+    
+    // Set today's date
+    document.getElementById('requestDate').value = today.toISOString().split('T')[0];
+    
+    // Initialize signature canvases
+    const canvases = ['dcOeSignature', 'operationManagerSignature', 'generalManagerSignature'];
+    canvases.forEach(canvasId => {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) {
+            return;
+        }
+        
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        
+        // Set canvas properties
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+            autoSaveSignature(canvasId);
+        });
+        
+        canvas.addEventListener('mouseout', () => {
+            isDrawing = false;
+            autoSaveSignature(canvasId);
+        });
+        
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (isDrawing) {
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            isDrawing = false;
+            autoSaveSignature(canvasId);
+        });
+    });
+    
+    // Add event listeners to all existing rows
+    const allRows = document.querySelectorAll('#itemsTableBody tr');
+    allRows.forEach(row => {
+        const unitCostInput = row.querySelector('input[name="unit_cost[]"]');
+        const quantityInput = row.querySelector('input[name="quantity[]"]');
+        
+        if (unitCostInput && quantityInput) {
+            unitCostInput.addEventListener('input', function() { calculateTotal(this); });
+            unitCostInput.addEventListener('change', function() { calculateTotal(this); });
+            unitCostInput.addEventListener('keyup', function() { calculateTotal(this); });
+            quantityInput.addEventListener('input', function() { calculateTotal(this); });
+            quantityInput.addEventListener('change', function() { calculateTotal(this); });
+            quantityInput.addEventListener('keyup', function() { calculateTotal(this); });
+        }
+    });
+    
+    // Initialize grand total calculation
+    updateGrandTotal();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}QR Code Information{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-qrcode me-2"></i>
+                        QR Code Information
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Details</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Label:</strong></td>
+                                    <td>{{ qr_code.label }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Type:</strong></td>
+                                    <td><span class="badge bg-primary">{{ qr_code.qr_type.title() }}</span></td>
+                                </tr>
+                                {% if qr_code.description %}
+                                <tr>
+                                    <td><strong>Description:</strong></td>
+                                    <td>{{ qr_code.description }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if qr_code.target_url %}
+                                <tr>
+                                    <td><strong>Target URL:</strong></td>
+                                    <td><a href="{{ qr_code.target_url }}" target="_blank" class="text-break">{{ qr_code.target_url }}</a></td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td>
+                                        {% if qr_code.is_accessible %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif qr_code.is_expired %}
+                                            <span class="badge bg-danger">Expired</span>
+                                        {% elif qr_code.is_scan_limit_reached %}
+                                            <span class="badge bg-warning">Scan Limit Reached</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Usage Statistics</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Scan Count:</strong></td>
+                                    <td>{{ qr_code.scan_count }}</td>
+                                </tr>
+                                {% if qr_code.max_scans %}
+                                <tr>
+                                    <td><strong>Max Scans:</strong></td>
+                                    <td>{{ qr_code.max_scans }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if qr_code.last_scanned %}
+                                <tr>
+                                    <td><strong>Last Scanned:</strong></td>
+                                    <td>{{ qr_code.last_scanned.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td><strong>Created:</strong></td>
+                                    <td>{{ qr_code.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                </tr>
+                                {% if qr_code.expires_at %}
+                                <tr>
+                                    <td><strong>Expires:</strong></td>
+                                    <td>{{ qr_code.expires_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+                    
+                    {% if qr_code.qr_type == 'url' and qr_code.target_url and qr_code.is_accessible %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-grid">
+                                <a href="{{ qr_code.target_url }}" target="_blank" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-external-link-alt me-2"></i>
+                                    Visit Target URL
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mt-4">
+                        <div class="col-12 text-center">
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-arrow-left me-1"></i> Go Back
+                            </a>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-home me-1"></i> Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

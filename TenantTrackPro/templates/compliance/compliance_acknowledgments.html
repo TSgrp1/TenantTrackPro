@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Compliance Acknowledgments{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i class="fas fa-check-circle me-2"></i>Compliance Acknowledgments</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ url_for('compliance_management') }}">Compliance Management</a></li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('view_compliance_record', record_id=record.id) }}">{{ record.record_number }}</a></li>
+                            <li class="breadcrumb-item active">Acknowledgments</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{{ url_for('view_compliance_record', record_id=record.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Record
+                    </a>
+                </div>
+            </div>
+
+            <!-- Record Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Record Summary
+                        <span class="badge 
+                            {% if record.language_code == 'en' %}bg-primary
+                            {% elif record.language_code == 'bn' %}bg-success
+                            {% elif record.language_code == 'my' %}bg-info
+                            {% elif record.language_code == 'ta' %}bg-warning
+                            {% elif record.language_code == 'zh' %}bg-danger
+                            {% else %}bg-secondary
+                            {% endif %} ms-2">
+                            {% if record.language_code == 'en' %}English
+                            {% elif record.language_code == 'bn' %}বাংলা
+                            {% elif record.language_code == 'my' %}မြန်မာ
+                            {% elif record.language_code == 'ta' %}தமিழ்
+                            {% elif record.language_code == 'zh' %}中文
+                            {% else %}{{ record.language_code.upper() }}
+                            {% endif %}
+                        </span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>{{ record.title }}</h6>
+                            <p class="text-muted mb-2">{{ record.description }}</p>
+                            <p><strong>Category:</strong> {{ record.compliance_category }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Record Number:</strong> <code>{{ record.record_number }}</code></p>
+                            <p><strong>Effective Date:</strong> {{ record.effective_date.strftime('%Y-%m-%d') if record.effective_date else 'N/A' }}</p>
+                            <p><strong>Total Acknowledgments:</strong> <span class="badge bg-info">{{ acknowledgments|length }}</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acknowledgments Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-success text-white text-center">
+                        <div class="card-body">
+                            <h3 class="mb-1">{{ acknowledgments|length }}</h3>
+                            <p class="mb-0 small">Total Acknowledgments</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white text-center">
+                        <div class="card-body">
+                            <h3 class="mb-1">{{ acknowledgments|selectattr('acknowledgment_method', 'equalto', 'digital')|list|length }}</h3>
+                            <p class="mb-0 small">Digital Acknowledgments</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white text-center">
+                        <div class="card-body">
+                            <h3 class="mb-1">
+                                {% set today = moment().date() %}
+                                {{ acknowledgments|selectattr('acknowledged_at')|selectattr('acknowledged_at', 'ge', today)|list|length }}
+                            </h3>
+                            <p class="mb-0 small">Today's Acknowledgments</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white text-center">
+                        <div class="card-body">
+                            <h3 class="mb-1">
+                                {% set unique_users = acknowledgments|map(attribute='user_id')|list|unique|list %}
+                                {{ unique_users|length }}
+                            </h3>
+                            <p class="mb-0 small">Unique Users</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acknowledgments List -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Acknowledgment History
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if acknowledgments %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Language</th>
+                                        <th>Method</th>
+                                        <th>Acknowledged At</th>
+                                        <th>IP Address</th>
+                                        <th>Notes</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ack in acknowledgments %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-primary rounded-circle text-white text-center me-2" style="width: 32px; height: 32px; line-height: 32px;">
+                                                    {{ ack.ack_user.first_name[0] if ack.ack_user and ack.ack_user.first_name else 'U' }}
+                                                </div>
+                                                <div>
+                                                    <strong>{{ ack.ack_user.first_name if ack.ack_user else 'Unknown User' }}</strong>
+                                                    {% if ack.ack_user and ack.ack_user.email %}
+                                                    <br><small class="text-muted">{{ ack.ack_user.email }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if ack.language_code == 'en' %}bg-primary
+                                                {% elif ack.language_code == 'bn' %}bg-success
+                                                {% elif ack.language_code == 'my' %}bg-info
+                                                {% elif ack.language_code == 'ta' %}bg-warning
+                                                {% elif ack.language_code == 'zh' %}bg-danger
+                                                {% else %}bg-secondary
+                                                {% endif %}">
+                                                {% if ack.language_code == 'en' %}English
+                                                {% elif ack.language_code == 'bn' %}বাংলা
+                                                {% elif ack.language_code == 'my' %}မြန်မာ
+                                                {% elif ack.language_code == 'ta' %}தமிழ்
+                                                {% elif ack.language_code == 'zh' %}中文
+                                                {% else %}{{ ack.language_code.upper() }}
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if ack.acknowledgment_method == 'digital' %}bg-success
+                                                {% elif ack.acknowledgment_method == 'physical' %}bg-warning
+                                                {% elif ack.acknowledgment_method == 'verbal' %}bg-info
+                                                {% else %}bg-secondary
+                                                {% endif %}">
+                                                {{ ack.acknowledgment_method.title() }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {{ ack.acknowledged_at.strftime('%Y-%m-%d %H:%M:%S') if ack.acknowledged_at else 'N/A' }}
+                                        </td>
+                                        <td>
+                                            <code>{{ ack.ip_address or 'N/A' }}</code>
+                                        </td>
+                                        <td>
+                                            {% if ack.notes %}
+                                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ ack.notes }}">
+                                                    {{ ack.notes }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">No notes</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-sm btn-outline-info" onclick="viewAcknowledgmentDetails({{ ack.id }})">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                {% if ack.signature_data %}
+                                                <button type="button" class="btn btn-sm btn-outline-success" onclick="viewSignature({{ ack.id }})">
+                                                    <i class="fas fa-signature"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Acknowledgments Yet</h5>
+                            <p class="text-muted">Users will appear here once they acknowledge this compliance record.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acknowledgment Details Modal -->
+<div class="modal fade" id="acknowledgmentDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Acknowledgment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="acknowledgmentDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Signature Modal -->
+<div class="modal fade" id="signatureModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Digital Signature</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center" id="signatureContent">
+                <!-- Signature image will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewAcknowledgmentDetails(ackId) {
+    // Load acknowledgment details in modal
+    document.getElementById('acknowledgmentDetailsContent').innerHTML = '<p class="text-center">Loading details...</p>';
+    
+    fetch(`/api/acknowledgment-details/${ackId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const content = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>User Information</h6>
+                            <p><strong>Name:</strong> ${data.user_name || 'Unknown'}</p>
+                            <p><strong>Email:</strong> ${data.user_email || 'N/A'}</p>
+                            <p><strong>User ID:</strong> <code>${data.user_id}</code></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Acknowledgment Details</h6>
+                            <p><strong>Method:</strong> ${data.method}</p>
+                            <p><strong>Language:</strong> ${data.language}</p>
+                            <p><strong>Date & Time:</strong> ${data.acknowledged_at}</p>
+                            <p><strong>IP Address:</strong> <code>${data.ip_address || 'N/A'}</code></p>
+                        </div>
+                        <div class="col-12">
+                            <h6>Additional Information</h6>
+                            <p><strong>User Agent:</strong> ${data.user_agent || 'N/A'}</p>
+                            <p><strong>Notes:</strong> ${data.notes || 'No notes provided'}</p>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('acknowledgmentDetailsContent').innerHTML = content;
+            } else {
+                document.getElementById('acknowledgmentDetailsContent').innerHTML = '<p class="text-danger">Error loading details</p>';
+            }
+        })
+        .catch(error => {
+            document.getElementById('acknowledgmentDetailsContent').innerHTML = '<p class="text-danger">Error loading details</p>';
+        });
+    
+    new bootstrap.Modal(document.getElementById('acknowledgmentDetailsModal')).show();
+}
+
+function viewSignature(ackId) {
+    // Load signature in modal
+    document.getElementById('signatureContent').innerHTML = '<p>Loading signature...</p>';
+    
+    fetch(`/api/acknowledgment-signature/${ackId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.signature_data) {
+                const content = `<img src="data:image/png;base64,${data.signature_data}" class="img-fluid" alt="Digital Signature" style="max-height: 300px;">`;
+                document.getElementById('signatureContent').innerHTML = content;
+            } else {
+                document.getElementById('signatureContent').innerHTML = '<p class="text-muted">No signature available</p>';
+            }
+        })
+        .catch(error => {
+            document.getElementById('signatureContent').innerHTML = '<p class="text-danger">Error loading signature</p>';
+        });
+    
+    new bootstrap.Modal(document.getElementById('signatureModal')).show();
+}
+
+// Export acknowledgments to Excel
+function exportAcknowledgments() {
+    window.location.href = `/export-acknowledgments/{{ record.id }}`;
+}
+</script>
+{% endblock %}

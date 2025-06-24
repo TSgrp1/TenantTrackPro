@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Use Stock - TS Management Services{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Use Stock</h2>
+                <div>
+                    <a href="{{ url_for('used_stock_summary') }}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-list"></i> View Usage Summary
+                    </a>
+                    <a href="{{ url_for('stock_info') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Stock Info
+                    </a>
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Record Stock Usage</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="stock_item_id" class="form-label">Item Name <span class="text-danger">*</span></label>
+                                <select class="form-select" name="stock_item_id" id="stock_item_id" required>
+                                    <option value="">Select Item</option>
+                                    {% for item in stock_items %}
+                                        {% if item.available_quantity > 0 %}
+                                            <option value="{{ item.id }}" data-available="{{ item.available_quantity }}" data-total="{{ item.quantity }}">
+                                                {{ item.name }} (Available: {{ item.available_quantity }})
+                                            </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="used_quantity" class="form-label">Used Quantity <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="used_quantity" id="used_quantity" min="1" required>
+                                <div class="form-text">
+                                    Available: <span id="available_display">-</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="usage_date" class="form-label">Usage Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="usage_date" id="usage_date" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" name="notes" id="notes" rows="3" placeholder="Optional notes about this usage..."></textarea>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="reset" class="btn btn-secondary me-2">Clear</button>
+                            {% if can_user_create(current_user, 'inventory') %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Record Usage
+                            </button>
+                            {% else %}
+                            <button class="btn btn-secondary" disabled title="View-only access - cannot record usage">
+                                <i class="fas fa-eye"></i> View Only
+                            </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if stock_items %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Available Stock Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>S.No</th>
+                                    <th>Item Name</th>
+                                    <th>Category</th>
+                                    <th>Total Quantity</th>
+                                    <th>Available Quantity</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in stock_items %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ item.name }}</td>
+                                        <td>{{ item.category }}</td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>
+                                            <span class="badge {% if item.available_quantity > 10 %}bg-success{% elif item.available_quantity > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ item.available_quantity }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if item.available_quantity > 0 %}
+                                                <span class="badge bg-success">Available</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Out of Stock</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info mt-4">
+                <i class="fas fa-info-circle"></i> No stock items available for usage.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const stockSelect = document.getElementById('stock_item_id');
+    const quantityInput = document.getElementById('used_quantity');
+    const availableDisplay = document.getElementById('available_display');
+    const usageDateInput = document.getElementById('usage_date');
+    
+    // Set today's date as default
+    usageDateInput.value = new Date().toISOString().split('T')[0];
+    
+    stockSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const available = selectedOption.dataset.available;
+            availableDisplay.textContent = available;
+            quantityInput.max = available;
+            quantityInput.placeholder = `Max: ${available}`;
+        } else {
+            availableDisplay.textContent = '-';
+            quantityInput.max = '';
+            quantityInput.placeholder = '';
+        }
+        quantityInput.value = '';
+    });
+    
+    quantityInput.addEventListener('input', function() {
+        const max = parseInt(this.max);
+        const current = parseInt(this.value);
+        
+        if (current > max) {
+            this.value = max;
+        }
+    });
+});
+</script>
+{% endblock %}

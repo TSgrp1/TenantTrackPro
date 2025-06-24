@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}View Room Checklist - TS Management Services Pte Ltd{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-eye me-2"></i>
+                        View Room Inventory Checklist
+                    </h1>
+                    <p class="text-muted mb-0">Room {{ checklist.room_number }} - {{ checklist.company_name }}</p>
+                </div>
+                <div>
+                    <a href="/room-handovers" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to List
+                    </a>
+                    <a href="/edit_checklist/{{ checklist.id }}" class="btn btn-primary ms-2">
+                        <i class="fas fa-edit me-1"></i> Edit
+                    </a>
+                    <a href="/export_checklist_excel/{{ checklist.id }}" class="btn btn-success ms-2">
+                        <i class="fas fa-file-excel me-1"></i> Export to Excel
+                    </a>
+                    <a href="/export_checklist_pdf/{{ checklist.id }}" class="btn btn-danger ms-2">
+                        <i class="fas fa-file-pdf me-1"></i> Download PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Basic Information -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                Basic Information
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>Room Number:</strong><br>
+                    <span class="badge bg-primary fs-6">{{ checklist.room_number }}</span>
+                </div>
+                <div class="col-md-3">
+                    <strong>Company Name:</strong><br>
+                    {{ checklist.company_name }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Date:</strong><br>
+                    {{ checklist.checklist_date.strftime('%Y-%m-%d') }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Status:</strong><br>
+                    <span class="badge 
+                        {% if checklist.status == 'Completed' %}bg-success
+                        {% elif checklist.status == 'Under Review' %}bg-warning
+                        {% elif checklist.status == 'Approved' %}bg-info
+                        {% else %}bg-secondary
+                        {% endif %}">
+                        {{ checklist.status }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Meter Readings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                Meter Readings
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Item</th>
+                            <th>Reading</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Water Meter</td>
+                            <td>{{ checklist.water_meter_reading or '' }}</td>
+                            <td>{{ checklist.water_meter_datetime.strftime('%Y-%m-%d') if checklist.water_meter_datetime else '' }}</td>
+                        </tr>
+                        <tr>
+                            <td>Electricity Meter</td>
+                            <td>{{ checklist.electricity_meter_reading or '' }}</td>
+                            <td>{{ checklist.electricity_meter_datetime.strftime('%Y-%m-%d') if checklist.electricity_meter_datetime else '' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checklist Items -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list-check me-2"></i>
+                Checklist Items
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if checklist_items %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Item</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in checklist_items %}
+                        <tr>
+                            <td>{{ item.category }}</td>
+                            <td>{{ item.item }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if item.status == 'Good' %}bg-success
+                                    {% elif item.status == 'Fair' %}bg-warning
+                                    {% elif item.status == 'Poor' %}bg-danger
+                                    {% else %}bg-secondary
+                                    {% endif %}">
+                                    {{ item.status }}
+                                </span>
+                            </td>
+                            <td>{{ item.remarks or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No checklist items recorded.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Signatures -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-signature me-2"></i>
+                Signatures
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Handover Signature</h6>
+                    {% if handover_signature %}
+                    <p><strong>Name:</strong> {{ handover_signature['name'] or 'Not provided' }}</p>
+                    <p><strong>Position:</strong> {{ handover_signature['position'] or 'Not provided' }}</p>
+                    <p><strong>FIN Number:</strong> {{ handover_signature['fin'] or 'Not provided' }}</p>
+                    <p><strong>Date:</strong> {{ handover_signature['date'] or 'Not provided' }}</p>
+                    {% else %}
+                    <p class="text-muted">No handover signature recorded.</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h6>Takeover Signature</h6>
+                    {% if takeover_signature %}
+                    <p><strong>Name:</strong> {{ takeover_signature['name'] or 'Not provided' }}</p>
+                    <p><strong>Position:</strong> {{ takeover_signature['position'] or 'Not provided' }}</p>
+                    <p><strong>FIN Number:</strong> {{ takeover_signature['fin'] or 'Not provided' }}</p>
+                    <p><strong>Date:</strong> {{ takeover_signature['date'] or 'Not provided' }}</p>
+                    {% else %}
+                    <p class="text-muted">No takeover signature recorded.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Trail -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-history me-2"></i>
+                Audit Trail
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Created By:</strong> {{ checklist.created_by_user.first_name }} {{ checklist.created_by_user.last_name or '' }}</p>
+                    <p><strong>Created At:</strong> {{ checklist.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Last Updated:</strong> {{ checklist.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

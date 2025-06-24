@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Room Number Management - TS Management Services{% endblock %}
+
+{% block content %}
+<style>
+    .room-number {
+        font-family: 'Courier New', monospace;
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-weight: bold;
+    }
+    .building-badge {
+        background: #28a745;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    .stats-card {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+    }
+</style>
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="fas fa-door-open me-3"></i>Room Number Management</h2>
+                <p class="text-muted mb-0">Manage room numbers for the House Acknowledge system</p>
+            </div>
+            <div>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-custom me-2">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+                <a href="{{ url_for('add_room_number') }}" class="btn btn-primary btn-custom">
+                    <i class="fas fa-plus me-2"></i>Add Room Numbers
+                </a>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-door-open fa-2x"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0">{{ room_numbers|length }}</h4>
+                            <p class="mb-0">Total Room Numbers</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-building fa-2x"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0">{{ room_numbers|map(attribute='building')|unique|list|length }}</h4>
+                            <p class="mb-0">Buildings</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <form method="POST" action="{{ url_for('bulk_add_predefined_rooms') }}" onsubmit="return confirm('This will add all predefined room numbers. Continue?')">
+                            <h6 class="card-title">Quick Setup</h6>
+                            <button type="submit" class="btn btn-success btn-custom">
+                                <i class="fas fa-magic me-2"></i>Add All Predefined Rooms
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Room Numbers Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Room Numbers</h5>
+            </div>
+            <div class="card-body">
+                {% if room_numbers %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Room Number</th>
+                                <th>Building</th>
+                                <th>Floor</th>
+                                <th>Unit</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for room in room_numbers %}
+                            <tr id="room-row-{{ room.id }}">
+                                <td>
+                                    <span class="room-number" id="room-display-{{ room.id }}">{{ room.room_number }}</span>
+                                    <input type="text" class="form-control d-none" id="room-edit-{{ room.id }}" value="{{ room.room_number }}">
+                                </td>
+                                <td>
+                                    <span class="building-badge" id="building-display-{{ room.id }}">{{ room.building }}</span>
+                                    <input type="text" class="form-control d-none" id="building-edit-{{ room.id }}" value="{{ room.building or '' }}">
+                                </td>
+                                <td>
+                                    <span id="floor-display-{{ room.id }}">{{ room.floor }}</span>
+                                    <input type="text" class="form-control d-none" id="floor-edit-{{ room.id }}" value="{{ room.floor or '' }}">
+                                </td>
+                                <td>
+                                    <span id="unit-display-{{ room.id }}">{{ room.unit }}</span>
+                                    <input type="text" class="form-control d-none" id="unit-edit-{{ room.id }}" value="{{ room.unit or '' }}">
+                                </td>
+                                <td>{{ room.created_at.strftime('%Y-%m-%d %H:%M') if room.created_at else 'N/A' }}</td>
+                                <td>
+                                    <button class="btn btn-outline-primary btn-sm me-1" id="edit-btn-{{ room.id }}" onclick="startEdit({{ room.id }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-success btn-sm me-1 d-none" id="save-btn-{{ room.id }}" onclick="saveEdit({{ room.id }})">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm me-1 d-none" id="cancel-btn-{{ room.id }}" onclick="cancelEdit({{ room.id }})">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" onclick="deleteRoom({{ room.id }}, '{{ room.room_number }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-door-open fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Room Numbers Found</h5>
+                    <p class="text-muted">Start by adding room numbers to the system.</p>
+                    <a href="{{ url_for('add_room_number') }}" class="btn btn-primary btn-custom">
+                        <i class="fas fa-plus me-2"></i>Add Room Numbers
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Store original values for cancel functionality
+        let originalValues = {};
+        
+        function startEdit(roomId) {
+            // Store original values
+            originalValues[roomId] = {
+                room_number: document.getElementById(`room-display-${roomId}`).textContent,
+                building: document.getElementById(`building-display-${roomId}`).textContent,
+                floor: document.getElementById(`floor-display-${roomId}`).textContent,
+                unit: document.getElementById(`unit-display-${roomId}`).textContent
+            };
+            
+            // Hide display elements and show edit inputs
+            document.getElementById(`room-display-${roomId}`).classList.add('d-none');
+            document.getElementById(`room-edit-${roomId}`).classList.remove('d-none');
+            document.getElementById(`building-display-${roomId}`).classList.add('d-none');
+            document.getElementById(`building-edit-${roomId}`).classList.remove('d-none');
+            document.getElementById(`floor-display-${roomId}`).classList.add('d-none');
+            document.getElementById(`floor-edit-${roomId}`).classList.remove('d-none');
+            document.getElementById(`unit-display-${roomId}`).classList.add('d-none');
+            document.getElementById(`unit-edit-${roomId}`).classList.remove('d-none');
+            
+            // Hide edit button, show save/cancel buttons
+            document.getElementById(`edit-btn-${roomId}`).classList.add('d-none');
+            document.getElementById(`save-btn-${roomId}`).classList.remove('d-none');
+            document.getElementById(`cancel-btn-${roomId}`).classList.remove('d-none');
+            
+            // Focus on room number input
+            document.getElementById(`room-edit-${roomId}`).focus();
+        }
+        
+        function cancelEdit(roomId) {
+            // Restore original values
+            document.getElementById(`room-edit-${roomId}`).value = originalValues[roomId].room_number;
+            document.getElementById(`building-edit-${roomId}`).value = originalValues[roomId].building;
+            document.getElementById(`floor-edit-${roomId}`).value = originalValues[roomId].floor;
+            document.getElementById(`unit-edit-${roomId}`).value = originalValues[roomId].unit;
+            
+            // Show display elements and hide edit inputs
+            document.getElementById(`room-display-${roomId}`).classList.remove('d-none');
+            document.getElementById(`room-edit-${roomId}`).classList.add('d-none');
+            document.getElementById(`building-display-${roomId}`).classList.remove('d-none');
+            document.getElementById(`building-edit-${roomId}`).classList.add('d-none');
+            document.getElementById(`floor-display-${roomId}`).classList.remove('d-none');
+            document.getElementById(`floor-edit-${roomId}`).classList.add('d-none');
+            document.getElementById(`unit-display-${roomId}`).classList.remove('d-none');
+            document.getElementById(`unit-edit-${roomId}`).classList.add('d-none');
+            
+            // Show edit button, hide save/cancel buttons
+            document.getElementById(`edit-btn-${roomId}`).classList.remove('d-none');
+            document.getElementById(`save-btn-${roomId}`).classList.add('d-none');
+            document.getElementById(`cancel-btn-${roomId}`).classList.add('d-none');
+        }
+        
+        function saveEdit(roomId) {
+            const roomNumber = document.getElementById(`room-edit-${roomId}`).value.trim();
+            const building = document.getElementById(`building-edit-${roomId}`).value.trim();
+            const floor = document.getElementById(`floor-edit-${roomId}`).value.trim();
+            const unit = document.getElementById(`unit-edit-${roomId}`).value.trim();
+            
+            if (!roomNumber) {
+                alert('Room number is required.');
+                return;
+            }
+            
+            // Send AJAX request to update room
+            fetch(`/room_numbers/edit/${roomId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    room_number: roomNumber,
+                    building: building,
+                    floor: floor,
+                    unit: unit
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update display values
+                    document.getElementById(`room-display-${roomId}`).textContent = roomNumber;
+                    document.getElementById(`building-display-${roomId}`).textContent = building;
+                    document.getElementById(`floor-display-${roomId}`).textContent = floor;
+                    document.getElementById(`unit-display-${roomId}`).textContent = unit;
+                    
+                    // Show display elements and hide edit inputs
+                    document.getElementById(`room-display-${roomId}`).classList.remove('d-none');
+                    document.getElementById(`room-edit-${roomId}`).classList.add('d-none');
+                    document.getElementById(`building-display-${roomId}`).classList.remove('d-none');
+                    document.getElementById(`building-edit-${roomId}`).classList.add('d-none');
+                    document.getElementById(`floor-display-${roomId}`).classList.remove('d-none');
+                    document.getElementById(`floor-edit-${roomId}`).classList.add('d-none');
+                    document.getElementById(`unit-display-${roomId}`).classList.remove('d-none');
+                    document.getElementById(`unit-edit-${roomId}`).classList.add('d-none');
+                    
+                    // Show edit button, hide save/cancel buttons
+                    document.getElementById(`edit-btn-${roomId}`).classList.remove('d-none');
+                    document.getElementById(`save-btn-${roomId}`).classList.add('d-none');
+                    document.getElementById(`cancel-btn-${roomId}`).classList.add('d-none');
+                    
+                    // Show success message
+                    showAlert('Room number updated successfully!', 'success');
+                } else {
+                    showAlert(data.message || 'Error updating room number', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error updating room number', 'danger');
+            });
+        }
+        
+        function deleteRoom(roomId, roomNumber) {
+            if (confirm(`Are you sure you want to delete room ${roomNumber}?`)) {
+                window.location.href = `/room_numbers/delete/${roomId}`;
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            // Find or create alerts container
+            let alertsContainer = document.querySelector('.alerts-container');
+            if (!alertsContainer) {
+                alertsContainer = document.createElement('div');
+                alertsContainer.className = 'alerts-container position-fixed top-0 end-0 p-3';
+                alertsContainer.style.zIndex = '1050';
+                document.body.appendChild(alertsContainer);
+            }
+            
+            alertsContainer.appendChild(alertDiv);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
+{% endblock %}

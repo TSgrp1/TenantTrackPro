@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Attendance - {{ attendance_type.title() }} Time</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        #camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        #camera-video {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        #captured-photo {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .camera-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        .capture-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 4px solid white;
+            background: #007bff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .form-section {
+            display: none;
+        }
+        
+        .form-section.active {
+            display: block;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            background: #e9ecef;
+            color: #6c757d;
+            font-weight: bold;
+        }
+        
+        .step.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        .step.completed {
+            background: #28a745;
+            color: white;
+        }
+        
+        .attendance-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .attendance-type-badge {
+            font-size: 1.2rem;
+            padding: 0.5rem 1rem;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .form-control[readonly] {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+            opacity: 0.8;
+        }
+        
+        .form-control[readonly]:focus {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="attendance-header">
+            <h1 class="h2 mb-3">
+                <i class="fas fa-clock me-2"></i>
+                Staff Attendance
+            </h1>
+            {% if attendance_type == 'start' %}
+            <span class="badge bg-success attendance-type-badge">
+                <i class="fas fa-sign-in-alt me-1"></i>Start Work Time
+            </span>
+            {% else %}
+            <span class="badge bg-warning attendance-type-badge">
+                <i class="fas fa-sign-out-alt me-1"></i>End Work Time
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step active" id="step-1">1</div>
+            <div class="step" id="step-2">2</div>
+            <div class="step" id="step-3">3</div>
+        </div>
+
+        <!-- Step 1: Camera/Selfie -->
+        <div class="form-section active" id="section-1">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-camera me-2"></i>
+                        Take Your Selfie
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div id="camera-container">
+                        <video id="camera-video" autoplay playsinline></video>
+                        <canvas id="photo-canvas" style="display: none;"></canvas>
+                        <img id="captured-photo" alt="Captured photo">
+                        <div class="camera-overlay"></div>
+                        <button type="button" class="btn capture-btn" id="capture-btn" onclick="capturePhoto()">
+                            <i class="fas fa-camera fa-2x text-white"></i>
+                        </button>
+                    </div>
+                    <div class="mt-3" id="camera-controls" style="display: none;">
+                        <button type="button" class="btn btn-success me-2" onclick="acceptPhoto()">
+                            <i class="fas fa-check me-1"></i>Use Photo
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="retakePhoto()">
+                            <i class="fas fa-redo me-1"></i>Retake
+                        </button>
+                    </div>
+                    <p class="text-muted mt-3">
+                        Position your face within the circle and click the camera button to take a selfie.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Information Form -->
+        <div class="form-section" id="section-2">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        Enter Your Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="attendance-form">
+                        <input type="hidden" id="attendance-type" value="{{ attendance_type }}">
+                        <input type="hidden" id="selfie-data">
+                        <input type="hidden" id="qr-code-scanned">
+                        
+                        <div class="mb-3">
+                            <label for="worker-select" class="form-label">
+                                <i class="fas fa-users me-1"></i>Select Worker
+                            </label>
+                            <select class="form-select" id="worker-select" onchange="fillWorkerDetails()">
+                                <option value="">-- Select a worker --</option>
+                                {% for worker in workers %}
+                                <option value="{{ worker.id }}" 
+                                        data-name="{{ worker.name }}" 
+                                        data-fin="{{ worker.fin_number }}" 
+                                        data-company="{{ worker.company_name }}">
+                                    {{ worker.name }} ({{ worker.fin_number }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select a worker to auto-fill their details below</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="staff-name" class="form-label">
+                                <i class="fas fa-user me-1"></i>Full Name *
+                            </label>
+                            <input type="text" class="form-control" id="staff-name" required readonly
+                                   placeholder="Select a worker from dropdown above">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="fin-number" class="form-label">
+                                <i class="fas fa-id-card me-1"></i>FIN Number
+                            </label>
+                            <input type="text" class="form-control" id="fin-number" readonly
+                                   placeholder="Will auto-fill when worker is selected">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="company-name" class="form-label">
+                                <i class="fas fa-building me-1"></i>Company Name *
+                            </label>
+                            <input type="text" class="form-control" id="company-name" required readonly
+                                   placeholder="Will auto-fill when worker is selected">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="location" class="form-label">
+                                <i class="fas fa-map-marker-alt me-1"></i>Location (Optional)
+                            </label>
+                            <input type="text" class="form-control" id="location" 
+                                   placeholder="Enter work location">
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-primary" onclick="nextStep()">
+                                <i class="fas fa-arrow-right me-1"></i>Continue
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="prevStep()">
+                                <i class="fas fa-arrow-left me-1"></i>Back
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Confirmation -->
+        <div class="form-section" id="section-3">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Confirm Submission
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <h6>Your Photo</h6>
+                            <img id="final-photo" class="img-thumbnail" style="max-width: 150px;">
+                        </div>
+                        <div class="col-md-8">
+                            <h6>Details</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Type:</th>
+                                    <td>
+                                        {% if attendance_type == 'start' %}
+                                        <span class="badge bg-success">Start Work</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">End Work</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Name:</th>
+                                    <td id="confirm-name"></td>
+                                </tr>
+                                <tr>
+                                    <th>Company:</th>
+                                    <td id="confirm-company"></td>
+                                </tr>
+                                <tr>
+                                    <th>Location:</th>
+                                    <td id="confirm-location"></td>
+                                </tr>
+                                <tr>
+                                    <th>Time:</th>
+                                    <td id="confirm-time"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="loading-spinner" id="loading-spinner">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Submitting...</span>
+                        </div>
+                        <p class="mt-2">Submitting your attendance...</p>
+                    </div>
+                    
+                    <div class="d-grid gap-2" id="confirm-buttons">
+                        <button type="button" class="btn btn-success btn-lg" onclick="submitAttendance()">
+                            <i class="fas fa-check me-1"></i>Submit Attendance
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="prevStep()">
+                            <i class="fas fa-arrow-left me-1"></i>Back
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Force cache clear with timestamp
+        const timestamp = Date.now();
+        console.log('Script loaded at:', timestamp);
+        let currentStep = 1;
+        let photoTaken = false;
+        let videoStream = null;
+
+        // Initialize camera when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCamera();
+            updateTime();
+            setInterval(updateTime, 1000);
+        });
+
+        async function initializeCamera() {
+            try {
+                const constraints = {
+                    video: {
+                        width: { ideal: 400 },
+                        height: { ideal: 300 },
+                        facingMode: 'user'
+                    }
+                };
+                
+                videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+                const video = document.getElementById('camera-video');
+                video.srcObject = videoStream;
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert('Unable to access camera. Please ensure camera permissions are granted.');
+            }
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('photo-canvas');
+            const capturedPhoto = document.getElementById('captured-photo');
+            
+            // Set canvas dimensions to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Draw video frame to canvas
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            // Convert to base64 and show preview
+            const photoData = canvas.toDataURL('image/jpeg', 0.8);
+            capturedPhoto.src = photoData;
+            capturedPhoto.style.display = 'block';
+            video.style.display = 'none';
+            
+            // Store photo data
+            document.getElementById('selfie-data').value = photoData;
+            
+            // Show controls
+            document.getElementById('camera-controls').style.display = 'block';
+            document.getElementById('capture-btn').style.display = 'none';
+            
+            photoTaken = true;
+        }
+
+        function acceptPhoto() {
+            if (photoTaken) {
+                nextStep();
+            }
+        }
+
+        function retakePhoto() {
+            const video = document.getElementById('camera-video');
+            const capturedPhoto = document.getElementById('captured-photo');
+            
+            capturedPhoto.style.display = 'none';
+            video.style.display = 'block';
+            
+            document.getElementById('camera-controls').style.display = 'none';
+            document.getElementById('capture-btn').style.display = 'block';
+            
+            photoTaken = false;
+        }
+
+        function nextStep() {
+            if (currentStep === 1 && !photoTaken) {
+                alert('Please take a selfie first.');
+                return;
+            }
+            
+            if (currentStep === 2) {
+                // Validate form
+                const workerSelected = document.getElementById('worker-select').value;
+                const staffName = document.getElementById('staff-name').value.trim();
+                const companyName = document.getElementById('company-name').value.trim();
+                
+                if (!workerSelected) {
+                    alert('Please select a worker from the dropdown.');
+                    return;
+                }
+                
+                if (!staffName || !companyName) {
+                    alert('Please select a worker to auto-fill required fields.');
+                    return;
+                }
+                
+                // Update confirmation details
+                document.getElementById('confirm-name').textContent = staffName;
+                document.getElementById('confirm-company').textContent = companyName;
+                document.getElementById('confirm-location').textContent = document.getElementById('location').value.trim() || '-';
+                document.getElementById('final-photo').src = document.getElementById('selfie-data').value;
+            }
+            
+            if (currentStep < 3) {
+                currentStep++;
+                updateStepDisplay();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepDisplay();
+            }
+        }
+
+        function updateStepDisplay() {
+            // Hide all sections
+            document.querySelectorAll('.form-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show current section
+            document.getElementById(`section-${currentStep}`).classList.add('active');
+            
+            // Update step indicators
+            for (let i = 1; i <= 3; i++) {
+                const step = document.getElementById(`step-${i}`);
+                step.classList.remove('active', 'completed');
+                
+                if (i < currentStep) {
+                    step.classList.add('completed');
+                } else if (i === currentStep) {
+                    step.classList.add('active');
+                }
+            }
+        }
+
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString();
+            const timeElement = document.getElementById('confirm-time');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+        }
+
+        async function submitAttendance() {
+            document.getElementById('loading-spinner').style.display = 'block';
+            document.getElementById('confirm-buttons').style.display = 'none';
+            
+            const formData = new FormData();
+            formData.append('staff_name', document.getElementById('staff-name').value.trim());
+            formData.append('fin_number', document.getElementById('fin-number').value.trim());
+            formData.append('company_name', document.getElementById('company-name').value.trim());
+            formData.append('attendance_type', document.getElementById('attendance-type').value);
+            formData.append('selfie_data', document.getElementById('selfie-data').value);
+            formData.append('location', document.getElementById('location').value.trim());
+            formData.append('qr_code_scanned', document.getElementById('qr-code-scanned').value);
+            
+            try {
+                const response = await fetch('/staff-attendance/submit', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log('Attendance submitted successfully, showing final message with type:', result.attendance_type);
+                    // Hide loading and show final message directly
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    showFinalMessage(result.attendance_type || document.getElementById('attendance-type').value);
+                } else {
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    document.getElementById('confirm-buttons').style.display = 'block';
+                    
+                    // Check if this is a missing checkout error
+                    if (result.error_type === 'missing_checkout') {
+                        showCheckoutWarning(result.message, result.last_start_time);
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                alert('Network error. Please try again.');
+                document.getElementById('loading-spinner').style.display = 'none';
+                document.getElementById('confirm-buttons').style.display = 'block';
+            }
+        }
+
+        function showCheckoutWarning(message, lastStartTime) {
+            // Create warning modal overlay
+            const warningOverlay = document.createElement('div');
+            warningOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            `;
+            
+            warningOverlay.innerHTML = `
+                <div class="card" style="max-width: 500px; margin: 20px;">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Checkout Required
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3">${message}</p>
+                        <p class="text-muted small mb-3">Last check-in: ${lastStartTime}</p>
+                        <p><strong>Please check out first before starting new work.</strong></p>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-warning" onclick="redirectToCheckout()">
+                                <i class="fas fa-sign-out-alt me-1"></i>Go to Checkout
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="closeWarning()">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            warningOverlay.id = 'checkout-warning-overlay';
+            document.body.appendChild(warningOverlay);
+        }
+
+        function redirectToCheckout() {
+            // Redirect to checkout page with attendance type 'end'
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('type', 'end');
+            window.location.href = currentUrl.toString();
+        }
+
+        function closeWarning() {
+            const overlay = document.getElementById('checkout-warning-overlay');
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+
+        function showFinalMessage(attendanceType) {
+            console.log('showFinalMessage called with type:', attendanceType);
+            // Remove existing overlays
+            const existingOverlay = document.querySelector('.success-overlay');
+            if (existingOverlay) {
+                existingOverlay.remove();
+            }
+            
+            // Create final message overlay
+            const finalOverlay = document.createElement('div');
+            finalOverlay.className = 'success-overlay';
+            finalOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                overflow-y: auto;
+                padding: 20px;
+            `;
+            
+            const messageTitle = attendanceType === 'start' ? 'Work Started Successfully!' : 'Work Ended Successfully!';
+            const proceedMessage = attendanceType === 'start' ? 'You can now proceed to work.' : 'Thank you for your work today.';
+            
+            finalOverlay.innerHTML = `
+                <div class="card shadow-lg" style="max-width: 600px; width: 100%; border: none;">
+                    <div class="card-header bg-white text-center border-0" style="padding: 2rem 2rem 1rem;">
+                        <i class="fas fa-check-circle text-success" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                        <h2 class="text-success mb-2">${messageTitle}</h2>
+                        <p class="lead text-muted mb-0">Report submitted successfully</p>
+                    </div>
+                    <div class="card-body" style="padding: 1rem 2rem 2rem;">
+                        <div class="alert alert-success mb-4">
+                            <h5 class="alert-heading">
+                                <i class="fas fa-thumbs-up me-2"></i>Attendance Recorded
+                            </h5>
+                            <p class="mb-0">${proceedMessage}</p>
+                        </div>
+                        
+                        <div class="alert alert-warning mb-4">
+                            <h5 class="alert-heading">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Important Safety Reminder
+                            </h5>
+                            <p class="mb-2"><strong>Please follow all safety precautions:</strong></p>
+                            <ul class="mb-0">
+                                <li>Always wear appropriate personal protective equipment (PPE)</li>
+                                <li>Follow all safety protocols and procedures</li>
+                                <li>Report any hazards or unsafe conditions immediately</li>
+                                <li>Keep your work area clean and organized</li>
+                                <li>Follow emergency evacuation procedures if needed</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="text-center">
+                            <p class="text-muted">
+                                <i class="fas fa-info-circle me-2"></i>
+                                You can close this page manually
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(finalOverlay);
+        }
+
+
+
+        // Load workers for dropdown - removed as workers are already rendered server-side
+
+        // Fill worker details when selected
+        function fillWorkerDetails() {
+            const select = document.getElementById('worker-select');
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (selectedOption && selectedOption.value) {
+                // Get data from the selected option's data attributes
+                const workerName = selectedOption.getAttribute('data-name');
+                const finNumber = selectedOption.getAttribute('data-fin');
+                const companyName = selectedOption.getAttribute('data-company');
+                
+                // Fill the readonly form fields
+                document.getElementById('staff-name').value = workerName || '';
+                document.getElementById('fin-number').value = finNumber || '';
+                document.getElementById('company-name').value = companyName || '';
+            } else {
+                // Clear fields if no worker selected
+                document.getElementById('staff-name').value = '';
+                document.getElementById('fin-number').value = '';
+                document.getElementById('company-name').value = '';
+            }
+        }
+
+        // Cleanup camera when page unloads
+        window.addEventListener('beforeunload', function() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>

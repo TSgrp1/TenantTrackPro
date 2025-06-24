@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Edit MSRF Request - TS Management Services{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem 1.5rem;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="fas fa-edit me-3"></i>
+                                Edit MSRF Request #{{ msrf_request.id }}
+                            </h2>
+                            <p class="mb-0 opacity-75">
+                                Update miscellaneous service request details
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <a href="{{ url_for('msrf_management') }}" class="btn btn-light">
+                                <i class="fas fa-arrow-left me-2"></i>Back to List
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-form me-2"></i>
+                        MSRF Request Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_msrf_request', request_id=msrf_request.id) }}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="room_number" class="form-label">Room Number <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <select class="form-select" name="room_number" id="roomNumberSelect" onchange="handleRoomSelection()" required>
+                                            <option value="">Select Room Number</option>
+                                            <option value="custom" {% if msrf_request.room_number not in room_numbers|map(attribute='room_number')|list %}selected{% endif %}>+ Add Custom Room Number</option>
+                                            {% for room in room_numbers %}
+                                                <option value="{{ room.room_number }}" {% if room.room_number == msrf_request.room_number %}selected{% endif %}>{{ room.room_number }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <input type="text" class="form-control" id="customRoomNumber" name="custom_room_number" 
+                                               placeholder="Enter custom room number" 
+                                               value="{% if msrf_request.room_number not in room_numbers|map(attribute='room_number')|list %}{{ msrf_request.room_number }}{% endif %}"
+                                               style="{% if msrf_request.room_number in room_numbers|map(attribute='room_number')|list %}display: none;{% endif %}">
+                                        <button type="button" class="btn btn-outline-secondary" id="backToDropdown" 
+                                                onclick="switchBackToDropdown()" 
+                                                style="{% if msrf_request.room_number in room_numbers|map(attribute='room_number')|list %}display: none;{% endif %}">
+                                            Back to List
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="company_name" class="form-label">Company Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="company_name" name="company_name" 
+                                           value="{{ msrf_request.company_name }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="serial_number" class="form-label">Serial Number</label>
+                                    <input type="text" class="form-control" id="serial_number" name="serial_number" 
+                                           value="{{ msrf_request.serial_number or '' }}" placeholder="Enter serial number (optional)">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="item_requested" class="form-label">Item Requested <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" id="item_requested" name="item_requested" rows="1" required>{{ msrf_request.item_requested }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="date_requested" class="form-label">Date Requested <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="date_requested" name="date_requested" 
+                                           value="{{ msrf_request.date_requested.strftime('%Y-%m-%d') if msrf_request.date_requested else '' }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="date_installed" class="form-label">Date Installed</label>
+                                    <input type="date" class="form-control" id="date_installed" name="date_installed"
+                                           value="{{ msrf_request.date_installed.strftime('%Y-%m-%d') if msrf_request.date_installed else '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                      placeholder="Additional notes (optional)">{{ msrf_request.notes or '' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Created At</label>
+                                    <input type="text" class="form-control" value="{{ msrf_request.created_at.strftime('%Y-%m-%d %H:%M:%S') }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Created By</label>
+                                    <input type="text" class="form-control" value="{{ msrf_request.created_by }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('msrf_management') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Update Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Room number selection functions
+function handleRoomSelection() {
+    const select = document.getElementById('roomNumberSelect');
+    const customInput = document.getElementById('customRoomNumber');
+    const backButton = document.getElementById('backToDropdown');
+    
+    if (select.value === 'custom') {
+        select.style.display = 'none';
+        customInput.style.display = 'block';
+        backButton.style.display = 'block';
+        customInput.focus();
+        customInput.required = true;
+        select.required = false;
+    }
+}
+
+function switchBackToDropdown() {
+    const select = document.getElementById('roomNumberSelect');
+    const customInput = document.getElementById('customRoomNumber');
+    const backButton = document.getElementById('backToDropdown');
+    
+    select.style.display = 'block';
+    customInput.style.display = 'none';
+    backButton.style.display = 'none';
+    customInput.value = '';
+    select.value = '';
+    select.required = true;
+    customInput.required = false;
+}
+</script>
+{% endblock %}

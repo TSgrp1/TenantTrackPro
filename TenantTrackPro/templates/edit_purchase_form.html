@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Purchase Form{% endblock %}
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        Edit Purchase Form - {{ purchase_request.request_number }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form id="editPurchaseForm" method="POST" action="/update-purchase-form/{{ purchase_request.id }}">
+                        <!-- Header with TS Group Logo -->
+                        <div class="row mb-4" style="border: 2px solid #000; padding: 15px; background: #f8f9fa;">
+                            <div class="col-3 d-flex align-items-center">
+                                <div style="background: #1e40af; color: white; padding: 12px; font-weight: bold; border-radius: 3px; position: relative;">
+                                    <div style="font-size: 16px; font-weight: bold;">TS GROUP</div>
+                                    <div style="background: #fbbf24; width: 15px; height: 15px; position: absolute; bottom: 8px; right: 8px;"></div>
+                                </div>
+                            </div>
+                            <div class="col-9 text-center">
+                                <h3 class="fw-bold mb-0" style="font-size: 20px; letter-spacing: 2px; color: #1e40af; background: #e0f2fe; padding: 8px; border-radius: 3px;">PURCHASE REQUISITION FORM</h3>
+                            </div>
+                        </div>
+
+                        <!-- Form Details -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="row mb-3">
+                                    <label for="request_number" class="col-sm-4 col-form-label fw-bold">Request Number:</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control" id="request_number" name="request_number" value="{{ purchase_request.request_number }}" required>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label for="pl_number" class="col-sm-4 col-form-label fw-bold">PL Number:</label>
+                                    <div class="col-sm-8">
+                                        <div class="input-group">
+                                            <span class="input-group-text">PL/25/</span>
+                                            <input type="text" class="form-control" id="pl_number" name="pl_number" value="{{ purchase_request.pl_number }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label for="request_date" class="col-sm-4 col-form-label fw-bold">Request Date:</label>
+                                    <div class="col-sm-8">
+                                        <input type="date" class="form-control" id="request_date" name="request_date" value="{{ purchase_request.request_date.strftime('%Y-%m-%d') if purchase_request.request_date }}" required>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label for="category" class="col-sm-4 col-form-label fw-bold">Category:</label>
+                                    <div class="col-sm-8">
+                                        <select class="form-select" id="category" name="category" required>
+                                            <option value="Purchase Stock" {{ 'selected' if purchase_request.category == 'Purchase Stock' else '' }}>Purchase Stock</option>
+                                            <option value="Office Supplies" {{ 'selected' if purchase_request.category == 'Office Supplies' else '' }}>Office Supplies</option>
+                                            <option value="Maintenance" {{ 'selected' if purchase_request.category == 'Maintenance' else '' }}>Maintenance</option>
+                                            <option value="Equipment" {{ 'selected' if purchase_request.category == 'Equipment' else '' }}>Equipment</option>
+                                            <option value="Other" {{ 'selected' if purchase_request.category == 'Other' else '' }}>Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="row mb-3">
+                                    <label for="requested_by" class="col-sm-4 col-form-label fw-bold">Requested By:</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control" id="requested_by" name="requested_by" value="{{ purchase_request.requested_by }}" required>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label for="dc_name" class="col-sm-4 col-form-label fw-bold">DC Name:</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control" id="dc_name" name="dc_name" value="{{ purchase_request.dc_name }}">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <label for="operation_manager" class="col-sm-4 col-form-label fw-bold">Operation Manager:</label>
+                                    <div class="col-sm-8">
+                                        <input type="text" class="form-control" id="operation_manager" name="operation_manager" value="{{ purchase_request.operation_manager }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Items Table -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="fw-bold mb-3">Items</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" style="font-size: 12px;">
+                                        <thead class="table-primary">
+                                            <tr>
+                                                <th style="width: 5%;" class="text-center">No</th>
+                                                <th style="width: 25%;" class="text-center">Item / Description</th>
+                                                <th style="width: 12%;" class="text-center">Unit Cost</th>
+                                                <th style="width: 8%;" class="text-center">Qty</th>
+                                                <th style="width: 12%;" class="text-center">Total</th>
+                                                <th style="width: 10%;" class="text-center">Unit Required</th>
+                                                <th style="width: 9%;" class="text-center">Cost Code</th>
+                                                <th style="width: 10%;" class="text-center">Remarks</th>
+                                                <th style="width: 9%;" class="text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="itemsTableBody">
+                                            {% for item in items %}
+                                            <tr>
+                                                <td class="text-center">{{ loop.index }}</td>
+                                                <td>
+                                                    <input type="text" class="form-control item-description border-0 p-1" name="description[]" value="{{ item.description }}" style="font-size: 12px;">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control unit-cost border-0 p-1" name="unit_cost[]" step="0.01" value="{{ item.unit_cost }}" style="font-size: 12px;">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control quantity border-0 p-1" name="quantity[]" value="{{ item.quantity }}" style="font-size: 12px;">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control total border-0 p-1" name="total[]" step="0.01" readonly value="{{ item.total_cost }}" style="font-size: 12px;">
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control border-0 p-1" name="unit[]" value="{{ item.unit }}" style="font-size: 12px;">
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control border-0 p-1" name="cost_code[]" value="{{ item.cost_code }}" style="font-size: 12px;">
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="form-control border-0 p-1" name="remarks[]" value="{{ item.remarks }}" style="font-size: 12px;">
+                                                </td>
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="4" class="text-end fw-bold">Subtotal:</td>
+                                                <td><input type="number" id="subtotal" name="subtotal" class="form-control border-0 fw-bold" readonly style="font-size: 12px;" value="{{ purchase_request.subtotal or '' }}"></td>
+                                                <td colspan="3"></td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="3" class="text-end">
+                                                    <input type="text" id="other_label" name="other_label" class="form-control border-0 text-end" placeholder="Tax/Other" style="font-size: 12px;" value="{{ purchase_request.other_label or '' }}">
+                                                </td>
+                                                <td class="text-end fw-bold">Amount:</td>
+                                                <td><input type="number" id="other_amount" name="other_amount" class="form-control border-0" step="0.01" style="font-size: 12px;" value="{{ purchase_request.other_amount or '' }}"></td>
+                                                <td colspan="3"></td>
+                                            </tr>
+                                            <tr class="table-success">
+                                                <td colspan="4" class="text-end fw-bold fs-6">GRAND TOTAL:</td>
+                                                <td><input type="number" id="grand_total" name="grand_total" class="form-control border-0 fw-bold fs-6" readonly style="background: #d1e7dd;" value="{{ purchase_request.grand_total or '' }}"></td>
+                                                <td colspan="3"></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                
+                                <!-- Add/Remove Row Buttons -->
+                                <div class="row mt-3">
+                                    <div class="col-12 text-center">
+                                        <button type="button" class="btn btn-success btn-sm me-2" onclick="addItemRow()">
+                                            <i class="fas fa-plus me-1"></i>Add Item Row
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow()">
+                                            <i class="fas fa-minus me-1"></i>Remove Last Row
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="row">
+                            <div class="col-12 text-center">
+                                <button type="submit" class="btn btn-primary btn-lg me-3">
+                                    <i class="fas fa-save me-2"></i>Update Purchase Request
+                                </button>
+                                <a href="{{ url_for('purchase_form_storage') }}" class="btn btn-secondary btn-lg">
+                                    <i class="fas fa-times me-2"></i>Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    let itemRowCounter = {{ items|length }};
+    
+    // Add event listeners for calculations
+    $(document).on('input', '.quantity, .unit-cost', function() {
+        const row = $(this).closest('tr');
+        const quantity = parseFloat(row.find('.quantity').val()) || 0;
+        const unitCost = parseFloat(row.find('.unit-cost').val()) || 0;
+        const total = quantity * unitCost;
+        row.find('.total').val(total.toFixed(2));
+        calculateTotals();
+    });
+    
+    // Calculate subtotal and grand total
+    function calculateTotals() {
+        let subtotal = 0;
+        $('.total').each(function() {
+            const value = parseFloat($(this).val()) || 0;
+            subtotal += value;
+        });
+        
+        $('#subtotal').val(subtotal.toFixed(2));
+        
+        const otherAmount = parseFloat($('#other_amount').val()) || 0;
+        const grandTotal = subtotal + otherAmount;
+        $('#grand_total').val(grandTotal.toFixed(2));
+    }
+    
+    // Listen for other amount changes
+    $(document).on('input', '#other_amount', function() {
+        calculateTotals();
+    });
+    
+    // Initial calculation on page load
+    calculateTotals();
+    
+    window.addItemRow = function() {
+        itemRowCounter++;
+        const newRow = `
+            <tr>
+                <td class="text-center">${itemRowCounter}</td>
+                <td>
+                    <input type="text" class="form-control item-description border-0 p-1" name="description[]" placeholder="Enter item description" style="font-size: 12px;">
+                </td>
+                <td>
+                    <input type="number" class="form-control unit-cost border-0 p-1" name="unit_cost[]" step="0.01" style="font-size: 12px;">
+                </td>
+                <td>
+                    <input type="number" class="form-control quantity border-0 p-1" name="quantity[]" style="font-size: 12px;">
+                </td>
+                <td>
+                    <input type="number" class="form-control total border-0 p-1" name="total[]" step="0.01" readonly style="font-size: 12px;">
+                </td>
+                <td>
+                    <input type="text" class="form-control border-0 p-1" name="unit[]" style="font-size: 12px;">
+                </td>
+                <td>
+                    <input type="text" class="form-control border-0 p-1" name="cost_code[]" style="font-size: 12px;">
+                </td>
+                <td>
+                    <input type="text" class="form-control border-0 p-1" name="remarks[]" style="font-size: 12px;">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeRow(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        
+        document.getElementById('itemsTableBody').insertAdjacentHTML('beforeend', newRow);
+    };
+    
+    window.removeItemRow = function() {
+        const tbody = document.getElementById('itemsTableBody');
+        const rows = tbody.getElementsByTagName('tr');
+        if (rows.length > 1) {
+            tbody.removeChild(rows[rows.length - 1]);
+            itemRowCounter = Math.max(0, itemRowCounter - 1);
+        }
+    };
+    
+    window.removeRow = function(button) {
+        const row = button.closest('tr');
+        row.remove();
+        // Renumber rows
+        const rows = document.querySelectorAll('#itemsTableBody tr');
+        rows.forEach((row, index) => {
+            const numberCell = row.querySelector('td:first-child');
+            numberCell.textContent = index + 1;
+        });
+        calculateTotals();
+    };
+    
+    // Auto-calculate totals on input change
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('unit-cost') || e.target.classList.contains('quantity')) {
+            const row = e.target.closest('tr');
+            const unitCost = parseFloat(row.querySelector('.unit-cost').value) || 0;
+            const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+            const total = unitCost * quantity;
+            row.querySelector('.total').value = total.toFixed(2);
+            
+            calculateTotals();
+        }
+        
+        if (e.target.id === 'other_amount') {
+            calculateTotals();
+        }
+    });
+
+    function calculateTotals() {
+        let subtotal = 0;
+        const totals = document.querySelectorAll('.total');
+        totals.forEach(function(total) {
+            subtotal += parseFloat(total.value) || 0;
+        });
+        
+        const subtotalField = document.getElementById('subtotal');
+        if (subtotalField) {
+            subtotalField.value = subtotal.toFixed(2);
+        }
+        
+        const otherAmountField = document.getElementById('other_amount');
+        const otherAmount = otherAmountField ? parseFloat(otherAmountField.value) || 0 : 0;
+        const grandTotal = subtotal + otherAmount;
+        
+        const grandTotalField = document.getElementById('grand_total');
+        if (grandTotalField) {
+            grandTotalField.value = grandTotal.toFixed(2);
+        }
+    }
+
+    // Update hidden fields before form submission
+    window.updateHiddenFields = function() {
+        const subtotal = document.getElementById('subtotal');
+        const otherLabel = document.getElementById('other_label');
+        const otherAmount = document.getElementById('other_amount');
+        const grandTotal = document.getElementById('grand_total');
+        
+        if (subtotal && document.getElementById('hidden_subtotal')) {
+            document.getElementById('hidden_subtotal').value = subtotal.value;
+        }
+        if (otherLabel && document.getElementById('hidden_other_label')) {
+            document.getElementById('hidden_other_label').value = otherLabel.value;
+        }
+        if (otherAmount && document.getElementById('hidden_other_amount')) {
+            document.getElementById('hidden_other_amount').value = otherAmount.value;
+        }
+        if (grandTotal && document.getElementById('hidden_grand_total')) {
+            document.getElementById('hidden_grand_total').value = grandTotal.value;
+        }
+    };
+
+    // Initialize calculations after page loads
+    setTimeout(calculateTotals, 100);
+});
+</script>
+{% endblock %}

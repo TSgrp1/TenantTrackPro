@@ -1,0 +1,715 @@
+{% extends "base.html" %}
+
+{% block title %}Bedding Items Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-primary">
+                    <i class="fas fa-bed me-2"></i>Bedding Items Management
+                </h2>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('bedding_categories') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-tags me-1"></i>Manage Categories
+                    </a>
+                    <a href="{{ url_for('add_bedding_item') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Add Bedding Item
+                    </a>
+                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#bulkUploadModal">
+                        <i class="fas fa-upload me-1"></i>Bulk Upload
+                    </button>
+                    <a href="{{ url_for('download_bedding_template') }}" class="btn btn-secondary">
+                        <i class="fas fa-file-excel me-1"></i>Template
+                    </a>
+                    <a href="{{ url_for('export_bedding_items') }}" class="btn btn-success">
+                        <i class="fas fa-download me-1"></i>Export
+                    </a>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-2">
+                    <div class="card text-center bg-primary text-white">
+                        <div class="card-body py-3">
+                            <h5 class="card-title mb-1">{{ stats.total }}</h5>
+                            <p class="card-text small">Total Items</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card text-center bg-success text-white">
+                        <div class="card-body py-3">
+                            <h5 class="card-title mb-1">{{ stats.in_store }}</h5>
+                            <p class="card-text small">In Store</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card text-center bg-info text-white">
+                        <div class="card-body py-3">
+                            <h5 class="card-title mb-1">{{ stats.in_room }}</h5>
+                            <p class="card-text small">In Room</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card text-center bg-warning text-white">
+                        <div class="card-body py-3">
+                            <h5 class="card-title mb-1">{{ stats.damaged }}</h5>
+                            <p class="card-text small">Damaged</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card text-center bg-secondary text-white">
+                        <div class="card-body py-3">
+                            <h5 class="card-title mb-1">{{ stats.others }}</h5>
+                            <p class="card-text small">Others</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">Search</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search_query }}" placeholder="Serial number, item name, room, resident...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">All Categories</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" {% if category_filter == category.id|string %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Status</option>
+                                <option value="In Store" {% if status_filter == 'In Store' %}selected{% endif %}>In Store</option>
+                                <option value="In Room" {% if status_filter == 'In Room' %}selected{% endif %}>In Room</option>
+                                <option value="Damaged" {% if status_filter == 'Damaged' %}selected{% endif %}>Damaged</option>
+                                <option value="Others" {% if status_filter == 'Others' %}selected{% endif %}>Others</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <div class="d-flex gap-2 w-100">
+                                <button type="submit" class="btn btn-primary flex-fill">
+                                    <i class="fas fa-search me-1"></i>Filter
+                                </button>
+                                <a href="{{ url_for('bedding_items') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Items Table -->
+            <div class="card">
+                <div class="card-body">
+                    {% if items.items %}
+                    <!-- Bulk Actions Bar -->
+                    <div class="d-flex justify-content-between align-items-center mb-3" id="bulkActionsBar" style="display: none !important;">
+                        <div>
+                            <span id="selectedCount">0</span> items selected
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmBulkDelete()">
+                                <i class="fas fa-trash me-1"></i>Delete Selected
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">
+                                <i class="fas fa-times me-1"></i>Clear Selection
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="50">
+                                        <input type="checkbox" id="selectAll" class="form-check-input" onclick="toggleSelectAll()">
+                                    </th>
+                                    <th>Serial Number</th>
+                                    <th>Item Name</th>
+                                    <th>Category</th>
+                                    <th>Status</th>
+                                    <th>Room</th>
+                                    <th>Resident</th>
+                                    <th>Company</th>
+                                    <th>Condition</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items.items %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input item-checkbox" 
+                                               value="{{ item.id }}" onclick="updateBulkActions()">
+                                    </td>
+                                    <td><strong>{{ item.serial_number }}</strong></td>
+                                    <td>{{ item.item_name }}</td>
+                                    <td>{{ item.category.name if item.category else 'N/A' }}</td>
+                                    <td>
+                                        {% if item.status == 'In Store' %}
+                                        <span class="badge bg-success">{{ item.status }}</span>
+                                        {% elif item.status == 'In Room' %}
+                                        <span class="badge bg-info">{{ item.status }}</span>
+                                        {% elif item.status == 'Damaged' %}
+                                        <span class="badge bg-warning">{{ item.status }}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ item.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.room_number or '-' }}</td>
+                                    <td>{{ item.resident_name or '-' }}</td>
+                                    <td>{{ item.company_name or '-' }}</td>
+                                    <td>
+                                        {% if item.condition == 'Excellent' %}
+                                        <span class="badge bg-success">{{ item.condition }}</span>
+                                        {% elif item.condition == 'Good' %}
+                                        <span class="badge bg-primary">{{ item.condition }}</span>
+                                        {% elif item.condition == 'Fair' %}
+                                        <span class="badge bg-warning">{{ item.condition }}</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">{{ item.condition }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                    onclick="viewItem({{ item.id }})" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <a href="{{ url_for('edit_bedding_item', item_id=item.id) }}" 
+                                               class="btn btn-sm btn-outline-warning" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-success" 
+                                                    onclick="addMovement({{ item.id }})" title="Add Movement">
+                                                <i class="fas fa-exchange-alt"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    onclick="confirmDelete({{ item.id }}, '{{ item.serial_number }}', '{{ item.item_name }}')" title="Delete Item">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if items.pages > 1 %}
+                    <nav aria-label="Page navigation" class="mt-3">
+                        <ul class="pagination justify-content-center">
+                            {% if items.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('bedding_items', page=items.prev_num, 
+                                   search=search_query, category=category_filter, status=status_filter) }}">Previous</a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in items.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != items.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('bedding_items', page=page_num, 
+                                           search=search_query, category=category_filter, status=status_filter) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">…</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if items.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('bedding_items', page=items.next_num, 
+                                   search=search_query, category=category_filter, status=status_filter) }}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-bed fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No bedding items found</h5>
+                        <p class="text-muted">Add your first bedding item to get started.</p>
+                        <a href="{{ url_for('add_bedding_item') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Add Bedding Item
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Item Modal -->
+<div class="modal fade" id="viewItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bedding Item Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="itemDetails">
+                <!-- Item details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Movement Modal -->
+<div class="modal fade" id="movementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Movement Record</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="movementForm">
+                <div class="modal-body">
+                    <input type="hidden" id="movement_item_id" name="item_id">
+                    
+                    <div class="mb-3">
+                        <label for="movement_type" class="form-label">Movement Type</label>
+                        <select class="form-select" id="movement_type" name="movement_type" required>
+                            <option value="">Select movement type...</option>
+                            <option value="Assignment">Assignment</option>
+                            <option value="Return">Return</option>
+                            <option value="Transfer">Transfer</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Disposal">Disposal</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="to_status" class="form-label">New Status</label>
+                        <select class="form-select" id="to_status" name="to_status" required>
+                            <option value="In Store">In Store</option>
+                            <option value="In Room">In Room</option>
+                            <option value="Damaged">Damaged</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="room_field">
+                        <label for="to_room" class="form-label">Room Number</label>
+                        <input type="text" class="form-control" id="to_room" name="to_room">
+                    </div>
+                    
+                    <div class="mb-3" id="resident_field">
+                        <label for="to_resident" class="form-label">Resident Name</label>
+                        <input type="text" class="form-control" id="to_resident" name="to_resident">
+                    </div>
+                    
+                    <div class="mb-3" id="company_field">
+                        <label for="to_company" class="form-label">Company Name</label>
+                        <input type="text" class="form-control" id="to_company" name="to_company">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason</label>
+                        <input type="text" class="form-control" id="reason" name="reason" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Movement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewItem(itemId) {
+    fetch(`/bedding-items/${itemId}/movements`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let html = `
+                    <h6 class="mb-3">Movement History</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Reason</th>
+                                    <th>By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.movements.forEach(movement => {
+                    html += `
+                        <tr>
+                            <td>${movement.movement_date}</td>
+                            <td>${movement.movement_type}</td>
+                            <td>${movement.from_status || '-'} ${movement.from_room ? `(${movement.from_room})` : ''}</td>
+                            <td>${movement.to_status || '-'} ${movement.to_room ? `(${movement.to_room})` : ''}</td>
+                            <td>${movement.reason}</td>
+                            <td>${movement.processed_by}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                document.getElementById('itemDetails').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('viewItemModal')).show();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading item details');
+        });
+}
+
+function addMovement(itemId) {
+    document.getElementById('movement_item_id').value = itemId;
+    new bootstrap.Modal(document.getElementById('movementModal')).show();
+}
+
+// Handle status change to show/hide fields
+document.getElementById('to_status').addEventListener('change', function() {
+    const status = this.value;
+    const roomField = document.getElementById('room_field');
+    const residentField = document.getElementById('resident_field');
+    const companyField = document.getElementById('company_field');
+    
+    if (status === 'In Room') {
+        roomField.style.display = 'block';
+        residentField.style.display = 'block';
+        companyField.style.display = 'block';
+        document.getElementById('to_room').required = true;
+        document.getElementById('to_resident').required = true;
+    } else {
+        roomField.style.display = 'none';
+        residentField.style.display = 'none';
+        companyField.style.display = 'none';
+        document.getElementById('to_room').required = false;
+        document.getElementById('to_resident').required = false;
+        document.getElementById('to_room').value = '';
+        document.getElementById('to_resident').value = '';
+        document.getElementById('to_company').value = '';
+    }
+});
+
+// Handle movement form submission
+document.getElementById('movementForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const itemId = document.getElementById('movement_item_id').value;
+    
+    fetch(`/bedding-items/${itemId}/movement`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Movement recorded successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error recording movement');
+    });
+});
+
+function confirmDelete(itemId, serialNumber, itemName) {
+    if (confirm(`Are you sure you want to delete this bedding item?\n\nSerial Number: ${serialNumber}\nItem Name: ${itemName}\n\nThis action cannot be undone.`)) {
+        deleteItem(itemId);
+    }
+}
+
+function deleteItem(itemId) {
+    fetch(`/delete_bedding_item/${itemId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Bedding item deleted successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting item');
+    });
+}
+
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    
+    if (checkedBoxes.length > 0) {
+        bulkActionsBar.style.display = 'flex';
+        selectedCountSpan.textContent = checkedBoxes.length;
+    } else {
+        bulkActionsBar.style.display = 'none';
+    }
+    
+    // Update select all checkbox state
+    const allCheckboxes = document.querySelectorAll('.item-checkbox');
+    if (checkedBoxes.length === allCheckboxes.length && allCheckboxes.length > 0) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else if (checkedBoxes.length > 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    }
+}
+
+function clearSelection() {
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.indeterminate = false;
+    
+    updateBulkActions();
+}
+
+function confirmBulkDelete() {
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+    const itemIds = Array.from(checkedBoxes).map(cb => cb.value);
+    
+    if (itemIds.length === 0) {
+        alert('Please select items to delete');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to delete ${itemIds.length} bedding item(s)?\n\nThis action cannot be undone.`)) {
+        bulkDeleteItems(itemIds);
+    }
+}
+
+function bulkDeleteItems(itemIds) {
+    fetch('/bulk_delete_bedding_items', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ item_ids: itemIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Successfully deleted ${data.deleted_count} bedding item(s)`);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting items');
+    });
+}
+
+function handleBulkUpload() {
+    const fileInput = document.getElementById('bulkUploadFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a file to upload');
+        return;
+    }
+    
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        alert('Please select an Excel file (.xlsx or .xls)');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Show loading state
+    const uploadBtn = document.getElementById('uploadBtn');
+    const originalText = uploadBtn.innerHTML;
+    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    uploadBtn.disabled = true;
+    
+    fetch('/bulk_upload_bedding_items', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        uploadBtn.innerHTML = originalText;
+        uploadBtn.disabled = false;
+        
+        if (data.success) {
+            document.getElementById('uploadResults').innerHTML = `
+                <div class="alert alert-success">
+                    <h6>Upload Complete!</h6>
+                    <p>${data.message}</p>
+                    <p><strong>Imported:</strong> ${data.imported} out of ${data.total_rows} rows</p>
+                    ${data.errors.length > 0 ? '<p><strong>Errors:</strong></p><ul>' + data.errors.map(e => '<li>' + e + '</li>').join('') + '</ul>' : ''}
+                </div>
+            `;
+            
+            // Close modal and refresh page after 3 seconds if successful
+            if (data.imported > 0) {
+                setTimeout(() => {
+                    bootstrap.Modal.getInstance(document.getElementById('bulkUploadModal')).hide();
+                    location.reload();
+                }, 3000);
+            }
+        } else {
+            document.getElementById('uploadResults').innerHTML = `
+                <div class="alert alert-danger">
+                    <h6>Upload Failed</h6>
+                    <p>${data.error}</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        uploadBtn.innerHTML = originalText;
+        uploadBtn.disabled = false;
+        console.error('Error:', error);
+        document.getElementById('uploadResults').innerHTML = `
+            <div class="alert alert-danger">
+                <h6>Upload Error</h6>
+                <p>An error occurred while uploading the file. Please try again.</p>
+            </div>
+        `;
+    });
+}
+
+// Reset upload modal when closed
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('bulkUploadModal');
+    if (modal) {
+        modal.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('bulkUploadFile').value = '';
+            document.getElementById('uploadResults').innerHTML = '';
+        });
+    }
+});
+</script>
+
+<!-- Bulk Upload Modal -->
+<div class="modal fade" id="bulkUploadModal" tabindex="-1" aria-labelledby="bulkUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkUploadModalLabel">
+                    <i class="fas fa-upload me-2"></i>Bulk Upload Bedding Items
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <h6>Instructions:</h6>
+                    <ol>
+                        <li>Download the Excel template using the "Template" button</li>
+                        <li>Fill in your bedding items data following the format</li>
+                        <li>Make sure serial numbers are unique</li>
+                        <li>Categories must match existing categories in your system</li>
+                        <li>Save the file and upload it below</li>
+                        <li>Review the results and any error messages</li>
+                    </ol>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex gap-2 mb-3">
+                        <a href="{{ url_for('download_bedding_template') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-download me-2"></i>Download Template
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="bulkUploadFile" class="form-label">Select Excel File:</label>
+                    <input type="file" class="form-control" id="bulkUploadFile" accept=".xlsx,.xls">
+                    <div class="form-text">Supported formats: .xlsx, .xls</div>
+                </div>
+                
+                <div id="uploadResults"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="uploadBtn" onclick="handleBulkUpload()">
+                    <i class="fas fa-upload me-2"></i>Upload File
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

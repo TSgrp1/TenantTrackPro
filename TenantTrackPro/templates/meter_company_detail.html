@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ company.company_name }} - Company Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-building me-2"></i>{{ company.company_name }}</h2>
+                    <p class="text-muted">Company Details & Room Management</p>
+                </div>
+                <a href="{{ url_for('meter_readings') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Pioneer Utility
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Company Information -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Company Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Company Name:</strong> {{ company.company_name }}</p>
+                    <p><strong>Created:</strong> {{ company.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Total Rooms:</strong> {{ rooms|length }}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge bg-success">Active</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New Room -->
+    {% if can_user_create(current_user, 'meter_reading') %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Add Room Number</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('add_meter_room', company_id=company.id) }}">
+                <div class="row align-items-end">
+    {% else %}
+    <div class="card mb-4 border-secondary">
+        <div class="card-header bg-light">
+            <h5 class="mb-0 text-muted"><i class="fas fa-eye me-2"></i>View Only Access</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i>You have view-only access and cannot add new rooms.
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4" style="display: none;">
+        <div class="card-body">
+            <form>
+                <div class="row align-items-end">
+    {% endif %}
+                    <div class="col-md-8">
+                        <label for="room_number" class="form-label">Room Number</label>
+                        
+                        <!-- Room Number Input Options -->
+                        <div class="input-group">
+                            <select class="form-select" id="roomNumberSelect" onchange="handleRoomSelection()">
+                                <option value="">Select from existing rooms</option>
+                                <option value="custom">+ Enter Custom Room Number</option>
+                                {% for room in available_rooms %}
+                                    <option value="{{ room.room_number }}">{{ room.room_number }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" class="form-control" id="room_number" name="room_number" 
+                                   placeholder="Enter room number (e.g., 80-01-001)" style="display: none;" required>
+                            <button type="button" class="btn btn-outline-secondary" id="backToDropdown" 
+                                    onclick="switchBackToDropdown()" style="display: none;">
+                                Back to List
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add Room
+                            </button>
+                            <button type="button" class="btn btn-success" id="bulkAddBtn" onclick="bulkAddAllRooms()">
+                                <i class="fas fa-building me-2"></i>Bulk Add All Rooms (304)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Rooms List -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-door-open me-2"></i>Room Numbers ({{ rooms|length }})</h5>
+        </div>
+        <div class="card-body">
+            {% if rooms %}
+            <div class="row">
+                {% for room in rooms %}
+                <div class="col-md-4 col-lg-3 mb-3">
+                    <div class="card border-info h-100">
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title text-center">
+                                <i class="fas fa-door-open me-2"></i>{{ room.room_number }}
+                            </h6>
+                            <p class="card-text text-muted text-center small">
+                                Added: {{ room.created_at.strftime('%Y-%m-%d') }}
+                            </p>
+                            <div class="mt-auto">
+                                <div class="d-flex gap-2">
+                                    <a href="{{ url_for('meter_room_detail', room_id=room.id) }}" 
+                                       class="btn btn-outline-primary btn-sm flex-grow-1">
+                                        <i class="fas fa-tachometer-alt me-1"></i>Manage Meters
+                                    </a>
+                                    {% if can_user_create(current_user, 'meter_reading') %}
+                                    <button type="button" 
+                                            class="btn btn-outline-danger btn-sm" 
+                                            onclick="deleteRoom({{ room.id }}, '{{ room.room_number }}')"
+                                            title="Delete Room">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-door-open fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No rooms added yet</h5>
+                <p class="text-muted">Add room numbers to start managing meter readings for this company.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Next Steps</h6>
+        </div>
+        <div class="card-body">
+            <ol class="mb-0">
+                <li><strong>Add Room Numbers:</strong> Use the form above to add all room numbers for this company</li>
+                <li><strong>Manage Meters:</strong> Click "Manage Meters" for each room to add water and electricity readings</li>
+                <li><strong>Record Readings:</strong> Enter start/end dates and meter readings for consumption tracking</li>
+                <li><strong>Generate Reports:</strong> Use the main meter readings page to view and export data</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<script>
+function handleRoomSelection() {
+    const select = document.getElementById('roomNumberSelect');
+    const input = document.getElementById('room_number');
+    const backBtn = document.getElementById('backToDropdown');
+    
+    if (select.value === 'custom') {
+        select.style.display = 'none';
+        input.style.display = 'block';
+        backBtn.style.display = 'block';
+        input.focus();
+        input.value = '';
+    } else if (select.value) {
+        input.value = select.value;
+    }
+}
+
+function switchBackToDropdown() {
+    const select = document.getElementById('roomNumberSelect');
+    const input = document.getElementById('room_number');
+    const backBtn = document.getElementById('backToDropdown');
+    
+    select.style.display = 'block';
+    input.style.display = 'none';
+    backBtn.style.display = 'none';
+    select.value = '';
+    input.value = '';
+}
+
+function bulkAddAllRooms() {
+    console.log('bulkAddAllRooms function called');
+    
+    if (confirm('This will add all 304 room numbers to {{ company.company_name }}. Continue?')) {
+        console.log('User confirmed bulk add');
+        
+        // Show loading state
+        const button = document.getElementById('bulkAddBtn');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Adding Rooms...';
+        button.disabled = true;
+        
+        // Create a form and submit it
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("bulk_add_meter_rooms", company_id=company.id) }}';
+        
+        console.log('Form action:', form.action);
+        
+        document.body.appendChild(form);
+        form.submit();
+    } else {
+        console.log('User cancelled bulk add');
+    }
+}
+
+// Auto-focus on dropdown and test bulk button
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded, testing bulk add button');
+    document.getElementById('roomNumberSelect').focus();
+    
+    // Test if bulk button exists
+    const bulkBtn = document.getElementById('bulkAddBtn');
+    if (bulkBtn) {
+        console.log('Bulk add button found');
+        bulkBtn.addEventListener('click', function() {
+            console.log('Bulk button clicked via event listener');
+        });
+    } else {
+        console.log('Bulk add button NOT found');
+    }
+});
+
+// Form validation for room number
+document.querySelector('form').addEventListener('submit', function(e) {
+    const roomNumber = document.getElementById('room_number').value.trim();
+    
+    if (!roomNumber) {
+        e.preventDefault();
+        alert('Please select or enter a room number');
+        const select = document.getElementById('roomNumberSelect');
+        if (select.style.display !== 'none') {
+            select.focus();
+        } else {
+            document.getElementById('room_number').focus();
+        }
+        return;
+    }
+    
+    if (roomNumber.length < 1) {
+        e.preventDefault();
+        alert('Room number cannot be empty');
+        document.getElementById('room_number').focus();
+        return;
+    }
+});
+
+function deleteRoom(roomId, roomNumber) {
+    if (confirm(`Are you sure you want to delete room "${roomNumber}"?\n\nThis will permanently remove the room and all its meter readings. This action cannot be undone.`)) {
+        fetch(`/meter-readings/room/${roomId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Error deleting room. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting room. Please try again.');
+        });
+    }
+}
+</script>
+{% endblock %}

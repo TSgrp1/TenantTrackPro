@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-box"></i> Asset Management</h2>
+                <div class="btn-group">
+                    {% if can_user_create(current_user, 'asset_management') %}
+                    <a href="{{ url_for('create_asset_name') }}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Create Asset Name
+                    </a>
+                    {% else %}
+                    <button class="btn btn-secondary" disabled title="View-only access - cannot create assets">
+                        <i class="fas fa-eye"></i> View Only
+                    </button>
+                    {% endif %}
+                    <a href="{{ url_for('store_assets') }}" class="btn btn-warning">
+                        <i class="fas fa-warehouse"></i> Store ({{ status_counts.Store }})
+                    </a>
+                    <a href="{{ url_for('damage_assets') }}" class="btn btn-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Damage ({{ status_counts.Damage }})
+                    </a>
+                </div>
+            </div>
+
+            <!-- Serial Number Search -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <form method="GET" class="d-flex">
+                        <input type="text" name="serial" class="form-control" 
+                               placeholder="Search by Serial Number..." 
+                               value="{{ serial_search or '' }}">
+                        <input type="hidden" name="search" value="{{ search_query or '' }}">
+                        <input type="hidden" name="status" value="{{ status_filter or '' }}">
+                        <button type="submit" class="btn btn-primary ms-2">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                        {% if serial_search %}
+                        <a href="{{ url_for('asset_management') }}" class="btn btn-secondary ms-2">
+                            <i class="fas fa-times"></i> Clear
+                        </a>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <form method="GET" class="d-flex">
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="Search assets..." 
+                               value="{{ search_query or '' }}">
+                        <input type="hidden" name="serial" value="{{ serial_search or '' }}">
+                        <input type="hidden" name="status" value="{{ status_filter or '' }}">
+                        <button type="submit" class="btn btn-outline-primary ms-2">Filter</button>
+                    </form>
+                </div>
+                <div class="col-md-4">
+                    <form method="GET">
+                        <select name="status" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Status</option>
+                            <option value="Room" {% if status_filter == 'Room' %}selected{% endif %}>
+                                Room ({{ status_counts.Room }})
+                            </option>
+                            <option value="Store" {% if status_filter == 'Store' %}selected{% endif %}>
+                                Store ({{ status_counts.Store }})
+                            </option>
+                            <option value="Damage" {% if status_filter == 'Damage' %}selected{% endif %}>
+                                Damage ({{ status_counts.Damage }})
+                            </option>
+                        </select>
+                        <input type="hidden" name="search" value="{{ search_query or '' }}">
+                        <input type="hidden" name="serial" value="{{ serial_search or '' }}">
+                    </form>
+                </div>
+            </div>
+
+            <!-- Status Count Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h3 class="card-title">{{ status_counts.Room }}</h3>
+                            <p class="card-text">In Room</p>
+                            <a href="{{ url_for('asset_management', status='Room') }}" class="btn btn-light btn-sm">View All</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <h3 class="card-title">{{ status_counts.Store }}</h3>
+                            <p class="card-text">In Store</p>
+                            <a href="{{ url_for('store_assets') }}" class="btn btn-dark btn-sm">View All</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h3 class="card-title">{{ status_counts.Damage }}</h3>
+                            <p class="card-text">Damaged</p>
+                            <a href="{{ url_for('damage_assets') }}" class="btn btn-light btn-sm">View All</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Asset Names Navigation -->
+            {% if asset_names %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h4>Asset Categories</h4>
+                    <div class="row">
+                        {% for asset_name in asset_names %}
+                        <div class="col-md-3 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ asset_name.name }}</h6>
+                                    <p class="card-text text-muted">{{ asset_name.category }}</p>
+                                    <p class="card-text">
+                                        <small class="text-muted">{{ asset_name.assets|length }} items</small>
+                                    </p>
+                                    <a href="{{ url_for('asset_name_details', asset_name_id=asset_name.id) }}" 
+                                       class="btn btn-primary btn-sm">View Assets</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Assets Table -->
+            {% if assets.items %}
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Assets List</h5>
+                    <div class="bulk-actions" style="display: none;">
+                        <button type="button" class="btn btn-success btn-sm me-2" onclick="exportSelected()">
+                            <i class="fas fa-download"></i> Export Selected
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteSelected()">
+                            <i class="fas fa-trash"></i> Delete Selected
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAll" class="form-check-input">
+                                    </th>
+                                    <th>S.No</th>
+                                    <th>Asset Name</th>
+                                    <th>Category</th>
+                                    <th>Serial Number</th>
+                                    <th>Room Number</th>
+                                    <th>Status</th>
+                                    <th>Quantity</th>
+                                    <th>Date Added</th>
+                                    <th>Last Edit</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asset in assets.items %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input asset-checkbox" 
+                                               value="{{ asset.id }}" data-serial="{{ asset.serial_number }}">
+                                    </td>
+                                    <td>{{ (assets.page - 1) * assets.per_page + loop.index }}</td>
+                                    <td>{{ asset.asset_name_ref.name }}</td>
+                                    <td>{{ asset.asset_name_ref.category }}</td>
+                                    <td><strong>{{ asset.serial_number }}</strong></td>
+                                    <td>{{ asset.room_number or '-' }}</td>
+                                    <td>
+                                        <select class="form-select form-select-sm status-select" 
+                                                data-asset-id="{{ asset.id }}">
+                                            <option value="Room" {% if asset.status == 'Room' %}selected{% endif %}>
+                                                Room
+                                            </option>
+                                            <option value="Store" {% if asset.status == 'Store' %}selected{% endif %}>
+                                                Store
+                                            </option>
+
+                                            <option value="Damage" {% if asset.status == 'Damage' %}selected{% endif %}>
+                                                Damage
+                                            </option>
+                                            <option value="Dispose" {% if asset.status == 'Dispose' %}selected{% endif %}>
+                                                Dispose
+                                            </option>
+                                            <option value="Other" {% if asset.status == 'Other' %}selected{% endif %}>
+                                                Other
+                                            </option>
+                                        </select>
+                                    </td>
+                                    <td>{{ asset.quantity }}</td>
+                                    <td>{{ asset.date_added.strftime('%Y-%m-%d') if asset.date_added else '-' }}</td>
+                                    <td>{{ asset.last_edited.strftime('%Y-%m-%d %H:%M') if asset.last_edited else '-' }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('edit_asset_item', asset_id=asset.id) }}" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('delete_asset_item', asset_id=asset.id) }}" 
+                                                  style="display: inline;" onsubmit="return confirm('Delete this asset?')">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if assets.pages > 1 %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if assets.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('asset_management', page=assets.prev_num, search=search_query, status=status_filter, serial=serial_search) }}">Previous</a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in assets.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != assets.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('asset_management', page=page_num, search=search_query, status=status_filter, serial=serial_search) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if assets.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('asset_management', page=assets.next_num, search=search_query, status=status_filter, serial=serial_search) }}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <h4><i class="fas fa-info-circle"></i> No Assets Found</h4>
+                <p>No assets match your search criteria. Try adjusting your filters or create a new asset name to get started.</p>
+                <a href="{{ url_for('create_asset_name') }}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Create Asset Name
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle status updates via AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.status-select').forEach(function(select) {
+        select.addEventListener('change', function() {
+            const assetId = this.getAttribute('data-asset-id');
+            const newStatus = this.value;
+            
+            fetch(`/asset-management/update-status/${assetId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: newStatus
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update status badge color
+                    this.className = `form-select form-select-sm status-select`;
+                    // Optional: show success message
+                    console.log('Status updated successfully');
+                } else {
+                    alert('Error updating status: ' + data.message);
+                    // Revert selection
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating status');
+                location.reload();
+            });
+        });
+    });
+
+    // Bulk operations functionality
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const assetCheckboxes = document.querySelectorAll('.asset-checkbox');
+    const bulkActions = document.querySelector('.bulk-actions');
+
+    // Handle select all checkbox
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            assetCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            toggleBulkActions();
+        });
+    }
+
+    // Handle individual checkboxes
+    assetCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectAllState();
+            toggleBulkActions();
+        });
+    });
+
+    function updateSelectAllState() {
+        const checkedCount = document.querySelectorAll('.asset-checkbox:checked').length;
+        const totalCount = assetCheckboxes.length;
+        
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = checkedCount === totalCount;
+            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < totalCount;
+        }
+    }
+
+    function toggleBulkActions() {
+        const checkedCount = document.querySelectorAll('.asset-checkbox:checked').length;
+        if (bulkActions) {
+            bulkActions.style.display = checkedCount > 0 ? 'block' : 'none';
+        }
+    }
+});
+
+// Export selected assets
+function exportSelected() {
+    const selectedIds = getSelectedAssetIds();
+    if (selectedIds.length === 0) {
+        alert('Please select at least one asset to export.');
+        return;
+    }
+    
+    // Create form and submit for export
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url_for("bulk_export_assets") }}';
+    
+    selectedIds.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'asset_ids';
+        input.value = id;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+// Delete selected assets
+function deleteSelected() {
+    const selectedIds = getSelectedAssetIds();
+    if (selectedIds.length === 0) {
+        alert('Please select at least one asset to delete.');
+        return;
+    }
+    
+    const selectedSerials = [];
+    document.querySelectorAll('.asset-checkbox:checked').forEach(checkbox => {
+        selectedSerials.push(checkbox.getAttribute('data-serial'));
+    });
+    
+    if (confirm(`Are you sure you want to delete ${selectedIds.length} selected assets?\n\nSerial Numbers: ${selectedSerials.join(', ')}\n\nThis action cannot be undone.`)) {
+        // Create form and submit for deletion
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("bulk_delete_assets") }}';
+        
+        selectedIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'asset_ids';
+            input.value = id;
+            form.appendChild(input);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    }
+}
+
+// Get selected asset IDs
+function getSelectedAssetIds() {
+    const selectedIds = [];
+    document.querySelectorAll('.asset-checkbox:checked').forEach(checkbox => {
+        selectedIds.push(checkbox.value);
+    });
+    return selectedIds;
+}
+</script>
+{% endblock %}

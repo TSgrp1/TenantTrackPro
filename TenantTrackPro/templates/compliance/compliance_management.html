@@ -1,0 +1,719 @@
+{% extends "base.html" %}
+
+{% block title %}Multilingual Compliance Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-shield-alt me-2"></i>Multilingual Compliance Records</h1>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createComplianceModal">
+                    <i class="fas fa-plus me-2"></i>Create New Compliance Record
+                </button>
+            </div>
+
+            <!-- Language Filter Tabs -->
+            <ul class="nav nav-tabs mb-3" id="languageFilterTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-records" type="button">
+                        <i class="fas fa-globe me-1"></i>All Languages
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="english-filter-tab" data-bs-toggle="tab" data-bs-target="#english-records" type="button">
+                        <i class="fas fa-flag me-1"></i>English
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="bengali-filter-tab" data-bs-toggle="tab" data-bs-target="#bengali-records" type="button">
+                        <i class="fas fa-flag me-1"></i>বাংলা (Bengali)
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="myanmar-filter-tab" data-bs-toggle="tab" data-bs-target="#myanmar-records" type="button">
+                        <i class="fas fa-flag me-1"></i>မြန်မာ (Myanmar)
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tamil-filter-tab" data-bs-toggle="tab" data-bs-target="#tamil-records" type="button">
+                        <i class="fas fa-flag me-1"></i>தமிழ் (Tamil)
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="chinese-filter-tab" data-bs-toggle="tab" data-bs-target="#chinese-records" type="button">
+                        <i class="fas fa-flag me-1"></i>中文 (Chinese)
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Compliance Records Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white text-center">
+                        <div class="card-body">
+                            <h3 class="mb-1">{{ compliance_records|length }}</h3>
+                            <p class="mb-0 small">Total Records</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white text-center">
+                        <div class="card-body">
+                            <h3 class="mb-1">{{ compliance_records|selectattr('status', 'equalto', 'Active')|list|length }}</h3>
+                            <p class="mb-0 small">Active Records</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white text-center">
+                        <div class="card-body">
+                            <h3 class="mb-1">{{ compliance_records|selectattr('requires_acknowledgment', 'equalto', True)|list|length }}</h3>
+                            <p class="mb-0 small">Require Acknowledgment</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white text-center">
+                        <div class="card-body">
+                            <h3 class="mb-1">5</h3>
+                            <p class="mb-0 small">Supported Languages</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="languageFilterTabContent">
+                <!-- All Records Tab -->
+                <div class="tab-pane fade show active" id="all-records" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">All Compliance Records</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if compliance_records %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Record #</th>
+                                                <th>Title</th>
+                                                <th>Language</th>
+                                                <th>Type</th>
+                                                <th>Category</th>
+                                                <th>Priority</th>
+                                                <th>Status</th>
+                                                <th>Effective Date</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for record in compliance_records %}
+                                            <tr>
+                                                <td><code>{{ record.record_number }}</code></td>
+                                                <td>
+                                                    <strong>{{ record.title }}</strong>
+                                                    {% if record.requires_acknowledgment %}
+                                                        <span class="badge bg-warning ms-1">ACK Required</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="badge 
+                                                        {% if record.language_code == 'en' %}bg-primary
+                                                        {% elif record.language_code == 'bn' %}bg-success
+                                                        {% elif record.language_code == 'my' %}bg-info
+                                                        {% elif record.language_code == 'ta' %}bg-warning
+                                                        {% elif record.language_code == 'zh' %}bg-danger
+                                                        {% else %}bg-secondary
+                                                        {% endif %}">
+                                                        {% if record.language_code == 'en' %}English
+                                                        {% elif record.language_code == 'bn' %}বাংলা
+                                                        {% elif record.language_code == 'my' %}မြန်မာ
+                                                        {% elif record.language_code == 'ta' %}தமிழ்
+                                                        {% elif record.language_code == 'zh' %}中文
+                                                        {% else %}{{ record.language_code.upper() }}
+                                                        {% endif %}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-info">{{ record.record_type.title() }}</span>
+                                                </td>
+                                                <td>{{ record.compliance_category }}</td>
+                                                <td>
+                                                    <span class="badge 
+                                                        {% if record.priority_level == 'High' %}bg-danger
+                                                        {% elif record.priority_level == 'Medium' %}bg-warning
+                                                        {% else %}bg-secondary
+                                                        {% endif %}">
+                                                        {{ record.priority_level }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge 
+                                                        {% if record.status == 'Active' %}bg-success
+                                                        {% elif record.status == 'Under Review' %}bg-warning
+                                                        {% elif record.status == 'Archived' %}bg-secondary
+                                                        {% else %}bg-dark
+                                                        {% endif %}">
+                                                        {{ record.status }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ record.effective_date.strftime('%Y-%m-%d') if record.effective_date else 'N/A' }}</td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="viewComplianceRecord({{ record.id }})">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-success" onclick="editComplianceRecord({{ record.id }})">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        {% if record.requires_acknowledgment %}
+                                                        <button type="button" class="btn btn-sm btn-outline-info" onclick="viewAcknowledgments({{ record.id }})">
+                                                            <i class="fas fa-check-circle"></i>
+                                                        </button>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-shield-alt fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No Compliance Records Found</h5>
+                                    <p class="text-muted">Create your first multilingual compliance record to get started.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Language-specific tabs (content will be filtered by JavaScript) -->
+                {% for lang_code, lang_name in [('en', 'English'), ('bn', 'Bengali'), ('my', 'Myanmar'), ('ta', 'Tamil'), ('zh', 'Chinese')] %}
+                <div class="tab-pane fade" id="{{ lang_code }}-records" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">{{ lang_name }} Compliance Records</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="compliance-records-container" data-language="{{ lang_code }}">
+                                <!-- Language-specific records will be loaded here by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Compliance Record Modal -->
+<div class="modal fade" id="createComplianceModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Multilingual Compliance Record</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="complianceForm" action="{{ url_for('create_compliance_record') }}" method="post" enctype="multipart/form-data">
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="record_type" class="form-label">Record Type *</label>
+                            <select class="form-select" id="record_type" name="record_type" required>
+                                <option value="">Select Type</option>
+                                <option value="regulations">Dormitory Regulations</option>
+                                <option value="safety">Safety Protocols</option>
+                                <option value="conduct">Conduct Guidelines</option>
+                                <option value="maintenance">Maintenance Rules</option>
+                                <option value="inspection">Inspection Requirements</option>
+                                <option value="emergency">Emergency Procedures</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="compliance_category" class="form-label">Category *</label>
+                            <input type="text" class="form-control" id="compliance_category" name="compliance_category" 
+                                   placeholder="e.g., House Rules, Fire Safety, Cleanliness Standards" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="priority_level" class="form-label">Priority Level *</label>
+                            <select class="form-select" id="priority_level" name="priority_level" required>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                                <option value="Low">Low</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="effective_date" class="form-label">Effective Date *</label>
+                            <input type="date" class="form-control" id="effective_date" name="effective_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="expiry_date" class="form-label">Expiry Date</label>
+                            <input type="date" class="form-control" id="expiry_date" name="expiry_date">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="requires_acknowledgment" name="requires_acknowledgment" checked>
+                                <label class="form-check-label" for="requires_acknowledgment">
+                                    Requires User Acknowledgment
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Language Tabs for Content -->
+                    <ul class="nav nav-tabs mb-3" id="complianceLanguageTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="en-content-tab" data-bs-toggle="tab" data-bs-target="#en-content" type="button">
+                                <i class="fas fa-flag me-1"></i>English *
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="bn-content-tab" data-bs-toggle="tab" data-bs-target="#bn-content" type="button">
+                                <i class="fas fa-flag me-1"></i>বাংলা (Bengali)
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="my-content-tab" data-bs-toggle="tab" data-bs-target="#my-content" type="button">
+                                <i class="fas fa-flag me-1"></i>မြန်မာ (Myanmar)
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="ta-content-tab" data-bs-toggle="tab" data-bs-target="#ta-content" type="button">
+                                <i class="fas fa-flag me-1"></i>தமிழ் (Tamil)
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="zh-content-tab" data-bs-toggle="tab" data-bs-target="#zh-content" type="button">
+                                <i class="fas fa-flag me-1"></i>中文 (Chinese)
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Language Content Tabs -->
+                    <div class="tab-content" id="complianceLanguageContent">
+                        <!-- English Content -->
+                        <div class="tab-pane fade show active" id="en-content" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="title_en" class="form-label">Title (English) *</label>
+                                <input type="text" class="form-control" id="title_en" name="title_en" 
+                                       placeholder="Enter compliance record title in English" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="description_en" class="form-label">Description (English) *</label>
+                                <textarea class="form-control" id="description_en" name="description_en" rows="4" 
+                                          placeholder="Brief description of the compliance requirement" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="detailed_instructions_en" class="form-label">Detailed Instructions (English)</label>
+                                <textarea class="form-control" id="detailed_instructions_en" name="detailed_instructions_en" rows="6" 
+                                          placeholder="Detailed instructions and guidelines"></textarea>
+                            </div>
+                            
+                            <!-- Content Input Options -->
+                            <div class="mb-3">
+                                <label class="form-label">Text Input</label>
+                                <textarea class="form-control" name="content_text_en" id="content_text_en" rows="4" 
+                                          placeholder="Enter detailed regulations and instructions in English..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">PDF Upload</label>
+                                <input type="file" class="form-control" name="pdf_file_en" id="pdf_file_en" accept=".pdf">
+                                <div class="form-text">Maximum file size: 10MB. Only PDF files are allowed.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Image Uploads (3 images)</label>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_1_en" accept="image/*">
+                                        <div class="form-text">Image 1</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_2_en" accept="image/*">
+                                        <div class="form-text">Image 2</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_3_en" accept="image/*">
+                                        <div class="form-text">Image 3</div>
+                                    </div>
+                                </div>
+                                <div class="form-text">Maximum file size: 5MB per image. Supported formats: JPG, PNG, GIF</div>
+                            </div>
+
+                            <!-- Reference Photos -->
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Reference Photo 1</label>
+                                    <input type="file" class="form-control" name="ref_photo_1_en" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_1_caption_en" placeholder="Photo caption">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Reference Photo 2</label>
+                                    <input type="file" class="form-control" name="ref_photo_2_en" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_2_caption_en" placeholder="Photo caption">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Reference Photo 3</label>
+                                    <input type="file" class="form-control" name="ref_photo_3_en" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_3_caption_en" placeholder="Photo caption">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bengali Content -->
+                        <div class="tab-pane fade" id="bn-content" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="title_bn" class="form-label">শিরোনাম (বাংলা)</label>
+                                <input type="text" class="form-control" id="title_bn" name="title_bn" 
+                                       placeholder="বাংলায় নিয়মকানুনের শিরোনাম লিখুন">
+                            </div>
+                            <div class="mb-3">
+                                <label for="description_bn" class="form-label">বিবরণ (বাংলা)</label>
+                                <textarea class="form-control" id="description_bn" name="description_bn" rows="4" 
+                                          placeholder="নিয়মকানুনের সংক্ষিপ্ত বিবরণ"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="detailed_instructions_bn" class="form-label">বিস্তারিত নির্দেশাবলী (বাংলা)</label>
+                                <textarea class="form-control" id="detailed_instructions_bn" name="detailed_instructions_bn" rows="6" 
+                                          placeholder="বিস্তারিত নির্দেশাবলী এবং গাইডলাইন"></textarea>
+                            </div>
+                            
+                            <!-- Content Input Options -->
+                            <div class="mb-3">
+                                <label class="form-label">টেক্সট ইনপুট</label>
+                                <textarea class="form-control" name="content_text_bn" id="content_text_bn" rows="4" 
+                                          placeholder="বাংলায় বিস্তারিত নিয়মকানুন ও নির্দেশাবলী লিখুন..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">PDF আপলোড</label>
+                                <input type="file" class="form-control" name="pdf_file_bn" id="pdf_file_bn" accept=".pdf">
+                                <div class="form-text">সর্বোচ্চ ফাইল সাইজ: ১০এমবি। শুধুমাত্র PDF ফাইল অনুমোদিত।</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">ছবি আপলোড (৩টি ছবি)</label>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_1_bn" accept="image/*">
+                                        <div class="form-text">ছবি ১</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_2_bn" accept="image/*">
+                                        <div class="form-text">ছবি ২</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_3_bn" accept="image/*">
+                                        <div class="form-text">ছবি ৩</div>
+                                    </div>
+                                </div>
+                                <div class="form-text">সর্বোচ্চ ফাইল সাইজ: ৫এমবি প্রতি ছবি। সমর্থিত ফরম্যাট: JPG, PNG, GIF</div>
+                            </div>
+                            
+                            <!-- Reference Photos -->
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">রেফারেন্স ছবি ১</label>
+                                    <input type="file" class="form-control" name="ref_photo_1_bn" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_1_caption_bn" placeholder="ছবির ক্যাপশন">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">রেফারেন্স ছবি ২</label>
+                                    <input type="file" class="form-control" name="ref_photo_2_bn" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_2_caption_bn" placeholder="ছবির ক্যাপশন">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">রেফারেন্স ছবি ৩</label>
+                                    <input type="file" class="form-control" name="ref_photo_3_bn" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_3_caption_bn" placeholder="ছবির ক্যাপশন">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Myanmar Content -->
+                        <div class="tab-pane fade" id="my-content" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="title_my" class="form-label">ခေါင်းစဉ် (မြန်မာ)</label>
+                                <input type="text" class="form-control" id="title_my" name="title_my" 
+                                       placeholder="မြန်မာဘာသာဖြင့် စည်းမျဉ်းခေါင်းစဉ်ရေးပါ">
+                            </div>
+                            <div class="mb-3">
+                                <label for="description_my" class="form-label">ဖော်ပြချက် (မြန်မာ)</label>
+                                <textarea class="form-control" id="description_my" name="description_my" rows="4" 
+                                          placeholder="စည်းမျဉ်းများ၏ အကျဉ်းချုပ်ဖော်ပြချက်"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="detailed_instructions_my" class="form-label">အသေးစိတ်ညွှန်ကြားချက်များ (မြန်မာ)</label>
+                                <textarea class="form-control" id="detailed_instructions_my" name="detailed_instructions_my" rows="6" 
+                                          placeholder="အသေးစိတ်ညွှန်ကြားချက်များနှင့် လမ်းညွှန်များ"></textarea>
+                            </div>
+                            
+                            <!-- Content Input Options -->
+                            <div class="mb-3">
+                                <label class="form-label">စာသား ထည့်သွင်းခြင်း</label>
+                                <textarea class="form-control" name="content_text_my" id="content_text_my" rows="4" 
+                                          placeholder="မြန်မာဘာသာဖြင့် အသေးစိတ်စည်းမျဉ်းများနှင့် ညွှန်ကြားချက်များရေးပါ..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">PDF တင်ခြင်း</label>
+                                <input type="file" class="form-control" name="pdf_file_my" id="pdf_file_my" accept=".pdf">
+                                <div class="form-text">အများဆုံးဖိုင်အရွယ်: ၁၀MB။ PDF ဖိုင်များသာ ခွင့်ပြုသည်။</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">ပုံများတင်ခြင်း (၃ပုံ)</label>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_1_my" accept="image/*">
+                                        <div class="form-text">ပုံ ၁</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_2_my" accept="image/*">
+                                        <div class="form-text">ပုံ ၂</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_3_my" accept="image/*">
+                                        <div class="form-text">ပုံ ၃</div>
+                                    </div>
+                                </div>
+                                <div class="form-text">အများဆုံးဖိုင်အရွယ်: ၅MB တစ်ပုံ။ ပံ့ပိုးပေးသောပုံစံများ: JPG, PNG, GIF</div>
+                            </div>
+                            
+                            <!-- Reference Photos -->
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">ရည်ညွှန်းပုံ ၁</label>
+                                    <input type="file" class="form-control" name="ref_photo_1_my" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_1_caption_my" placeholder="ပုံရှင်းလင်းချက်">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">ရည်ညွှန်းပုံ ၂</label>
+                                    <input type="file" class="form-control" name="ref_photo_2_my" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_2_caption_my" placeholder="ပုံရှင်းလင်းချက်">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">ရည်ညွှန်းပုံ ၃</label>
+                                    <input type="file" class="form-control" name="ref_photo_3_my" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_3_caption_my" placeholder="ပုံရှင်းလင်းချက်">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tamil Content -->
+                        <div class="tab-pane fade" id="ta-content" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="title_ta" class="form-label">தலைப்பு (தமிழ்)</label>
+                                <input type="text" class="form-control" id="title_ta" name="title_ta" 
+                                       placeholder="தமிழில் இணக்க விதிமுறைகளின் தலைப்பை எழுதுங்கள்">
+                            </div>
+                            <div class="mb-3">
+                                <label for="description_ta" class="form-label">விளக்கம் (தமிழ்)</label>
+                                <textarea class="form-control" id="description_ta" name="description_ta" rows="4" 
+                                          placeholder="விதிமுறைகளின் சுருக்கமான விளக்கம்"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="detailed_instructions_ta" class="form-label">விரிவான வழிமுறைகள் (தமிழ்)</label>
+                                <textarea class="form-control" id="detailed_instructions_ta" name="detailed_instructions_ta" rows="6" 
+                                          placeholder="விரிவான வழிமுறைகள் மற்றும் வழிகாட்டுதல்கள்"></textarea>
+                            </div>
+                            
+                            <!-- Content Input Options -->
+                            <div class="mb-3">
+                                <label class="form-label">உரை உள்ளீடு</label>
+                                <textarea class="form-control" name="content_text_ta" id="content_text_ta" rows="4" 
+                                          placeholder="தமிழில் விரிவான விதிமுறைகள் மற்றும் வழிமுறைகளை எழுதுங்கள்..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">PDF பதிவேற்றம்</label>
+                                <input type="file" class="form-control" name="pdf_file_ta" id="pdf_file_ta" accept=".pdf">
+                                <div class="form-text">அதிகபட்ச கோப்பு அளவு: 10MB. PDF கோப்புகள் மட்டுமே அனுமதிக்கப்படுகின்றன.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">படம் பதிவேற்றம் (3 படங்கள்)</label>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_1_ta" accept="image/*">
+                                        <div class="form-text">படம் 1</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_2_ta" accept="image/*">
+                                        <div class="form-text">படம் 2</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_3_ta" accept="image/*">
+                                        <div class="form-text">படம் 3</div>
+                                    </div>
+                                </div>
+                                <div class="form-text">அதிகபட்ச கோப்பு அளவு: ஒரு படத்திற்கு 5MB. ஆதரிக்கப்படும் வடிவங்கள்: JPG, PNG, GIF</div>
+                            </div>
+                            
+                            <!-- Reference Photos -->
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">குறிப்பு புகைப்படம் ௧</label>
+                                    <input type="file" class="form-control" name="ref_photo_1_ta" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_1_caption_ta" placeholder="புகைப்பட விளக்கம்">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">குறிப்பு புகைப்படம் ௨</label>
+                                    <input type="file" class="form-control" name="ref_photo_2_ta" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_2_caption_ta" placeholder="புகைப்பட விளக்கம்">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">குறிப்பு புகைப்படம் ௩</label>
+                                    <input type="file" class="form-control" name="ref_photo_3_ta" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_3_caption_ta" placeholder="புகைப்பட விளக்கம்">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chinese Content -->
+                        <div class="tab-pane fade" id="zh-content" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="title_zh" class="form-label">标题 (中文)</label>
+                                <input type="text" class="form-control" id="title_zh" name="title_zh" 
+                                       placeholder="请用中文输入合规记录标题">
+                            </div>
+                            <div class="mb-3">
+                                <label for="description_zh" class="form-label">描述 (中文)</label>
+                                <textarea class="form-control" id="description_zh" name="description_zh" rows="4" 
+                                          placeholder="合规要求的简要描述"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="detailed_instructions_zh" class="form-label">详细说明 (中文)</label>
+                                <textarea class="form-control" id="detailed_instructions_zh" name="detailed_instructions_zh" rows="6" 
+                                          placeholder="详细说明和指导"></textarea>
+                            </div>
+                            
+                            <!-- Content Input Options -->
+                            <div class="mb-3">
+                                <label class="form-label">文本输入</label>
+                                <textarea class="form-control" name="content_text_zh" id="content_text_zh" rows="4" 
+                                          placeholder="请用中文输入详细的规定和说明..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">PDF上传</label>
+                                <input type="file" class="form-control" name="pdf_file_zh" id="pdf_file_zh" accept=".pdf">
+                                <div class="form-text">最大文件大小：10MB。仅允许PDF文件。</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">图片上传 (3张图片)</label>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_1_zh" accept="image/*">
+                                        <div class="form-text">图片 1</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_2_zh" accept="image/*">
+                                        <div class="form-text">图片 2</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="file" class="form-control mb-2" name="image_3_zh" accept="image/*">
+                                        <div class="form-text">图片 3</div>
+                                    </div>
+                                </div>
+                                <div class="form-text">最大文件大小：每张图片5MB。支持格式：JPG, PNG, GIF</div>
+                            </div>
+                            
+                            <!-- Reference Photos -->
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">参考照片 1</label>
+                                    <input type="file" class="form-control" name="ref_photo_1_zh" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_1_caption_zh" placeholder="照片说明">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">参考照片 2</label>
+                                    <input type="file" class="form-control" name="ref_photo_2_zh" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_2_caption_zh" placeholder="照片说明">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">参考照片 3</label>
+                                    <input type="file" class="form-control" name="ref_photo_3_zh" accept="image/*">
+                                    <input type="text" class="form-control mt-1" name="ref_photo_3_caption_zh" placeholder="照片说明">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Create Compliance Record
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// JavaScript for handling language-specific filtering and form interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default effective date to today
+    document.getElementById('effective_date').value = new Date().toISOString().split('T')[0];
+    
+    // Handle language tab switching for compliance records display
+    const languageTabs = document.querySelectorAll('[data-bs-toggle="tab"]');
+    languageTabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function (e) {
+            const targetTab = e.target.getAttribute('data-bs-target');
+            if (targetTab && targetTab.includes('-records')) {
+                const language = targetTab.replace('#', '').replace('-records', '');
+                if (language !== 'all') {
+                    filterRecordsByLanguage(language);
+                }
+            }
+        });
+    });
+});
+
+function filterRecordsByLanguage(languageCode) {
+    // Filter and display records for specific language
+    const container = document.querySelector(`[data-language="${languageCode}"]`);
+    if (container) {
+        // This would be populated by AJAX call to get language-specific records
+        container.innerHTML = '<p class="text-center">Loading ' + languageCode + ' records...</p>';
+        
+        // Implement AJAX call to fetch filtered records
+        fetch(`/compliance-records/filter/${languageCode}`)
+            .then(response => response.text())
+            .then(html => {
+                container.innerHTML = html;
+            })
+            .catch(error => {
+                container.innerHTML = '<p class="text-center text-danger">Error loading records</p>';
+            });
+    }
+}
+
+function viewComplianceRecord(recordId) {
+    // Open compliance record details modal/page
+    window.open(`/compliance-records/${recordId}`, '_blank');
+}
+
+function editComplianceRecord(recordId) {
+    // Open edit compliance record modal/page
+    window.location.href = `/compliance-records/${recordId}/edit`;
+}
+
+function viewAcknowledgments(recordId) {
+    // Open acknowledgments tracking modal/page
+    window.open(`/compliance-records/${recordId}/acknowledgments`, '_blank');
+}
+</script>
+{% endblock %}

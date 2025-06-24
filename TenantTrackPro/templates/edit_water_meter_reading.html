@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Water Meter Reading{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0"><i class="fas fa-water me-2"></i>Edit Water Meter Reading</h4>
+                    <small>Room: {{ room.room_number }} - {{ room.company.name }}</small>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="meter_number" class="form-label">Meter Number</label>
+                                    <input type="text" class="form-control" id="meter_number" name="meter_number" 
+                                           value="{{ reading.meter_number }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="rate_per_unit" class="form-label">Rate per Unit ($)</label>
+                                    <input type="number" class="form-control" id="rate_per_unit" name="rate_per_unit" 
+                                           step="0.01" value="{{ reading.rate_per_unit }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" 
+                                           value="{{ reading.start_date.strftime('%Y-%m-%d') }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="end_date" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date" 
+                                           value="{{ reading.end_date.strftime('%Y-%m-%d') }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="start_reading" class="form-label">Start Reading</label>
+                                    <input type="number" class="form-control" id="start_reading" name="start_reading" 
+                                           style="max-width: 150px;" step="1" maxlength="8"
+                                           value="{{ reading.start_reading }}" placeholder="00000000" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="end_reading" class="form-label">End Reading</label>
+                                    <input type="number" class="form-control" id="end_reading" name="end_reading" 
+                                           style="max-width: 150px;" step="1" maxlength="8"
+                                           value="{% if reading.total_consumption > 0 %}{{ reading.end_reading }}{% endif %}" 
+                                           placeholder="Leave empty for initial reading">
+                                    <small class="text-muted">Leave empty if this is an initial reading</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="physical_pax" class="form-label">Physical Pax</label>
+                                    <input type="number" class="form-control" id="physical_pax" name="physical_pax" 
+                                           min="0" value="{{ reading.physical_pax }}" placeholder="Number of occupants">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">Notes (Optional)</label>
+                                    <textarea class="form-control" id="notes" name="notes" rows="1">{{ reading.notes }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('meter_room_detail', room_id=room.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Back to Room Details
+                            </a>
+                            <button type="submit" class="btn btn-info">
+                                <i class="fas fa-save me-1"></i>Update Reading
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

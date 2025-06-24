@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acknowledgment Form - {{ language.title() }}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .form-control, .form-select {
+            color: #000000 !important;
+            background-color: #ffffff !important;
+            border: 2px solid #343a40;
+            font-size: 1.2rem;
+            font-weight: 600;
+            padding: 12px 16px;
+        }
+        .form-control:focus, .form-select:focus {
+            color: #000000 !important;
+            background-color: #ffffff !important;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        .form-label {
+            color: #000000 !important;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            text-shadow: none;
+        }
+        .form-control::placeholder {
+            color: #6c757d !important;
+            opacity: 0.8;
+        }
+        .form-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: black;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        .form-header h1, .form-header p {
+            color: black !important;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+        .signature-pad {
+            border: 2px dashed #6c757d;
+            border-radius: 8px;
+            background: #f8f9fa;
+            cursor: crosshair;
+            touch-action: none;
+        }
+        .signature-pad.signed {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .signature-controls {
+            margin-top: 1rem;
+        }
+        .required-field {
+            color: #dc3545;
+        }
+        .submit-button {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        }
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(40,167,69,0.4);
+        }
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        .form-section {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 2px solid #343a40;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .form-check-label {
+            color: #000000 !important;
+            font-weight: 600;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        .form-check-input {
+            width: 1.5rem;
+            height: 1.5rem;
+            margin-right: 0.75rem;
+            border: 2px solid #343a40;
+            background-color: #ffffff;
+        }
+        .form-check-input:checked {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .section-title {
+            color: #000000 !important;
+            font-weight: bold;
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #007bff;
+        }
+        .text-muted {
+            color: #000000 !important;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .signature-instruction {
+            color: #000000 !important;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+        #signatureStatus {
+            color: #000000 !important;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        body {
+            background-color: #f0f2f5;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+    <button class="btn btn-secondary back-button" onclick="history.back()">
+        <i class="fas fa-arrow-left me-2"></i>Back
+    </button>
+
+    <div class="form-header">
+        <div class="container text-center">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="fas fa-clipboard-check me-3"></i>
+                {% if language == 'english' %}House Rules Acknowledgment Form
+                {% elif language == 'tamil' %}வீட்டு விதிகள் ஒப்புதல் படிவம்
+                {% elif language == 'chinese' %}宿舍规则确认表格
+                {% elif language == 'myanmar' %}အိမ်စည်းမျဉ်း အသိအမှတ်ပြု ပုံစံ
+                {% elif language == 'bengali' %}গৃহ নিয়মাবলী স্বীকারোক্তি ফর্ম
+                {% endif %}
+            </h1>
+            <p class="lead fs-4 mb-0">{{ house_acknowledge.title }}</p>
+            <p class="mt-2 fs-5">
+                {% if language == 'english' %}Please read the house rules and provide your acknowledgment
+                {% elif language == 'tamil' %}வீட்டு விதிகளைப் படித்து உங்கள் ஒப்புதலை வழங்கவும்
+                {% elif language == 'chinese' %}请阅读宿舍规则并提供您的确认
+                {% elif language == 'myanmar' %}အိမ်စည်းမျဉ်းများကို ဖတ်ပြီး သင့်အသိအမှတ်ပြုချက်ကို ပေးပါ
+                {% elif language == 'bengali' %}অনুগ্রহ করে গৃহ নিয়মাবলী পড়ুন এবং আপনার স্বীকারোক্তি প্রদান করুন
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-container">
+            <div class="form-section">
+                <form method="POST" id="acknowledgmentForm">
+                    <input type="hidden" name="language_selected" value="{{ language }}">
+                    <input type="hidden" name="e_signature" id="signatureData">
+                    
+                    <!-- Personal Information -->
+                    <div class="mb-4">
+                        <h5 class="section-title">
+                            {% if language == 'english' %}Personal Information
+                            {% elif language == 'tamil' %}தனிப்பட்ட தகவல்
+                            {% elif language == 'chinese' %}个人信息
+                            {% elif language == 'myanmar' %}ကိုယ်ရေးကိုယ်တာ အချက်အလက်
+                            {% elif language == 'bengali' %}ব্যক্তিগত তথ্য
+                            {% endif %}
+                            <span class="required-field">*</span>
+                        </h5>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">
+                                {% if language == 'english' %}Full Name
+                                {% elif language == 'tamil' %}முழு பெயர்
+                                {% elif language == 'chinese' %}全名
+                                {% elif language == 'myanmar' %}အမည်အပြည့်အစုံ
+                                {% elif language == 'bengali' %}পূর্ণ নাম
+                                {% endif %}
+                                <span class="required-field">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="fin" class="form-label">
+                                {% if language == 'english' %}FIN Number
+                                {% elif language == 'tamil' %}FIN எண்
+                                {% elif language == 'chinese' %}身份证号码
+                                {% elif language == 'myanmar' %}FIN နံပါတ်
+                                {% elif language == 'bengali' %}FIN নম্বর
+                                {% endif %}
+                                <span class="required-field">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="fin" name="fin" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="company_name" class="form-label">
+                                {% if language == 'english' %}Company Name
+                                {% elif language == 'tamil' %}நிறுவன பெயர்
+                                {% elif language == 'chinese' %}公司名称
+                                {% elif language == 'myanmar' %}ကုမ္ပဏီအမည်
+                                {% elif language == 'bengali' %}কোম্পানির নাম
+                                {% endif %}
+                                <span class="required-field">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="company_name" name="company_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="room_number" class="form-label">
+                                {% if language == 'english' %}Room Number
+                                {% elif language == 'tamil' %}அறை எண்
+                                {% elif language == 'chinese' %}房间号
+                                {% elif language == 'myanmar' %}အခန်းနံပါတ်
+                                {% elif language == 'bengali' %}রুম নম্বর
+                                {% endif %}
+                                <span class="required-field">*</span>
+                            </label>
+                            <select class="form-select" id="room_number" name="room_number" required>
+                                <option value="">
+                                    {% if language == 'english' %}Select Room Number
+                                    {% elif language == 'tamil' %}அறை எண்ணைத் தேர்ந்தெடுக்கவும்
+                                    {% elif language == 'chinese' %}选择房间号
+                                    {% elif language == 'myanmar' %}အခန်းနံပါတ် ရွေးချယ်ပါ
+                                    {% elif language == 'bengali' %}রুম নম্বর নির্বাচন করুন
+                                    {% endif %}
+                                </option>
+                                {% for room in room_numbers %}
+                                    <option value="{{ room.room_number }}">{{ room.room_number }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="phone_number" class="form-label">
+                            {% if language == 'english' %}Phone Number
+                            {% elif language == 'tamil' %}தொலைபேசி எண்
+                            {% elif language == 'chinese' %}电话号码
+                            {% elif language == 'myanmar' %}ဖုန်းနံပါတ်
+                            {% elif language == 'bengali' %}ফোন নম্বর
+                            {% endif %}
+                            <span class="required-field">*</span>
+                        </label>
+                        <input type="tel" class="form-control" id="phone_number" name="phone_number" required>
+                    </div>
+
+                    <!-- Selfie Photo Section -->
+                    <div class="mb-4">
+                        <h5 class="section-title">
+                            {% if language == 'english' %}Selfie Photo
+                            {% elif language == 'tamil' %}சுய புகைப்படம்
+                            {% elif language == 'chinese' %}自拍照片
+                            {% elif language == 'myanmar' %}ကိုယ်တိုင်ရိုက်သော ဓာတ်ပုံ
+                            {% elif language == 'bengali' %}সেলফি ছবি
+                            {% endif %}
+                            <span class="required-field">*</span>
+                        </h5>
+                        <p class="text-muted">
+                            {% if language == 'english' %}Please take a selfie photo for verification purposes
+                            {% elif language == 'tamil' %}சரிபார்ப்பு நோக்கங்களுக்காக ஒரு சுய புகைப்படம் எடுக்கவும்
+                            {% elif language == 'chinese' %}请自拍一张照片以供验证
+                            {% elif language == 'myanmar' %}အတည်ပြုရန်အတွက် ကိုယ်တိုင်ရိုက်သော ဓာတ်ပုံတစ်ပုံ ရိုက်ပါ
+                            {% elif language == 'bengali' %}যাচাইয়ের উদ্দেশ্যে একটি সেলফি ছবি তুলুন
+                            {% endif %}
+                        </p>
+                        
+                        <div id="cameraContainer" class="text-center mb-3">
+                            <video id="video" class="d-none" width="320" height="240" autoplay></video>
+                            <canvas id="photoCanvas" class="d-none" width="320" height="240"></canvas>
+                            <div id="photoPreview" class="d-none">
+                                <img id="capturedPhoto" src="" alt="Captured Photo" class="img-fluid border rounded" style="max-width: 320px;">
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="button" class="btn btn-primary me-2" id="startCameraBtn">
+                                <i class="fas fa-camera me-1"></i>
+                                {% if language == 'english' %}Start Camera
+                                {% elif language == 'tamil' %}கேமராவைத் தொடங்கவும்
+                                {% elif language == 'chinese' %}启动相机
+                                {% elif language == 'myanmar' %}ကင်မရာ စတင်ရန်
+                                {% elif language == 'bengali' %}ক্যামেরা শুরু করুন
+                                {% endif %}
+                            </button>
+                            <button type="button" class="btn btn-success me-2 d-none" id="captureBtn">
+                                <i class="fas fa-camera-retro me-1"></i>
+                                {% if language == 'english' %}Take Photo
+                                {% elif language == 'tamil' %}புகைப்படம் எடுக்கவும்
+                                {% elif language == 'chinese' %}拍照
+                                {% elif language == 'myanmar' %}ဓာတ်ပုံရိုက်ရန်
+                                {% elif language == 'bengali' %}ছবি তুলুন
+                                {% endif %}
+                            </button>
+                            <button type="button" class="btn btn-warning d-none" id="retakeBtn">
+                                <i class="fas fa-redo me-1"></i>
+                                {% if language == 'english' %}Retake
+                                {% elif language == 'tamil' %}மீண்டும் எடுக்கவும்
+                                {% elif language == 'chinese' %}重新拍摄
+                                {% elif language == 'myanmar' %}ပြန်ရိုက်ရန်
+                                {% elif language == 'bengali' %}আবার তুলুন
+                                {% endif %}
+                            </button>
+                        </div>
+                        
+                        <input type="hidden" name="selfie_photo" id="selfiePhotoData">
+                        <small class="text-muted" id="photoStatus">
+                            {% if language == 'english' %}Photo required
+                            {% elif language == 'tamil' %}புகைப்படம் தேவை
+                            {% elif language == 'chinese' %}需要照片
+                            {% elif language == 'myanmar' %}ဓာတ်ပုံ လိုအပ်သည်
+                            {% elif language == 'bengali' %}ছবি প্রয়োজন
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    <!-- E-Signature Section -->
+                    <div class="mb-4">
+                        <h5 class="section-title">
+                            {% if language == 'english' %}Electronic Signature
+                            {% elif language == 'tamil' %}மின்னணு கையொப்பம்
+                            {% elif language == 'chinese' %}电子签名
+                            {% elif language == 'myanmar' %}အီလက်ထရွန်နစ် လက်မှတ်
+                            {% elif language == 'bengali' %}ইলেকট্রনিক স্বাক্ষর
+                            {% endif %}
+                            <span class="required-field">*</span>
+                        </h5>
+                        <p class="text-muted">
+                            {% if language == 'english' %}Please draw your signature in the box below
+                            {% elif language == 'tamil' %}கீழே உள்ள பெட்டியில் உங்கள் கையொப்பத்தை வரையவум்
+                            {% elif language == 'chinese' %}请在下面的框中绘制您的签名
+                            {% elif language == 'myanmar' %}အောက်ပါ ဘောက်စ်တွင် သင့်လက်မှတ်ကို ရေးပါ
+                            {% elif language == 'bengali' %}নিচের বাক্সে আপনার স্বাক্ষর আঁকুন
+                            {% endif %}
+                        </p>
+                        
+                        <canvas id="signaturePad" class="signature-pad w-100" width="500" height="200"></canvas>
+                        
+                        <div class="signature-controls">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="clearSignature()">
+                                <i class="fas fa-eraser me-1"></i>
+                                {% if language == 'english' %}Clear
+                                {% elif language == 'tamil' %}அழிக்கவும்
+                                {% elif language == 'chinese' %}清除
+                                {% elif language == 'myanmar' %}ရှင်းလင်းရန်
+                                {% elif language == 'bengali' %}পরিষ্কার
+                                {% endif %}
+                            </button>
+                            <small class="text-muted ms-2" id="signatureStatus">
+                                {% if language == 'english' %}Signature required
+                                {% elif language == 'tamil' %}கையொப்பம் தேவை
+                                {% elif language == 'chinese' %}需要签名
+                                {% elif language == 'myanmar' %}လက်မှတ် လိုအပ်သည်
+                                {% elif language == 'bengali' %}স্বাক্ষর প্রয়োজন
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Acknowledgment Statement -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="acknowledgmentCheck" required>
+                            <label class="form-check-label" for="acknowledgmentCheck">
+                                {% if language == 'english' %}
+                                    I acknowledge that I have read, understood, and agree to comply with the house rules and regulations presented above.
+                                {% elif language == 'tamil' %}
+                                    மேலே வழங்கப்பட்ட வீட்டு விதிகள் மற்றும் ஒழுங்குமுறைகளை படித்து, புரிந்துகொண்டு, அதன்படி நடப்பதற்கு ஒப்புக்கொள்கிறேன்.
+                                {% elif language == 'chinese' %}
+                                    我确认已阅读、理解并同意遵守上述宿舍规章制度。
+                                {% elif language == 'myanmar' %}
+                                    အထက်တွင် ဖော်ပြထားသော အိမ်စည်းမျဉ်းများနှင့် စည်းကမ်းများကို ဖတ်ရှု၊ နားလည်ပြီး လိုက်နာရန် သဘောတူကြောင်း အသိအမှတ်ပြုပါသည်။
+                                {% elif language == 'bengali' %}
+                                    আমি স্বীকার করি যে আমি উপরে উপস্থাপিত ঘরের নিয়ম ও বিধিবিধান পড়েছি, বুঝেছি এবং মেনে চলতে সম্মত হয়েছি।
+                                {% endif %}
+                                <span class="required-field">*</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="text-center">
+                        <button type="submit" class="btn submit-button" id="submitBtn" disabled>
+                            <i class="fas fa-check-circle me-2"></i>
+                            {% if language == 'english' %}Submit Acknowledgment
+                            {% elif language == 'tamil' %}ஒப்புதலை சமர்பிக்கவும்
+                            {% elif language == 'chinese' %}提交确认
+                            {% elif language == 'myanmar' %}အသိအမှတ်ပြုခြင်းကို တင်သွင်းပါ
+                            {% elif language == 'bengali' %}স্বীকারোক্তি জমা দিন
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Signature pad functionality
+        const canvas = document.getElementById('signaturePad');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let hasSignature = false;
+
+        // Set canvas background to white for better visibility
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', handleTouch);
+        canvas.addEventListener('touchmove', handleTouch);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+            
+            hasSignature = true;
+            updateSignatureStatus();
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                            e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }
+
+        function clearSignature() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            hasSignature = false;
+            updateSignatureStatus();
+        }
+
+        function updateSignatureStatus() {
+            const statusElement = document.getElementById('signatureStatus');
+            const submitBtn = document.getElementById('submitBtn');
+            const checkBox = document.getElementById('acknowledgmentCheck');
+            
+            if (hasSignature) {
+                canvas.classList.add('signed');
+                statusElement.textContent = '{% if language == "english" %}Signature captured{% elif language == "tamil" %}கையொப்பம் பதிவு செய்யப்பட்டது{% elif language == "chinese" %}已捕获签名{% elif language == "myanmar" %}လက်မှတ် မှတ်တမ်းတင်ပြီး{% elif language == "bengali" %}স্বাক্ষর ক্যাপচার করা হয়েছে{% endif %}';
+                statusElement.style.color = '#28a745';
+            } else {
+                canvas.classList.remove('signed');
+                statusElement.textContent = '{% if language == "english" %}Signature required{% elif language == "tamil" %}கையொப்பம் தேவை{% elif language == "chinese" %}需要签名{% elif language == "myanmar" %}လက်မှတ် လိုအပ်သည်{% elif language == "bengali" %}স্বাক্ষর প্রয়োজন{% endif %}';
+                statusElement.style.color = '#6c757d';
+            }
+            
+            // Enable submit button only if signature and checkbox are both completed
+            updateSubmitButton();
+        }
+
+        // Camera and Photo functionality
+        let videoStream = null;
+        let hasPhoto = false;
+
+        const video = document.getElementById('video');
+        const photoCanvas = document.getElementById('photoCanvas');
+        const photoPreview = document.getElementById('photoPreview');
+        const capturedPhoto = document.getElementById('capturedPhoto');
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const retakeBtn = document.getElementById('retakeBtn');
+        const photoStatus = document.getElementById('photoStatus');
+        const selfiePhotoData = document.getElementById('selfiePhotoData');
+
+        startCameraBtn.addEventListener('click', startCamera);
+        captureBtn.addEventListener('click', capturePhoto);
+        retakeBtn.addEventListener('click', retakePhoto);
+
+        async function startCamera() {
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'user',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    } 
+                });
+                video.srcObject = videoStream;
+                video.classList.remove('d-none');
+                startCameraBtn.classList.add('d-none');
+                captureBtn.classList.remove('d-none');
+            } catch (err) {
+                alert('{% if language == "english" %}Error accessing camera. Please check permissions.{% elif language == "tamil" %}கேமராவை அணுகுவதில் பிழை. அனுமதிகளைச் சரிபார்க்கவும்.{% elif language == "chinese" %}访问相机时出错。请检查权限。{% elif language == "myanmar" %}ကင်မရာ အသုံးပြုရာတွင် အမှားအယွင်း။ ခွင့်ပြုချက်များကို စစ်ဆေးပါ။{% elif language == "bengali" %}ক্যামেরা অ্যাক্সেস করতে ত্রুটি। দয়া করে অনুমতি পরীক্ষা করুন।{% endif %}');
+            }
+        }
+
+        function capturePhoto() {
+            const canvas = photoCanvas;
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas dimensions to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Draw video frame to canvas
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert to data URL
+            const photoDataURL = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Store photo data
+            selfiePhotoData.value = photoDataURL;
+            
+            // Display preview
+            capturedPhoto.src = photoDataURL;
+            photoPreview.classList.remove('d-none');
+            
+            // Hide video and show retake button
+            video.classList.add('d-none');
+            captureBtn.classList.add('d-none');
+            retakeBtn.classList.remove('d-none');
+            
+            // Stop video stream
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            
+            hasPhoto = true;
+            updatePhotoStatus();
+        }
+
+        function retakePhoto() {
+            // Reset photo state
+            hasPhoto = false;
+            selfiePhotoData.value = '';
+            photoPreview.classList.add('d-none');
+            retakeBtn.classList.add('d-none');
+            startCameraBtn.classList.remove('d-none');
+            updatePhotoStatus();
+        }
+
+        function updatePhotoStatus() {
+            if (hasPhoto) {
+                photoStatus.textContent = '{% if language == "english" %}Photo captured{% elif language == "tamil" %}புகைப்படம் பதிவு செய்யப்பட்டது{% elif language == "chinese" %}已拍摄照片{% elif language == "myanmar" %}ဓာတ်ပုံ ရိုက်ပြီး{% elif language == "bengali" %}ছবি তোলা হয়েছে{% endif %}';
+                photoStatus.style.color = '#28a745';
+            } else {
+                photoStatus.textContent = '{% if language == "english" %}Photo required{% elif language == "tamil" %}புகைப்படம் தேவை{% elif language == "chinese" %}需要照片{% elif language == "myanmar" %}ဓာတ်ပုံ လိုအပ်သည်{% elif language == "bengali" %}ছবি প্রয়োজন{% endif %}';
+                photoStatus.style.color = '#6c757d';
+            }
+            updateSubmitButton();
+        }
+
+        function updateSubmitButton() {
+            const submitBtn = document.getElementById('submitBtn');
+            const checkBox = document.getElementById('acknowledgmentCheck');
+            
+            // Enable submit button only if signature, photo, and checkbox are all completed
+            submitBtn.disabled = !(hasSignature && hasPhoto && checkBox.checked);
+        }
+
+        // Form validation
+        document.getElementById('acknowledgmentCheck').addEventListener('change', updateSubmitButton);
+
+        document.getElementById('acknowledgmentForm').addEventListener('submit', function(e) {
+            if (!hasSignature) {
+                e.preventDefault();
+                alert('{% if language == "english" %}Please provide your signature before submitting.{% elif language == "tamil" %}சமர்பிக்கும் முன் உங்கள் கையொப்பத்தை வழங்கவும்.{% elif language == "chinese" %}请在提交前提供您的签名。{% elif language == "myanmar" %}တင်သွင်းမှုမပြုမီ သင့်လက်မှတ်ကို ထည့်ပါ။{% elif language == "bengali" %}জমা দেওয়ার আগে দয়া করে আপনার স্বাক্ষর প্রদান করুন।{% endif %}');
+                return;
+            }
+            
+            if (!hasPhoto) {
+                e.preventDefault();
+                alert('{% if language == "english" %}Please take a selfie photo before submitting.{% elif language == "tamil" %}சமர்பிக்கும் முன் ஒரு சுய புகைப்படம் எடுக்கவும்.{% elif language == "chinese" %}请在提交前拍摄自拍照片。{% elif language == "myanmar" %}တင်သွင်းမှုမပြုမီ ကိုယ်တိုင်ရိုက်သော ဓာတ်ပုံ ရိုက်ပါ။{% elif language == "bengali" %}জমা দেওয়ার আগে দয়া করে একটি সেলফি ছবি তুলুন।{% endif %}');
+                return;
+            }
+            
+            // Save signature data
+            const signatureData = canvas.toDataURL();
+            document.getElementById('signatureData').value = signatureData;
+        });
+
+        // Real-time form validation
+        document.querySelectorAll('input[required]').forEach(input => {
+            input.addEventListener('input', updateSubmitButton);
+        });
+    </script>
+</body>
+</html>

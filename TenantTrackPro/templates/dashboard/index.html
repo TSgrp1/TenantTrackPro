@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - TS Management Services Pte Ltd{% endblock %}
+
+{% block content %}
+
+<!-- Important News Section -->
+{% if important_news %}
+<div class="container-fluid mb-4">
+    <div class="row">
+        <div class="col-12">
+            {% for news in important_news %}
+            <div class="alert alert-{% if news.priority == 'high' %}danger{% elif news.priority == 'low' %}secondary{% else %}info{% endif %} alert-dismissible fade show shadow-sm mb-3" role="alert">
+                <div class="d-flex align-items-start">
+                    <div class="me-3">
+                        {% if news.priority == 'high' %}
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                        {% else %}
+                        <i class="fas fa-bullhorn fa-2x"></i>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="alert-heading mb-2">
+                            <i class="fas fa-newspaper me-2"></i>{{ news.title }}
+                            {% if news.priority == 'high' %}
+                            <span class="badge bg-danger ms-2">URGENT</span>
+                            {% endif %}
+                        </h5>
+                        <div class="news-content">
+                            {{ news.content|replace('\n', '<br>')|safe }}
+                        </div>
+                        
+                        <!-- Attachments -->
+                        {% if news.pdf_attachment or news.image_attachment %}
+                        <div class="mt-3 pt-2 border-top">
+                            <h6 class="mb-2"><i class="fas fa-paperclip me-1"></i>Attachments:</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% if news.pdf_attachment %}
+                                <a href="{{ url_for('static', filename=news.pdf_attachment) }}" 
+                                   target="_blank" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-file-pdf me-1"></i>View PDF
+                                </a>
+                                {% endif %}
+                                {% if news.image_attachment %}
+                                <button class="btn btn-outline-info btn-sm" onclick="showImage('{{ url_for('static', filename=news.image_attachment) }}', '{{ news.title }}')">
+                                    <i class="fas fa-image me-1"></i>View Image
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                Posted: {{ news.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                {% if news.expires_at %}
+                                | <i class="fas fa-calendar-times me-1"></i>
+                                Expires: {{ news.expires_at.strftime('%B %d, %Y') }}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        Dashboard
+                    </h1>
+                    {% if current_user.organization %}
+                    <p class="text-muted mb-0">{{ current_user.organization.name }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <!-- Asset management removed per user request -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-3 mb-4">
+        <!-- Row 1: Core Management -->
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="fw-bold mb-0">{{ total_handovers }}</h4>
+                            <p class="mb-0">Room Handovers</p>
+                        </div>
+                        <i class="fas fa-handshake fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="fw-bold mb-0">{{ total_offenses }}</h4>
+                            <p class="mb-0">Offence Records</p>
+                        </div>
+                        <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="fw-bold mb-0">{{ house_acknowledgment_count }}</h4>
+                            <p class="mb-0">House Acknowledgments</p>
+                        </div>
+                        <i class="fas fa-inbox fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Additional Management -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-secondary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="fw-bold mb-0">{{ total_forms }}</h4>
+                            <p class="mb-0">Form Templates</p>
+                        </div>
+                        <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-dark text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="fw-bold mb-0">{{ total_qr_codes }}</h4>
+                            <p class="mb-0">QR Codes</p>
+                        </div>
+                        <i class="fas fa-qrcode fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="fw-bold mb-0">{{ open_offenses }}</h4>
+                            <p class="mb-0">Open Offenses</p>
+                        </div>
+                        <i class="fas fa-exclamation-circle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="fw-bold mb-0">{{ today_submissions }}</h4>
+                            <p class="mb-0">Today's Activity</p>
+                        </div>
+                        <i class="fas fa-calendar-day fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset sections removed per user request -->
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <a href="{{ url_for('form_management') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-clipboard-list mb-2 d-block"></i>
+                                Form Management
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ url_for('qr_codes') }}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-qrcode mb-2 d-block"></i>
+                                QR Codes
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ url_for('asset_management') }}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-boxes mb-2 d-block"></i>
+                                Asset Management
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ url_for('room_handovers') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-handshake mb-2 d-block"></i>
+                                Room Handover
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ url_for('offense_records') }}" class="btn btn-outline-warning w-100">
+                                <i class="fas fa-exclamation-triangle mb-2 d-block"></i>
+                                Offense Records
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ url_for('room_inventory_records') }}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-clipboard-list mb-2 d-block"></i>
+                                Room Inventory Records
+                            </a>
+                        </div>
+
+                        <div class="col-md-2">
+                            <a href="{{ url_for('room_numbers') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-door-open mb-2 d-block"></i>
+                                Room Numbers
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ url_for('fin_search') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-search mb-2 d-block"></i>
+                                FIN Search
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ url_for('meter_readings') }}?from=quick-actions" class="btn btn-outline-info w-100" onclick="sessionStorage.setItem('scrollToRoomNumber', 'true')">
+                                <i class="fas fa-tachometer-alt mb-2 d-block"></i>
+                                Pioneer Utility
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ url_for('staff_attendance') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-clock mb-2 d-block"></i>
+                                Staff Attendance
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ url_for('room_inspection_reports') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-search mb-2 d-block"></i>
+                                Room Inspection Report
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ url_for('resident_checkin_checkout_dashboard') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-user-check mb-2 d-block"></i>
+                                Resident Check-in & Resident Check-Out
+                            </a>
+                        </div>
+                        {% if user_permissions.can_view_key_management %}
+                        <div class="col-md-2">
+                            <a href="/key-management" class="btn btn-outline-dark w-100">
+                                <i class="fas fa-key mb-2 d-block"></i>
+                                Key Management
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+{% endblock %}

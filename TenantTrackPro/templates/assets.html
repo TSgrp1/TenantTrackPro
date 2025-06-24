@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block title %}Assets - TS Management Services Pte Ltd{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-boxes me-2"></i>
+                        Asset Management
+                    </h1>
+                    <p class="text-muted mb-0">Manage your organization's assets</p>
+                </div>
+                <div class="btn-group">
+                    {% if can_user_create(current_user, 'asset_management') %}
+                    <a href="{{ url_for('new_asset') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> Add Asset
+                    </a>
+                    {% else %}
+                    <button class="btn btn-secondary" disabled title="View-only access - cannot create assets">
+                        <i class="fas fa-eye me-1"></i> View Only
+                    </button>
+                    {% endif %}
+                    <div class="btn-group">
+                        <button class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-file-excel me-1"></i> Excel
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/assets/export/excel">
+                                <i class="fas fa-download me-2"></i> Export to Excel
+                            </a></li>
+                            <li><a class="dropdown-item" href="/assets/import/template">
+                                <i class="fas fa-file-download me-2"></i> Download Import Template
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="document.getElementById('importFile').click()">
+                                <i class="fas fa-upload me-2"></i> Import from Excel
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Hidden file input for import -->
+                <input type="file" id="importFile" accept=".xlsx,.xls" style="display: none;" onchange="handleFileImport(this)">
+                
+                <script>
+                function handleFileImport(input) {
+                    if (input.files && input.files[0]) {
+                        const formData = new FormData();
+                        formData.append('file', input.files[0]);
+                        
+                        fetch('/assets/import/excel', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert(data.message);
+                                location.reload();
+                            } else {
+                                alert('Import failed: ' + data.error);
+                            }
+                        })
+                        .catch(error => {
+                            alert('Import failed: ' + error.message);
+                        });
+                    }
+                }
+                </script>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search_term }}" placeholder="Search by name...">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        {% for status in statuses %}
+                        <option value="{{ status }}" {% if current_status == status %}selected{% endif %}>
+                            {{ status }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="category" class="form-label">Category</label>
+                    <select class="form-select" id="category" name="category">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if current_category == category.id|string %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="serial_number" class="form-label">Serial Number</label>
+                    <input type="text" class="form-control" id="serial_number" name="serial_number" 
+                           value="{{ serial_number_filter }}" placeholder="Search by serial number...">
+                </div>
+                
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-search me-1"></i> Filter
+                    </button>
+                    <a href="{{ url_for('assets') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Assets Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2"></i>
+                Assets ({{ assets|length }} items)
+            </h5>
+            <div class="btn-group">
+                <button class="btn btn-outline-info btn-sm" onclick="exportSelected()" id="exportSelectedBtn" disabled>
+                    <i class="fas fa-file-excel me-1"></i> Export Selected
+                </button>
+                <button class="btn btn-outline-danger btn-sm" onclick="deleteSelected()" id="deleteSelectedBtn" disabled>
+                    <i class="fas fa-trash me-1"></i> Delete Selected
+                </button>
+                <div class="btn-group">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" id="statusSelectedBtn" disabled>
+                        <i class="fas fa-edit me-1"></i> Mark As
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="updateSelectedStatus('Active')">
+                            <i class="fas fa-play me-2 text-success"></i> Active
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="updateSelectedStatus('Inactive')">
+                            <i class="fas fa-pause me-2 text-warning"></i> Inactive
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="updateSelectedStatus('Room')">
+                            <i class="fas fa-bed me-2 text-primary"></i> Room
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="updateSelectedStatus('Store')">
+                            <i class="fas fa-warehouse me-2 text-info"></i> Store
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="updateSelectedStatus('Clear')">
+                            <i class="fas fa-check-circle me-2 text-success"></i> Clear
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="updateSelectedStatus('Other')">
+                            <i class="fas fa-question-circle me-2 text-secondary"></i> Other
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if assets %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                            </th>
+                            <th>Asset Name</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Location</th>
+                            <th>Quantity</th>
+                            <th>Serial Number</th>
+                            <th>Created Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asset in assets %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="asset-checkbox" value="{{ asset.id }}" onchange="updateActionButtons()">
+                            </td>
+                            <td>
+                                <div>
+                                    <strong>{{ asset.name }}</strong>
+                                    {% if asset.description %}
+                                    <br><small class="text-muted">{{ asset.description[:50] }}{% if asset.description|length > 50 %}...{% endif %}</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ asset.category.name }}</span>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if asset.status == 'Active' %}bg-success
+                                    {% elif asset.status == 'Inactive' %}bg-secondary
+                                    {% elif asset.status == 'Room' %}bg-primary
+                                    {% elif asset.status == 'Store' %}bg-info
+                                    {% elif asset.status == 'Clear' %}bg-warning
+                                    {% else %}bg-dark
+                                    {% endif %}">
+                                    {{ asset.status }}
+                                </span>
+                            </td>
+                            <td>{{ asset.location or '-' }}</td>
+                            <td>{{ asset.quantity }}</td>
+                            <td>{{ asset.serial_number or '-' }}</td>
+                            <td>{{ asset.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('edit_asset', asset_id=asset.id) }}" 
+                                       class="btn btn-outline-primary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger" 
+                                            onclick="confirmDelete({{ asset.id }}, '{{ asset.name }}')" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
+                <h4>No Assets Found</h4>
+                <p class="text-muted">
+                    {% if search_term or current_status or current_category %}
+                        No assets match your current filters. Try adjusting your search criteria.
+                    {% else %}
+                        Start by adding your first asset to the system.
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('new_asset') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> Add First Asset
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the asset "<span id="assetNameToDelete"></span>"?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i> Delete Asset
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(assetId, assetName) {
+    document.getElementById('assetNameToDelete').textContent = assetName;
+    document.getElementById('deleteForm').action = `/assets/${assetId}/delete`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+function toggleSelectAll(selectAllCheckbox) {
+    const checkboxes = document.querySelectorAll('.asset-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    updateActionButtons();
+}
+
+function updateActionButtons() {
+    const selectedCount = document.querySelectorAll('.asset-checkbox:checked').length;
+    const exportBtn = document.getElementById('exportSelectedBtn');
+    const deleteBtn = document.getElementById('deleteSelectedBtn');
+    const statusBtn = document.getElementById('statusSelectedBtn');
+    
+    if (exportBtn) exportBtn.disabled = selectedCount === 0;
+    if (deleteBtn) deleteBtn.disabled = selectedCount === 0;
+    if (statusBtn) statusBtn.disabled = selectedCount === 0;
+}
+
+function exportSelected() {
+    const selected = document.querySelectorAll('.asset-checkbox:checked');
+    if (selected.length === 0) return;
+    
+    const assetIds = Array.from(selected).map(checkbox => checkbox.value);
+    const params = new URLSearchParams();
+    assetIds.forEach(id => params.append('asset_ids', id));
+    
+    window.location.href = `/assets/export/excel/selected?${params.toString()}`;
+}
+
+function deleteSelected() {
+    const selected = document.querySelectorAll('.asset-checkbox:checked');
+    if (selected.length === 0) return;
+    
+    if (confirm(`Are you sure you want to delete ${selected.length} selected assets? This action cannot be undone.`)) {
+        const promises = Array.from(selected).map(checkbox => {
+            return fetch(`/assets/${checkbox.value}/delete`, { method: 'POST' });
+        });
+        
+        Promise.all(promises).then(() => {
+            location.reload();
+        }).catch(() => {
+            alert('Error deleting some assets');
+        });
+    }
+}
+
+function updateSelectedStatus(status) {
+    const selected = document.querySelectorAll('.asset-checkbox:checked');
+    if (selected.length === 0) return;
+    
+    if (confirm(`Are you sure you want to mark ${selected.length} selected assets as ${status}?`)) {
+        const promises = Array.from(selected).map(checkbox => {
+            const formData = new FormData();
+            formData.append('status', status);
+            
+            return fetch(`/assets/${checkbox.value}/update`, {
+                method: 'POST',
+                body: formData
+            });
+        });
+        
+        Promise.all(promises).then(() => {
+            location.reload();
+        }).catch(() => {
+            alert('Error updating some assets');
+        });
+    }
+}
+
+function handleFileImport(input) {
+    if (input.files && input.files[0]) {
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        
+        fetch('/assets/import/excel', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Import failed: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Import failed: ' + error.message);
+        });
+    }
+}
+</script>
+{% endblock %}

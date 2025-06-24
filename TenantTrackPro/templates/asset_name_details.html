@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}{{ asset_name.name }} - Asset Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-box"></i> {{ asset_name.name }}</h2>
+                    <p class="text-muted">Category: {{ asset_name.category }}</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('asset_management') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Asset Management
+                    </a>
+                    {% if can_user_create(current_user, 'asset_management') %}
+                    <a href="{{ url_for('add_asset', asset_name_id=asset_name.id) }}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Add Asset
+                    </a>
+                    {% else %}
+                    <button class="btn btn-secondary" disabled title="View-only access - cannot create assets">
+                        <i class="fas fa-eye"></i> View Only
+                    </button>
+                    {% endif %}
+                    <a href="{{ url_for('export_asset_excel', asset_name_id=asset_name.id) }}" class="btn btn-primary">
+                        <i class="fas fa-download"></i> Export to Excel
+                    </a>
+                    <a href="{{ url_for('download_asset_template', asset_name_id=asset_name.id) }}" class="btn btn-info">
+                        <i class="fas fa-file-excel"></i> Download Template
+                    </a>
+                    <a href="{{ url_for('import_asset_excel', asset_name_id=asset_name.id) }}" class="btn btn-warning">
+                        <i class="fas fa-upload"></i> Import from Excel
+                    </a>
+                </div>
+            </div>
+
+            <!-- Status Count Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h3 class="card-title">{{ status_counts.Room }}</h3>
+                            <p class="card-text">In Room</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <h3 class="card-title">{{ status_counts.Store }}</h3>
+                            <p class="card-text">In Store</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h3 class="card-title">{{ status_counts.Damage }}</h3>
+                            <p class="card-text">Damaged</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <form method="GET" class="d-flex">
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="Search serial numbers..." 
+                               value="{{ search_query or '' }}">
+                        <input type="hidden" name="status" value="{{ status_filter or '' }}">
+                        <input type="hidden" name="room" value="{{ room_filter or '' }}">
+                        <button type="submit" class="btn btn-outline-primary ms-2">Search</button>
+                    </form>
+                </div>
+                <div class="col-md-3">
+                    <form method="GET">
+                        <select name="status" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Status</option>
+                            <option value="Room" {% if status_filter == 'Room' %}selected{% endif %}>Room</option>
+                            <option value="Store" {% if status_filter == 'Store' %}selected{% endif %}>Store</option>
+                            <option value="Damage" {% if status_filter == 'Damage' %}selected{% endif %}>Damage</option>
+                            <option value="Dispose" {% if status_filter == 'Dispose' %}selected{% endif %}>Dispose</option>
+                            <option value="Other" {% if status_filter == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                        <input type="hidden" name="search" value="{{ search_query or '' }}">
+                        <input type="hidden" name="room" value="{{ room_filter or '' }}">
+                    </form>
+                </div>
+                <div class="col-md-3">
+                    <form method="GET" class="d-flex">
+                        <input type="text" name="room" class="form-control" 
+                               placeholder="Filter by room..." 
+                               value="{{ room_filter or '' }}">
+                        <input type="hidden" name="search" value="{{ search_query or '' }}">
+                        <input type="hidden" name="status" value="{{ status_filter or '' }}">
+                        <button type="submit" class="btn btn-outline-secondary ms-2">Filter</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Assets Table -->
+            {% if assets.items %}
+            <div class="card">
+                <div class="card-header">
+                    <h5>Assets - {{ assets.total }} items found</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Serial Number</th>
+                                    <th>Room Number</th>
+                                    <th>Status</th>
+                                    <th>Quantity</th>
+                                    <th>Date Added</th>
+                                    <th>Last Edit</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asset in assets.items %}
+                                <tr>
+                                    <td><strong>{{ asset.serial_number }}</strong></td>
+                                    <td>{{ asset.room_number or '-' }}</td>
+                                    <td>
+                                        {% if can_user_edit(current_user, 'asset_management') %}
+                                        <select class="form-select form-select-sm status-select" 
+                                                data-asset-id="{{ asset.id }}">
+                                            <option value="Room" {% if asset.status == 'Room' %}selected{% endif %}>
+                                                Room
+                                            </option>
+                                            <option value="Store" {% if asset.status == 'Store' %}selected{% endif %}>
+                                                Store
+                                            </option>
+                                            <option value="Damage" {% if asset.status == 'Damage' %}selected{% endif %}>
+                                                Damage
+                                            </option>
+                                            <option value="Dispose" {% if asset.status == 'Dispose' %}selected{% endif %}>
+                                                Dispose
+                                            </option>
+                                            <option value="Other" {% if asset.status == 'Other' %}selected{% endif %}>
+                                                Other
+                                            </option>
+                                        </select>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ asset.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ asset.quantity }}</td>
+                                    <td>{{ asset.date_added.strftime('%Y-%m-%d') if asset.date_added else '-' }}</td>
+                                    <td>{{ asset.last_edited.strftime('%Y-%m-%d %H:%M') if asset.last_edited else '-' }}</td>
+                                    <td>{{ asset.notes[:50] + '...' if asset.notes and asset.notes|length > 50 else asset.notes or '-' }}</td>
+                                    <td>
+                                        {% if can_user_edit(current_user, 'asset_management') %}
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('edit_asset_item', asset_id=asset.id) }}" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('delete_asset_item', asset_id=asset.id) }}" 
+                                                  style="display: inline;" onsubmit="return confirm('Delete this asset?')">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">
+                                            <i class="fas fa-eye"></i> View Only
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if assets.pages > 1 %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if assets.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('asset_name_details', asset_name_id=asset_name.id, page=assets.prev_num, search=search_query, status=status_filter, room=room_filter) }}">Previous</a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in assets.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != assets.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('asset_name_details', asset_name_id=asset_name.id, page=page_num, search=search_query, status=status_filter, room=room_filter) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if assets.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('asset_name_details', asset_name_id=asset_name.id, page=assets.next_num, search=search_query, status=status_filter, room=room_filter) }}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <h4><i class="fas fa-info-circle"></i> No Assets Found</h4>
+                <p>No assets found for "{{ asset_name.name }}". Start by adding your first asset.</p>
+                {% if can_user_create(current_user, 'asset_management') %}
+                <a href="{{ url_for('add_asset', asset_name_id=asset_name.id) }}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Add First Asset
+                </a>
+                {% else %}
+                <button class="btn btn-secondary" disabled title="View-only access - cannot create assets">
+                    <i class="fas fa-eye"></i> View Only Access
+                </button>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle status updates via AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.status-select').forEach(function(select) {
+        select.addEventListener('change', function() {
+            const assetId = this.getAttribute('data-asset-id');
+            const newStatus = this.value;
+            
+            fetch(`/asset-management/update-status/${assetId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: newStatus
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Status updated successfully');
+                } else {
+                    alert('Error updating status: ' + data.message);
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating status');
+                location.reload();
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

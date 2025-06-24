@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Attendance QR Codes - TS Management Services Pte Ltd{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-qrcode me-2"></i>
+                        Staff Attendance QR Codes
+                    </h1>
+                    {% if current_user.organization %}
+                    <p class="text-muted mb-0">{{ current_user.organization.name }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <a href="{{ url_for('staff_attendance') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="alert alert-info" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Instructions:</strong> Print these QR codes and place them at work locations. Staff can scan them to mark their attendance with selfie verification.
+    </div>
+
+    <!-- QR Codes -->
+    <div class="row g-4">
+        <!-- Start Time QR Code -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Start Work Time QR Code
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="qr-code-container mb-3">
+                        <div id="start-qr-code" class="d-flex justify-content-center"></div>
+                    </div>
+                    <h6 class="fw-bold">Scan to Mark Start Time</h6>
+                    <p class="text-muted">Staff scan this QR code when they arrive at work</p>
+                    
+                    <!-- QR Code Details -->
+                    <div class="mt-4">
+                        <h6>QR Code Details:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Code ID:</th>
+                                    <td>{{ start_qr.code }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Type:</th>
+                                    <td>Staff Attendance - Start</td>
+                                </tr>
+                                <tr>
+                                    <th>URL:</th>
+                                    <td><small>{{ request.url_root }}{{ start_qr.target_url }}</small></td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        {% if start_qr.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Scans:</th>
+                                    <td>{{ start_qr.scan_count }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="mt-4">
+                        <div class="btn-group" role="group">
+                            <button type="button" id="start-download-btn" class="btn btn-success" onclick="downloadQR('start-qr-code', 'Start_Work_QR_Code')">
+                                <i class="fas fa-download me-1"></i>Download
+                            </button>
+                            <button type="button" id="start-print-btn" class="btn btn-outline-success" onclick="printQR('start-qr-section')">
+                                <i class="fas fa-print me-1"></i>Print
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- End Time QR Code -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-sign-out-alt me-2"></i>
+                        End Work Time QR Code
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="qr-code-container mb-3">
+                        <div id="end-qr-code" class="d-flex justify-content-center"></div>
+                    </div>
+                    <h6 class="fw-bold">Scan to Mark End Time</h6>
+                    <p class="text-muted">Staff scan this QR code when they finish work</p>
+                    
+                    <!-- QR Code Details -->
+                    <div class="mt-4">
+                        <h6>QR Code Details:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Code ID:</th>
+                                    <td>{{ end_qr.code }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Type:</th>
+                                    <td>Staff Attendance - End</td>
+                                </tr>
+                                <tr>
+                                    <th>URL:</th>
+                                    <td><small>{{ request.url_root }}{{ end_qr.target_url }}</small></td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        {% if end_qr.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Scans:</th>
+                                    <td>{{ end_qr.scan_count }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="mt-4">
+                        <div class="btn-group" role="group">
+                            <button type="button" id="end-download-btn" class="btn btn-warning" onclick="downloadQR('end-qr-code', 'End_Work_QR_Code')">
+                                <i class="fas fa-download me-1"></i>Download
+                            </button>
+                            <button type="button" id="end-print-btn" class="btn btn-outline-warning" onclick="printQR('end-qr-section')">
+                                <i class="fas fa-print me-1"></i>Print
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Sections (Hidden) -->
+    <div id="start-qr-section" class="d-none print-section">
+        <div class="text-center p-4">
+            <h2>Staff Attendance - Start Work Time</h2>
+            <div id="start-qr-print"></div>
+            <h4 class="mt-3">Scan to Mark Start Time</h4>
+            <p>{{ request.url_root }}{{ start_qr.target_url }}</p>
+            <p><strong>Instructions:</strong> Scan this QR code when you arrive at work. Take a selfie and enter your details.</p>
+        </div>
+    </div>
+
+    <div id="end-qr-section" class="d-none print-section">
+        <div class="text-center p-4">
+            <h2>Staff Attendance - End Work Time</h2>
+            <div id="end-qr-print"></div>
+            <h4 class="mt-3">Scan to Mark End Time</h4>
+            <p>{{ request.url_root }}{{ end_qr.target_url }}</p>
+            <p><strong>Instructions:</strong> Scan this QR code when you finish work. Take a selfie and enter your details.</p>
+        </div>
+    </div>
+
+    <!-- Usage Guidelines -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Usage Guidelines
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-map-marker-alt me-2 text-primary"></i>Placement Tips</h6>
+                            <ul>
+                                <li>Place QR codes at main entrance/exit points</li>
+                                <li>Ensure adequate lighting for scanning</li>
+                                <li>Mount at eye level for easy access</li>
+                                <li>Protect from weather if placed outdoors</li>
+                                <li>Consider multiple locations for large facilities</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-users me-2 text-success"></i>Staff Instructions</h6>
+                            <ul>
+                                <li>Use any smartphone camera or QR scanner app</li>
+                                <li>Allow camera permissions for selfie capture</li>
+                                <li>Enter full name and company name accurately</li>
+                                <li>Ensure good lighting for selfie photo</li>
+                                <li>Submit only once per start/end session</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> Keep these QR codes secure and only share with authorized staff. Each scan creates a permanent attendance record with timestamp and photo verification.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Print Styles -->
+<style>
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .print-section, .print-section * {
+        visibility: visible;
+    }
+    .print-section {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+}
+
+.qr-code-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+</style>
+
+
+<script>
+// QR Code management
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Construct URLs for QR codes
+    const baseUrl = window.location.origin;
+    const startUrl = baseUrl + '/staff-attendance/scan/start';
+    const endUrl = baseUrl + '/staff-attendance/scan/end';
+    
+    console.log('Generating QR codes for:', startUrl, endUrl);
+    
+    // Generate QR codes using API service
+    generateSimpleQRCode('start-qr-code', startUrl);
+    generateSimpleQRCode('end-qr-code', endUrl);
+    generateSimpleQRCode('start-qr-print', startUrl);
+    generateSimpleQRCode('end-qr-print', endUrl);
+});
+
+function generateSimpleQRCode(elementId, url) {
+    const element = document.getElementById(elementId);
+    
+    if (!element) {
+        console.error('Element not found:', elementId);
+        return;
+    }
+    
+    // Create QR code using qr-server API
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+    const img = document.createElement('img');
+    img.src = qrUrl;
+    img.alt = 'QR Code';
+    img.className = 'img-fluid';
+    img.style.maxWidth = '200px';
+    
+    // Clear the element and add the image
+    element.innerHTML = '';
+    element.appendChild(img);
+    
+    // Hide loading and enable buttons
+    hideLoadingAndEnableButtons(elementId, true);
+    
+    console.log('QR Code generated successfully for:', elementId);
+}
+
+function hideLoadingAndEnableButtons(elementId, success) {
+    // Determine which buttons to enable based on elementId
+    if (elementId === 'start-qr-code') {
+        const downloadBtn = document.getElementById('start-download-btn');
+        const printBtn = document.getElementById('start-print-btn');
+        
+        if (success) {
+            if (downloadBtn) downloadBtn.disabled = false;
+            if (printBtn) printBtn.disabled = false;
+        }
+    } else if (elementId === 'end-qr-code') {
+        const downloadBtn = document.getElementById('end-download-btn');
+        const printBtn = document.getElementById('end-print-btn');
+        
+        if (success) {
+            if (downloadBtn) downloadBtn.disabled = false;
+            if (printBtn) printBtn.disabled = false;
+        }
+    }
+}
+
+function downloadQR(elementId, filename) {
+    const element = document.getElementById(elementId);
+    const img = element.querySelector('img');
+    
+    if (!img) {
+        alert('QR code not ready. Please wait a moment and try again.');
+        return;
+    }
+    
+    // Create a temporary link to download the image
+    const link = document.createElement('a');
+    link.download = `${filename}.png`;
+    link.href = img.src;
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log('QR code downloaded:', filename);
+}
+
+function printQR(sectionId) {
+    const printContent = document.getElementById(sectionId);
+    const originalContent = document.body.innerHTML;
+    
+    document.body.innerHTML = printContent.innerHTML;
+    window.print();
+    document.body.innerHTML = originalContent;
+    
+    // Regenerate QR codes after restoring content
+    setTimeout(() => {
+        const baseUrl = window.location.origin;
+        const startUrl = baseUrl + '/staff-attendance/scan/start';
+        const endUrl = baseUrl + '/staff-attendance/scan/end';
+        
+        generateSimpleQRCode('start-qr-code', startUrl);
+        generateSimpleQRCode('end-qr-code', endUrl);
+        generateSimpleQRCode('start-qr-print', startUrl);
+        generateSimpleQRCode('end-qr-print', endUrl);
+    }, 100);
+}
+</script>
+{% endblock %}

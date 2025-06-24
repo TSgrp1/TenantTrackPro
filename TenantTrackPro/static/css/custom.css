@@ -1,0 +1,276 @@
+/* Custom CSS for Pioneer Management System */
+
+/* Navigation Styling */
+.nav-item-custom {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    margin: 2px 0;
+    border-radius: 6px;
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.nav-item-custom:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    text-decoration: none;
+}
+
+.nav-item-custom.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.nav-icon-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.nav-text {
+    font-size: 11px;
+    margin-top: 4px;
+    line-height: 1.2;
+}
+
+/* Purchase Form Styling */
+.signature-container canvas {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fafafa;
+    cursor: crosshair;
+}
+
+.purchase-form-header {
+    border: 2px solid #000;
+    padding: 15px;
+    background: #f8f9fa;
+}
+
+.ts-group-logo {
+    background: #1e40af;
+    color: white;
+    padding: 12px;
+    font-weight: bold;
+    border-radius: 3px;
+    position: relative;
+}
+
+.ts-group-accent {
+    background: #fbbf24;
+    width: 15px;
+    height: 15px;
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+}
+
+/* Form Table Styling */
+.purchase-table {
+    border-collapse: collapse;
+}
+
+.purchase-table td,
+.purchase-table th {
+    border: 1px solid #000;
+    padding: 8px;
+    text-align: center;
+}
+
+.purchase-table input {
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+}
+
+/* Signature Section */
+.signature-section {
+    border: 1px solid #000;
+    margin-top: -1px;
+}
+
+.signature-column {
+    border-right: 1px solid #000;
+    padding: 12px;
+}
+
+.signature-column:last-child {
+    border-right: none;
+}
+
+.signature-area {
+    border: 1px solid #ccc;
+    height: 80px;
+    margin-bottom: 8px;
+    background: #fafafa;
+}
+
+.signature-input {
+    border-bottom: 1px solid #000;
+    margin-bottom: 5px;
+}
+
+.signature-label {
+    border-bottom: 1px solid #000;
+    margin-bottom: 8px;
+    padding: 3px 0;
+    font-size: 10px;
+    text-align: center;
+    color: #666;
+}
+
+/* Card Styling */
+.card-shadow {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-header-custom {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: none;
+}
+
+/* Button Styling */
+.btn-custom {
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Table Enhancements */
+.table-custom {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.table-custom thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+/* Modal Styling */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    border-bottom: 2px solid #f8f9fa;
+    padding: 20px;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+/* Alert Styling */
+.alert-custom {
+    border-radius: 8px;
+    border: none;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+    color: #155724;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #fdbb2d 0%, #22c1c3 100%);
+    color: #856404;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+    color: #721c24;
+}
+
+/* Loading Spinner */
+.spinner-custom {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .nav-text {
+        font-size: 10px;
+    }
+    
+    .purchase-form-header {
+        padding: 10px;
+    }
+    
+    .signature-area {
+        height: 60px;
+    }
+    
+    .table-responsive {
+        font-size: 12px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .purchase-form-header {
+        border: 2px solid #000 !important;
+        background: white !important;
+    }
+}
+
+/* Utility Classes */
+.text-truncate-custom {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #fdbb2d 0%, #22c1c3 100%);
+}
+
+.border-custom {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+}
